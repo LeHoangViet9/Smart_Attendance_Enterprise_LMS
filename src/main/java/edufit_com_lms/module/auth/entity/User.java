@@ -37,6 +37,7 @@ public class User {
     @Column(name = "avatar_url", unique = true)
     private String avatarUrl;
     @Column(name = "face_embedding", columnDefinition = "vector(512)")
+    @org.hibernate.annotations.ColumnTransformer(read = "face_embedding::text", write = "?::vector")
     private String faceEmbedding;
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

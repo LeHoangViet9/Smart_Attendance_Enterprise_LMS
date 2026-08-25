@@ -1,0 +1,306 @@
+/* FaceOnboarding.css */
+
+.onboarding-container {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #0f172a;
+    /* Nền tối phong cách hacker/cyber */
+    position: relative;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+    color: white;
+}
+
+/* Hiệu ứng Background */
+.cyber-circle {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    z-index: 0;
+}
+
+.circle-1 {
+    width: 400px;
+    height: 400px;
+    background: rgba(16, 185, 129, 0.4);
+    top: -100px;
+    left: -100px;
+}
+
+.circle-2 {
+    width: 300px;
+    height: 300px;
+    background: rgba(59, 130, 246, 0.4);
+    bottom: -50px;
+    right: -50px;
+}
+
+/* Modal Glassmorphism */
+.onboarding-glass {
+    position: relative;
+    z-index: 10;
+    width: 90%;
+    max-width: 600px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    border-radius: 24px;
+    padding: 40px;
+    text-align: center;
+}
+
+.onboarding-header h2 {
+    font-size: 2rem;
+    margin: 0 0 10px 0;
+    background: linear-gradient(135deg, #34d399 0%, #3b82f6 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.onboarding-header .subtitle {
+    font-weight: 500;
+    color: #94a3b8;
+    margin-top: 0;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+}
+
+.scanner-arena {
+    margin: 30px 0;
+    min-height: 300px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Video & Camera Frame */
+.video-container {
+    position: relative;
+    width: 320px;
+    height: 320px;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 0 40px rgba(16, 185, 129, 0.2);
+    background: #000;
+}
+
+.video-container video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+    /* Lật ngang như gương */
+}
+
+/* Khung viền ngắm mục tiêu (Target Frame) */
+.target-frame {
+    position: absolute;
+    top: 10%;
+    left: 10%;
+    width: 80%;
+    height: 80%;
+    border-radius: 50%;
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    box-sizing: border-box;
+    animation: rotateFrame 10s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes rotateFrame {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Tia súng Laser quét từ trên xuống */
+.laser-scanner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: #10b981;
+    box-shadow: 0 0 15px #10b981, 0 0 30px #10b981;
+    animation: scanAnimation 2s infinite ease-in-out alternate;
+}
+
+@keyframes scanAnimation {
+    0% {
+        top: 0%;
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 1;
+    }
+
+    90% {
+        opacity: 1;
+    }
+
+    100% {
+        top: 100%;
+        opacity: 0;
+    }
+}
+
+/* Hiệu ứng chớp đen/trắng khi chụp */
+.camera-flash {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: white;
+    z-index: 9999;
+    animation: flashAnim 0.3s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes flashAnim {
+    0% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+/* Khung Instruction */
+.instruction-box {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 25px;
+    white-space: pre-line;
+    border-left: 4px solid #3b82f6;
+    color: #cbd5e1;
+}
+
+/* Nút bấm Sci-fi */
+.onboarding-actions button {
+    padding: 14px 30px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+}
+
+.btn-start {
+    background: #3b82f6;
+    color: white;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+}
+
+.btn-start:hover {
+    background: #2563eb;
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.6);
+}
+
+.btn-capture {
+    background: #10b981;
+    color: white;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Model Training State */
+.training-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.ai-brain-icon {
+    font-size: 80px;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0% {
+        transform: translateY(0px) rotate(0deg);
+        filter: drop-shadow(0 0 10px #3b82f6);
+    }
+
+    50% {
+        transform: translateY(-20px) rotate(5deg);
+        filter: drop-shadow(0 0 30px #34d399);
+    }
+
+    100% {
+        transform: translateY(0px) rotate(0deg);
+        filter: drop-shadow(0 0 10px #3b82f6);
+    }
+}
+
+.progress-bar-container {
+    width: 250px;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #10b981);
+    transition: width 0.3s ease;
+}
+
+.success-checkmark {
+    font-size: 80px;
+    margin-bottom: 20px;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+    0% {
+        transform: scale(0);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.btn-finish {
+    background: linear-gradient(135deg, #f59e0b, #ea580c);
+    color: white;
+    width: 100%;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+}
+
+.init-container .face-icon-large {
+    font-size: 150px;
+    opacity: 0.3;
+}

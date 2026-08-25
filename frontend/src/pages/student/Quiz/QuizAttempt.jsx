@@ -14,6 +14,8 @@ const QuizAttempt = () => {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
     const [showSubmitModal, setShowSubmitModal] = useState(false);
+    const [showTimeUpModal, setShowTimeUpModal] = useState(false);
+    const [submitError, setSubmitError] = useState(null);
 
     // Ref for timer
     const [timeLeft, setTimeLeft] = useState(null);
@@ -108,8 +110,27 @@ const QuizAttempt = () => {
     };
 
     const handleTimeUp = () => {
-        alert("Time is up! Your answers will be submitted automatically.");
-        setTimeout(() => handleConfirmSubmit(), 100);
+        setShowTimeUpModal(true);
+        setShowSubmitModal(false);
+        setTimeout(() => {
+            executeSubmit();
+        }, 1500);
+    };
+
+    const executeSubmit = async () => {
+        setSubmitting(true);
+        setSubmitError(null);
+        try {
+            await axiosInstance.post(`/v1/student/quizzes/attempts/${attemptId}/submit`, {
+                quizAttemptId: parseInt(attemptId),
+                answers: answers
+            });
+            navigate('/student/quizzes/history');
+        } catch (err) {
+            console.error('Submit failed', err);
+            setSubmitError('Không thể nộp bài do lỗi máy chủ. Vui lòng nhấn thử lại.');
+            setSubmitting(false);
+        }
     };
 
     const handleOptionSelect = (questionId, optionId) => {
@@ -148,19 +169,8 @@ const QuizAttempt = () => {
     };
 
     const handleConfirmSubmit = async () => {
-        setSubmitting(true);
         setShowSubmitModal(false);
-        try {
-            await axiosInstance.post(`/v1/student/quizzes/attempts/${attemptId}/submit`, {
-                quizAttemptId: parseInt(attemptId),
-                answers: answers
-            });
-            navigate('/student/quizzes/history');
-        } catch (err) {
-            console.error('Submit failed', err);
-            alert('Failed to submit quiz. Please try again.');
-            setSubmitting(false);
-        }
+        await executeSubmit();
     };
 
     const handleSubmitClick = () => {
@@ -244,14 +254,44 @@ const QuizAttempt = () => {
 
             {/* Custom Submit Confirmation Modal */}
             {showSubmitModal && (
-                <div className="modal-overlay">
-                    <div className="modal-glass">
+                <div className="modal-overlay" onClick={() => setShowSubmitModal(false)}>
+                    <div className="modal-glass" onClick={(e) => e.stopPropagation()}>
                         <h3>Hoàn thành bài thi?</h3>
                         <p>Bạn đã trả lời {answers.filter(a => a.selectedOptionId || (a.answerText && a.answerText.trim() !== '')).length} trên tổng số {quiz?.questions?.length} câu hỏi. Bạn có chắc chắn muốn nộp bài ngay lúc này không?</p>
                         <div className="modal-actions">
-                            <button className="btn-cancel" onClick={() => setShowSubmitModal(false)}>Quay lại làm tiếp</button>
-                            <button className="btn-confirm" onClick={handleConfirmSubmit}>Nộp Bài Ngay</button>
+                            <button className="btn-cancel" onClick={() => setShowSubmitModal(false)} disabled={submitting}>Quay lại làm tiếp</button>
+                            <button className="btn-confirm" onClick={handleConfirmSubmit} disabled={submitting}>
+                                {submitting ? 'Đang nộp...' : 'Nộp Bài Ngay'}
+                            </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Custom Time Is Up Modal (Auto-Submitting) */}
+            {showTimeUpModal && (
+                <div className="modal-overlay">
+                    <div className="modal-glass" style={{ maxWidth: '420px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '0.75rem', animation: 'pulse 1s infinite alternate' }}>⏰</div>
+                        <h3 style={{ color: '#dc2626', margin: '0 0 0.5rem 0' }}>Hết Giờ Làm Bài!</h3>
+                        <p style={{ color: '#4b5563', margin: '0 0 1.5rem 0', lineHeight: 1.5 }}>
+                            Thời gian làm bài thi của bạn đã kết thúc. Hệ thống đang tự động tổng hợp câu trả lời và nộp bài thi...
+                        </p>
+                        {submitError ? (
+                            <div>
+                                <div className="error-message" style={{ marginBottom: '1rem', textAlign: 'left' }}>
+                                    <span>⚠️</span> {submitError}
+                                </div>
+                                <button className="btn-confirm" onClick={executeSubmit}>
+                                    Thử nộp lại ngay
+                                </button>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
+                                <div className="spinner"></div>
+                                <span style={{ fontSize: '0.9rem', color: '#6b7280', fontWeight: 600 }}>Đang tự động nộp bài thi...</span>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

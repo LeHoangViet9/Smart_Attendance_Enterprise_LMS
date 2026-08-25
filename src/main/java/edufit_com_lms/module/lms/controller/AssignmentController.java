@@ -37,6 +37,15 @@ public class AssignmentController {
                 .body(ApiResponse.success("Assignment created successfully", response));
     }
 
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<AssignmentResponse>>> getAllAssignments(
+            @RequestParam(required = false) UUID classId) {
+        List<AssignmentResponse> responses = (classId != null)
+                ? assignmentService.getAssignmentsByClassId(classId)
+                : assignmentService.getAllAssignments();
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<AssignmentResponse>> getAssignmentById(@PathVariable UUID id) {
         AssignmentResponse response = assignmentService.getAssignmentById(id);

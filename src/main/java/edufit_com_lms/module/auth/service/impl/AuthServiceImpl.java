@@ -4,6 +4,7 @@ import edufit_com_lms.common.exception.ConflictException;
 import edufit_com_lms.common.exception.ResourceNotFound;
 import edufit_com_lms.common.exception.UnauthorizedException;
 import edufit_com_lms.module.auth.dto.request.AdminRegisterRequest;
+import edufit_com_lms.module.auth.dto.request.ChangePasswordRequest;
 import edufit_com_lms.module.auth.dto.request.LoginRequest;
 import edufit_com_lms.module.auth.dto.response.UserResponse;
 import edufit_com_lms.module.auth.entity.User;
@@ -37,7 +38,7 @@ public class AuthServiceImpl implements AuthService {
         if (userRepository.existsByCode(registerRequest.getCode())) {
             throw new ConflictException("Code already exists");
         }
-        String password = generatePassword();
+        String password = registerRequest.getEmail(); // Đặt mật khẩu mặc định là email
         User user = new User();
         user.setEmail(registerRequest.getEmail());
         user.setCode(registerRequest.getCode());
@@ -98,6 +99,22 @@ public class AuthServiceImpl implements AuthService {
                 .refreshToken(refreshToken)
                 .accessToken(accessToken)
                 .build();
+    }
+
+    @Override
+    public void changePassword(ChangePasswordRequest changePasswordRequest) {
+        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new ResourceNotFound("Can not found email"));
+        if (!passwordEncoder.matches(changePasswordRequest.getOldPassword(), user.getPassword())) {
+            throw new UnauthorizedException("Old password wrong");
+        }
+
+        if (passwordEncoder.matches(changePasswordRequest.getNewPassword(), user.getPassword())) {
+            throw new UnauthorizedException("New password is not same old password");
+        }
+        user.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
+        userRepository.save(user);
     }
 
     @Override

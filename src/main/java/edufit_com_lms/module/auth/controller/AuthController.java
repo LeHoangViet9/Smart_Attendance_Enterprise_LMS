@@ -1,6 +1,7 @@
 package edufit_com_lms.module.auth.controller;
 
 import edufit_com_lms.common.response.ApiResponse;
+import edufit_com_lms.module.auth.dto.request.ChangePasswordRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -57,5 +58,17 @@ public class AuthController {
                 null,
                 HttpStatus.OK
         ), HttpStatus.OK);
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<ApiResponse<String>> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        authService.changePassword(request);
+        return new ResponseEntity<>(new ApiResponse<>(
+                true,
+                "Change password successfully",
+                null,
+                null,
+                HttpStatus.OK
+        ),HttpStatus.OK);
     }
 }

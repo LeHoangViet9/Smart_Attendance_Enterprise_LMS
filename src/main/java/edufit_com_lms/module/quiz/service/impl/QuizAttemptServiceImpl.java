@@ -14,6 +14,7 @@ import edufit_com_lms.module.quiz.entity.Question;
 import edufit_com_lms.module.quiz.entity.QuestionOption;
 import edufit_com_lms.module.quiz.entity.QuestionType;
 import edufit_com_lms.module.quiz.entity.StudentAnswer;
+import edufit_com_lms.module.quiz.entity.ReviewType;
 import edufit_com_lms.module.quiz.dto.request.StudentAnswerRequest;
 import edufit_com_lms.module.quiz.repository.QuestionRepository;
 import edufit_com_lms.module.quiz.repository.QuestionOptionRepository;
@@ -21,6 +22,8 @@ import edufit_com_lms.module.quiz.repository.StudentAnswerRepository;
 import edufit_com_lms.module.quiz.mapper.QuizAttemptMapper;
 import edufit_com_lms.module.quiz.repository.QuizAttemptRepository;
 import edufit_com_lms.module.quiz.repository.QuizRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
@@ -119,7 +122,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
             }
         }
 
-        double totalScore = 0.0;
+        double earnedPoints = 0.0;
         List<StudentAnswer> studentAnswers = new ArrayList<>();
 
         if (submitRequest.getAnswers() != null && !submitRequest.getAnswers().isEmpty()) {
@@ -139,7 +142,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                         || question.getQuestionType() == QuestionType.TRUE_FALSE) {
                     if (selectedOption != null && Boolean.TRUE.equals(selectedOption.getIsCorrect())) {
                         isAwarded = true;
-                        totalScore += question.getPoints();
+                        earnedPoints += question.getPoints();
                     }
                 } else if (question.getQuestionType() == QuestionType.FILL_BLANK) {
                     if (answerReq.getAnswerText() != null && !answerReq.getAnswerText().isEmpty()) {
@@ -150,7 +153,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                                                     .equalsIgnoreCase(answerReq.getAnswerText().trim()));
                             if (matched) {
                                 isAwarded = true;
-                                totalScore += question.getPoints();
+                                earnedPoints += question.getPoints();
                             }
                         }
                     }
@@ -168,7 +171,16 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
             studentAnswerRepository.saveAll(studentAnswers);
         }
 
-        quizAttempt.setScore(totalScore);
+        double totalMaxPoints = quizAttempt.getQuiz().getQuestions().stream()
+                .mapToDouble(Question::getPoints).sum();
+
+        double finalScore = 0.0;
+        if (totalMaxPoints > 0) {
+            finalScore = (earnedPoints / totalMaxPoints) * 10.0;
+            finalScore = Math.round(finalScore * 100.0) / 100.0;
+        }
+
+        quizAttempt.setScore(finalScore);
         quizAttempt.setEndTime(submitTime);
         quizAttempt.setStatus(QuizStatus.COMPLETED);
 
@@ -179,9 +191,10 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
     }
 
     @Override
-    public List<QuizAttemptResponse> getStudentAttemptHistory(Long studentId) {
-        List<QuizAttempt> attempts = quizAttemptRepository.findAllByStudentUserIdOrderByStartTimeDesc(studentId);
-        return attempts.stream().map(quizAttemptMapper::toResponse).toList();
+    public Page<QuizAttemptResponse> getStudentAttemptHistory(Long studentId, Pageable pageable) {
+        Page<QuizAttempt> attempts = quizAttemptRepository.findAllByStudentUserIdOrderByStartTimeDesc(studentId,
+                pageable);
+        return attempts.map(quizAttemptMapper::toResponse);
     }
 
     @Override
@@ -205,6 +218,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public QuizReviewResponse getAttemptReview(Long attemptId, Long studentId) {
         QuizAttempt quizAttempt = quizAttemptRepository.findById(attemptId)
                 .orElseThrow(() -> new ResourceNotFound("Can not found quiz attempt"));
@@ -218,6 +232,18 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         }
 
         Quiz quiz = quizAttempt.getQuiz();
+
+        if (quiz.getReviewType() != null) {
+            if (quiz.getReviewType() == ReviewType.NEVER) {
+                throw new ConflictException("Giáo viên không cho phép xem lại bài thi này.");
+            }
+            if (quiz.getReviewType() == ReviewType.AFTER_DEADLINE) {
+                if (quiz.getEndTime() != null && LocalDateTime.now().isBefore(quiz.getEndTime())) {
+                    throw new ConflictException("Chưa đến thời gian xem lại bài (Phải chờ qua hạn kết thúc).");
+                }
+            }
+        }
+
         List<StudentAnswer> studentAnswers = studentAnswerRepository.findAllByAttemptId(attemptId);
 
         List<QuizReviewResponse.ReviewQuestionDto> questionDtos = new ArrayList<>();
@@ -262,7 +288,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                 .quizTitle(quiz.getTitle())
                 .startTime(quizAttempt.getStartTime())
                 .endTime(quizAttempt.getEndTime())
-                .score(quizAttempt.getScore())
+                .score((quiz.getShowScore() != null && !quiz.getShowScore()) ? null : quizAttempt.getScore())
                 .status(quizAttempt.getStatus())
                 .questions(questionDtos)
                 .build();

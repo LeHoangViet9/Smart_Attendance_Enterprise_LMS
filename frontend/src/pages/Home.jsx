@@ -23,8 +23,8 @@ const Home = () => {
 
     const handleGoToSystem = () => {
         if (!user) return;
-        if (user.role === 'STUDENT') navigate('/student/quizzes');
-        else if (user.role === 'ADMIN') navigate('/admin-home');
+        if (user.role === 'STUDENT') navigate('/student/student-home');
+        else if (user.role === 'ADMIN') navigate('/admin/dashboard');
         else if (user.role === 'LECTURER') navigate('/lecturer-home');
     };
 

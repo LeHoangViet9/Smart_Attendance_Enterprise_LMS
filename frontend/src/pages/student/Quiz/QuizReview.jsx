@@ -22,7 +22,8 @@ const QuizReview = () => {
                 }
             } catch (err) {
                 console.error(err);
-                setError('Unable to load quiz results. Make sure your attempt is completed.');
+                const backendMsg = err.response?.data?.message;
+                setError(backendMsg || 'Unable to load quiz results. Make sure your attempt is completed.');
             } finally {
                 setLoading(false);
             }

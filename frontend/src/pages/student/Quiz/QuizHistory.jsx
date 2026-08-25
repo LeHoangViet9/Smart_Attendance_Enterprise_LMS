@@ -17,8 +17,8 @@ const QuizHistory = () => {
         try {
             const response = await axiosInstance.get('/v1/student/quizzes/attempts/history');
             if (response.data && response.data.data) {
-                // Sort history by startTime descending (newest first)
-                const sortedHistory = response.data.data.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+                const historyData = response.data.data.content ? response.data.data.content : response.data.data;
+                const sortedHistory = historyData.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
                 setHistory(sortedHistory);
             }
         } catch (err) {

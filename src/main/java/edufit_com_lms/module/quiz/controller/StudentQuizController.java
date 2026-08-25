@@ -96,7 +96,8 @@ public class StudentQuizController {
 
         // API: Lịch sử điểm của bản thân
         @GetMapping("/attempts/history")
-        public ResponseEntity<ApiResponse<List<QuizAttemptResponse>>> getMyHistory() {
+        public ResponseEntity<ApiResponse<org.springframework.data.domain.Page<QuizAttemptResponse>>> getMyHistory(
+                        @PageableDefault(page = 0, size = 10) Pageable pageable) {
                 Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
                 CustomUserDetail userDetails = (CustomUserDetail) authentication.getPrincipal();
                 Long studentId = userDetails.getId();
@@ -105,7 +106,7 @@ public class StudentQuizController {
                                 true,
                                 "Fetch attempt history successfully",
                                 null,
-                                quizAttemptService.getStudentAttemptHistory(studentId),
+                                quizAttemptService.getStudentAttemptHistory(studentId, pageable),
                                 HttpStatus.OK), HttpStatus.OK);
         }
 

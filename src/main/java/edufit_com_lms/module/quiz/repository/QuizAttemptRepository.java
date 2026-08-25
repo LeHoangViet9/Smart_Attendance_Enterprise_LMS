@@ -1,6 +1,8 @@
 package edufit_com_lms.module.quiz.repository;
 
 import edufit_com_lms.module.quiz.entity.QuizAttempt;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,5 +15,5 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Long> 
     Optional<QuizAttempt> findByQuizIdAndStudentUserId(Long quizId, Long studentId);
 
     // Lấy lịch sử thi của một học sinh
-    List<QuizAttempt> findAllByStudentUserIdOrderByStartTimeDesc(Long studentId);
+    Page<QuizAttempt> findAllByStudentUserIdOrderByStartTimeDesc(Long studentId,Pageable pageable);
 }

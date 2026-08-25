@@ -47,6 +47,13 @@ public class Quiz {
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Question> questions;
 
+    @Column(name = "show_score")
+    private Boolean showScore;
+
+    @Column(name = "review_type")
+    @Enumerated(EnumType.STRING)
+    private ReviewType reviewType;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

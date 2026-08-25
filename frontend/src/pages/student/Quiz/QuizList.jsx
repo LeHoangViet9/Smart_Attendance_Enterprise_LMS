@@ -7,15 +7,20 @@ const QuizList = () => {
     const [quizzes, setQuizzes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
     const navigate = useNavigate();
 
     useEffect(() => {
-        fetchQuizzes();
-    }, []);
+        const delayDebounceFn = setTimeout(() => {
+            fetchQuizzes(searchQuery);
+        }, 500);
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchQuery]);
 
-    const fetchQuizzes = async () => {
+    const fetchQuizzes = async (query = '') => {
         try {
-            const response = await axiosInstance.get('/v1/student/quizzes');
+            const url = query ? `/v1/student/quizzes?keyword=${encodeURIComponent(query)}` : '/v1/student/quizzes';
+            const response = await axiosInstance.get(url);
             if (response.data && response.data.data && response.data.data.content) {
                 setQuizzes(response.data.data.content);
             }
@@ -48,7 +53,35 @@ const QuizList = () => {
 
     return (
         <div className="quiz-container">
-            <h1 className="page-title">Available Quizzes</h1>
+            <h1 className="page-title">Danh sách bài Quiz</h1>
+
+            <div className="search-container" style={{ marginBottom: '30px', display: 'flex', justifyContent: 'center' }}>
+                <input
+                    type="text"
+                    placeholder="🔍 Tìm kiếm kỳ thi, bài quiz..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{
+                        padding: '14px 24px',
+                        width: '100%',
+                        maxWidth: '500px',
+                        borderRadius: '30px',
+                        border: '1px solid #e5e7eb',
+                        outline: 'none',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+                        fontSize: '1rem',
+                        transition: 'all 0.3s ease'
+                    }}
+                    onFocus={(e) => {
+                        e.target.style.boxShadow = '0 4px 20px rgba(59, 130, 246, 0.2)';
+                        e.target.style.borderColor = '#3b82f6';
+                    }}
+                    onBlur={(e) => {
+                        e.target.style.boxShadow = '0 4px 15px rgba(0,0,0,0.05)';
+                        e.target.style.borderColor = '#e5e7eb';
+                    }}
+                />
+            </div>
 
             {error && <div className="error-message">⚠️ {error}</div>}
 

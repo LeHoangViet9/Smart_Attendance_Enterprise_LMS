@@ -49,7 +49,7 @@ const Login = () => {
             if (data.role === 'STUDENT') {
                 navigate('/face-onboarding');
             } else if (data.role === 'ADMIN') {
-                navigate('/admin-home');
+                navigate('/admin/dashboard');
             } else if (data.role === 'LECTURER') {
                 navigate('/lecturer-home');
             } else {
@@ -65,7 +65,7 @@ const Login = () => {
 
     return (
         <div className="login-container">
-            <div className="glass-panel">
+            <div className="login-glass-panel">
                 <div className="login-header">
                     <div className="login-icon">🏫</div>
                     <h2>Educo LMS</h2>
@@ -89,7 +89,7 @@ const Login = () => {
                         <label>Mật Khẩu</label>
                         <input
                             type="password"
-                            placeholder="Nhập 123456 để thử nghiệm"
+                            placeholder="Nhập mật khẩu của bạn"
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}

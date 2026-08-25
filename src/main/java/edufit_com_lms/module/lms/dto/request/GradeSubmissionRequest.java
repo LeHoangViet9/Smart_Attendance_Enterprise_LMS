@@ -1,4 +1,4 @@
-package edufit_com_lms.module.lms.dto;
+package edufit_com_lms.module.lms.dto.request;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;

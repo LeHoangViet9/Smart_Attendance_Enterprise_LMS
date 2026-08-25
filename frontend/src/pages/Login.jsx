@@ -46,7 +46,7 @@ const Login = () => {
             // Luồng điều hướng thông minh
             console.log('[LOGIN DEBUG] Navigating for role:', data.role);
             if (data.role === 'STUDENT') {
-                navigate('/student/quizzes');
+                navigate('/face-onboarding');
             } else if (data.role === 'ADMIN') {
                 navigate('/admin-home');
             } else if (data.role === 'LECTURER') {

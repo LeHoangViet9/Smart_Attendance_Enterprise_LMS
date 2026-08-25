@@ -10,11 +10,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-
 import edufit_com_lms.module.quiz.mapper.QuizMapper;
+
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class QuizServiceImpl implements QuizService {
     private final QuizRepository quizRepository;
     private final QuizMapper quizMapper;

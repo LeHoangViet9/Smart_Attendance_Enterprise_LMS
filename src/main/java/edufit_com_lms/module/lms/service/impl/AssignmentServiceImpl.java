@@ -1,9 +1,9 @@
 package edufit_com_lms.module.lms.service.impl;
 
 import edufit_com_lms.common.exception.ResourceNotFound;
-import edufit_com_lms.module.lms.dto.AssignmentResponse;
-import edufit_com_lms.module.lms.dto.CreateAssignmentRequest;
-import edufit_com_lms.module.lms.dto.UpdateAssignmentRequest;
+import edufit_com_lms.module.lms.dto.response.AssignmentResponse;
+import edufit_com_lms.module.lms.dto.request.CreateAssignmentRequest;
+import edufit_com_lms.module.lms.dto.request.UpdateAssignmentRequest;
 import edufit_com_lms.module.lms.entity.Assignment;
 import edufit_com_lms.module.lms.repository.AssignmentRepository;
 import edufit_com_lms.module.lms.repository.SubmissionRepository;

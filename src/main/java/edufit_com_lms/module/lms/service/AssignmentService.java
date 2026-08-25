@@ -1,8 +1,8 @@
 package edufit_com_lms.module.lms.service;
 
-import edufit_com_lms.module.lms.dto.AssignmentResponse;
-import edufit_com_lms.module.lms.dto.CreateAssignmentRequest;
-import edufit_com_lms.module.lms.dto.UpdateAssignmentRequest;
+import edufit_com_lms.module.lms.dto.response.AssignmentResponse;
+import edufit_com_lms.module.lms.dto.request.CreateAssignmentRequest;
+import edufit_com_lms.module.lms.dto.request.UpdateAssignmentRequest;
 
 import java.util.List;
 import java.util.UUID;

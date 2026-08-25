@@ -1,8 +1,8 @@
 package edufit_com_lms.module.lms.controller;
 
 import edufit_com_lms.common.response.ApiResponse;
-import edufit_com_lms.module.lms.dto.GradeSubmissionRequest;
-import edufit_com_lms.module.lms.dto.SubmissionResponse;
+import edufit_com_lms.module.lms.dto.request.GradeSubmissionRequest;
+import edufit_com_lms.module.lms.dto.response.SubmissionResponse;
 import edufit_com_lms.module.lms.service.SubmissionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

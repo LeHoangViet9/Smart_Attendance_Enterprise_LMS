@@ -33,12 +33,22 @@ public class StudentQuizController {
         public ResponseEntity<ApiResponse<Page<QuizResponse>>> getAvailableQuizzes(
                         @RequestParam(required = false) String keyword,
                         @PageableDefault(page = 0, size = 10) Pageable pageable) {
-                return new ResponseEntity<>(new ApiResponse<>(
-                                true,
-                                "List available quizzes successfully",
-                                null,
-                                quizService.getQuizzes(keyword, null, pageable),
-                                HttpStatus.OK), HttpStatus.OK);
+                try {
+                        return new ResponseEntity<>(new ApiResponse<>(
+                                        true,
+                                        "List available quizzes successfully",
+                                        null,
+                                        quizService.getQuizzes(keyword, null, pageable),
+                                        HttpStatus.OK), HttpStatus.OK);
+                } catch (Exception e) {
+                        e.printStackTrace();
+                        return new ResponseEntity<>(new ApiResponse<>(
+                                        false,
+                                        "HTTP 500 Debug: " + e.getMessage(),
+                                        null,
+                                        null,
+                                        HttpStatus.INTERNAL_SERVER_ERROR), HttpStatus.INTERNAL_SERVER_ERROR);
+                }
         }
 
         // API: Xem thông tin và hệ thống câu hỏi của đề

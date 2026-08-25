@@ -1,8 +1,8 @@
 package edufit_com_lms.module.lms.service;
 
-import edufit_com_lms.module.lms.dto.GradeSubmissionRequest;
-import edufit_com_lms.module.lms.dto.SubmitAssignmentRequest;
-import edufit_com_lms.module.lms.dto.SubmissionResponse;
+import edufit_com_lms.module.lms.dto.request.GradeSubmissionRequest;
+import edufit_com_lms.module.lms.dto.request.SubmitAssignmentRequest;
+import edufit_com_lms.module.lms.dto.response.SubmissionResponse;
 
 import java.util.List;
 import java.util.UUID;

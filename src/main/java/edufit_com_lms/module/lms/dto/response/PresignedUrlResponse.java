@@ -1,4 +1,4 @@
-package edufit_com_lms.module.lms.dto;
+package edufit_com_lms.module.lms.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

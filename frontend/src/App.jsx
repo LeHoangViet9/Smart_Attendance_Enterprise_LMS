@@ -8,6 +8,7 @@ import QuizDetails from './pages/student/Quiz/QuizDetails';
 import QuizAttempt from './pages/student/Quiz/QuizAttempt';
 import QuizHistory from './pages/student/Quiz/QuizHistory';
 import QuizReview from './pages/student/Quiz/QuizReview';
+import FaceOnboarding from './pages/student/FaceOnboarding';
 
 const App = () => {
   return (
@@ -26,7 +27,7 @@ const App = () => {
           <Route path="quizzes/attempts/:attemptId/review" element={<QuizReview />} />
         </Route>
 
-        <Route path="/face-onboarding" element={<div style={{ padding: '50px' }}>Màn hình KYC khuôn mặt (Chưa làm)</div>} />
+        <Route path="/face-onboarding" element={<FaceOnboarding />} />
         <Route path="/admin-home" element={<div style={{ padding: '50px' }}>Chào Admin Quản trị LMS</div>} />
         <Route path="/lecturer-home" element={<div style={{ padding: '50px' }}>Chào Giảng viên LMS</div>} />
       </Routes>

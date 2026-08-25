@@ -1,8 +1,8 @@
 package edufit_com_lms.module.lms.service;
 
 import edufit_com_lms.common.exception.BadRequestException;
-import edufit_com_lms.module.lms.dto.PresignedUrlRequest;
-import edufit_com_lms.module.lms.dto.PresignedUrlResponse;
+import edufit_com_lms.module.lms.dto.request.PresignedUrlRequest;
+import edufit_com_lms.module.lms.dto.response.PresignedUrlResponse;
 import io.minio.BucketExistsArgs;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MakeBucketArgs;

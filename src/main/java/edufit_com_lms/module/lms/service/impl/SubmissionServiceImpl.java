@@ -1,8 +1,8 @@
 package edufit_com_lms.module.lms.service.impl;
 
-import edufit_com_lms.module.lms.dto.GradeSubmissionRequest;
-import edufit_com_lms.module.lms.dto.SubmitAssignmentRequest;
-import edufit_com_lms.module.lms.dto.SubmissionResponse;
+import edufit_com_lms.module.lms.dto.request.GradeSubmissionRequest;
+import edufit_com_lms.module.lms.dto.request.SubmitAssignmentRequest;
+import edufit_com_lms.module.lms.dto.response.SubmissionResponse;
 import edufit_com_lms.module.lms.entity.Assignment;
 import edufit_com_lms.module.lms.entity.Submission;
 import edufit_com_lms.common.exception.BadRequestException;

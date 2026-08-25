@@ -9,6 +9,9 @@ import QuizAttempt from './pages/student/Quiz/QuizAttempt';
 import QuizHistory from './pages/student/Quiz/QuizHistory';
 import QuizReview from './pages/student/Quiz/QuizReview';
 import FaceOnboarding from './pages/student/FaceOnboarding';
+import AssignmentList from './pages/student/Assignment/AssignmentList';
+import AssignmentDetails from './pages/student/Assignment/AssignmentDetails';
+import AssignmentManagement from './pages/student/Assignment/AssignmentManagement';
 
 const App = () => {
   return (
@@ -19,12 +22,15 @@ const App = () => {
 
         {/* Student Routes */}
         <Route path="/student" element={<Layout />}>
-          <Route path="student-home" element={<div style={{ padding: '50px' }}>Chào mừng học viên LMS</div>} />
+          <Route path="student-home" element={<Navigate to="/student/assignments" replace />} />
           <Route path="quizzes" element={<QuizList />} />
           <Route path="quizzes/history" element={<QuizHistory />} />
           <Route path="quizzes/:id" element={<QuizDetails />} />
           <Route path="quizzes/attempts/:attemptId" element={<QuizAttempt />} />
           <Route path="quizzes/attempts/:attemptId/review" element={<QuizReview />} />
+          <Route path="assignments" element={<AssignmentList />} />
+          <Route path="assignments/:id" element={<AssignmentDetails />} />
+          <Route path="assignments/manage" element={<AssignmentManagement />} />
         </Route>
 
         <Route path="/face-onboarding" element={<FaceOnboarding />} />

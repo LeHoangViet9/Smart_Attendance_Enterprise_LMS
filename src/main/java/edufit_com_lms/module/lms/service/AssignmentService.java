@@ -10,6 +10,7 @@ import java.util.UUID;
 public interface AssignmentService {
     AssignmentResponse createAssignment(CreateAssignmentRequest request);
     AssignmentResponse getAssignmentById(UUID id);
+    List<AssignmentResponse> getAllAssignments();
     List<AssignmentResponse> getAssignmentsByClassId(UUID classId);
     AssignmentResponse updateAssignment(UUID id, UpdateAssignmentRequest request);
     void deleteAssignment(UUID id);

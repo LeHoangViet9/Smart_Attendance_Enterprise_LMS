@@ -50,6 +50,14 @@ public class AssignmentServiceImpl implements AssignmentService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<AssignmentResponse> getAllAssignments() {
+        return assignmentRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<AssignmentResponse> getAssignmentsByClassId(UUID classId) {
         return assignmentRepository.findByClassId(classId).stream()
                 .map(this::mapToResponse)

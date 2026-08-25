@@ -43,10 +43,10 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/lecturer/**").hasAnyRole("ADMIN", "LECTURER")
-                        .requestMatchers("/api/student/**").hasAnyRole("ADMIN", "STUDENT")
+                        // .requestMatchers("/api/auth/**").permitAll()
+                        // .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // .requestMatchers("/api/lecturer/**").hasAnyRole("ADMIN", "LECTURER")
+                        // .requestMatchers("/api/student/**").hasAnyRole("ADMIN", "STUDENT")
                         .anyRequest().authenticated());
         http.exceptionHandling(ex -> ex
                 .authenticationEntryPoint((req, res, e) -> {

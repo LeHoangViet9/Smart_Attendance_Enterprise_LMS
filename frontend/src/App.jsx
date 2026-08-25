@@ -12,6 +12,8 @@ import FaceOnboarding from './pages/student/FaceOnboarding';
 import AssignmentList from './pages/student/Assignment/AssignmentList';
 import AssignmentDetails from './pages/student/Assignment/AssignmentDetails';
 import AssignmentManagement from './pages/student/Assignment/AssignmentManagement';
+import CourseList from './pages/student/Course/CourseList';
+import CourseDetails from './pages/student/Course/CourseDetails';
 
 const App = () => {
   return (
@@ -22,7 +24,9 @@ const App = () => {
 
         {/* Student Routes */}
         <Route path="/student" element={<Layout />}>
-          <Route path="student-home" element={<Navigate to="/student/assignments" replace />} />
+          <Route path="student-home" element={<Navigate to="/student/courses" replace />} />
+          <Route path="courses" element={<CourseList />} />
+          <Route path="courses/:id" element={<CourseDetails />} />
           <Route path="quizzes" element={<QuizList />} />
           <Route path="quizzes/history" element={<QuizHistory />} />
           <Route path="quizzes/:id" element={<QuizDetails />} />

@@ -23,6 +23,7 @@ const Layout = () => {
                         <span className="logo-sparkle">✨</span> Edufit LMS
                     </Link>
                     <div className="nav-links">
+                        <Link to="/student/courses" className="nav-link">Courses</Link>
                         <Link to="/student/quizzes" className="nav-link">Quizzes</Link>
                         <Link to="/student/assignments" className="nav-link">Assignments</Link>
                         <Link to="/student/quizzes/history" className="nav-link">My History</Link>

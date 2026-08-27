@@ -12,5 +12,5 @@ import lombok.NoArgsConstructor;
 public class OptionResponse {
     private Long id;
     private String content;
-    // BÍ MẬT 100%: Tuyệt đối không chứa field isCorrect ở đây!
+    private Boolean isCorrect; // Bật cờ này để Giáo Viên (Lecturer) trên FE QuizManagement đọc được
 }

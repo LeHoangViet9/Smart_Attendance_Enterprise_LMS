@@ -12,8 +12,8 @@ import java.util.List;
 @Repository
 public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Long> {
     // Check xem sinh viên có đang thi dở bài này không
-    Optional<QuizAttempt> findByQuizIdAndStudentUserId(Long quizId, Long studentId);
+    List<QuizAttempt> findByQuizIdAndStudentUserId(Long quizId, Long studentId);
 
     // Lấy lịch sử thi của một học sinh
-    Page<QuizAttempt> findAllByStudentUserIdOrderByStartTimeDesc(Long studentId,Pageable pageable);
+    Page<QuizAttempt> findAllByStudentUserIdOrderByStartTimeDesc(Long studentId, Pageable pageable);
 }

@@ -36,6 +36,14 @@ public class Assignment {
     @Column(name = "attachment_url")
     private String attachmentUrl;
 
+    @Column(name = "is_exam")
+    @Builder.Default
+    private Boolean isExam = false;
+
+    @Column(name = "is_published")
+    @Builder.Default
+    private Boolean isPublished = true;
+
     @Column(name = "created_at", updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -47,4 +55,3 @@ public class Assignment {
         }
     }
 }
-

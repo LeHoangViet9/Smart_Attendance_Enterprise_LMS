@@ -13,6 +13,8 @@ const AssignmentManagement = () => {
     const [loadingSubmissions, setLoadingSubmissions] = useState(false);
     const [error, setError] = useState(null);
 
+    const [userRole, setUserRole] = useState('STUDENT');
+
     // Grading Modal State
     const [gradingSubmission, setGradingSubmission] = useState(null);
     const [scoreInput, setScoreInput] = useState('');
@@ -21,23 +23,47 @@ const AssignmentManagement = () => {
     const [savingGrade, setSavingGrade] = useState(false);
 
     useEffect(() => {
-        fetchAssignments();
+        const storedUser = localStorage.getItem('user');
+        let currentRole = 'STUDENT';
+        if (storedUser) {
+            try {
+                const parsed = JSON.parse(storedUser);
+                if (parsed.role) {
+                    setUserRole(parsed.role);
+                    currentRole = parsed.role;
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        fetchAssignments(currentRole);
     }, []);
 
-    const fetchAssignments = async () => {
+    const fetchAssignments = async (role) => {
         setLoadingAssignments(true);
         try {
             const res = await axiosInstance.get('/v1/assignments');
             if (res.data && res.data.data) {
-                setAssignments(res.data.data);
-                if (res.data.data.length > 0) {
-                    setSelectedAssignmentId(res.data.data[0].id);
-                    fetchSubmissions(res.data.data[0].id);
+                let fetchedAssignments = res.data.data;
+
+                // Admin chỉ xem đề thi quan trọng
+                if (role === 'ADMIN') {
+                    fetchedAssignments = fetchedAssignments.filter(a => a.isExam === true);
+                }
+
+                setAssignments(fetchedAssignments);
+                if (fetchedAssignments.length > 0) {
+                    const params = new URLSearchParams(window.location.search);
+                    const queryId = params.get('id');
+                    const targetId = fetchedAssignments.find(a => a.id === queryId) ? queryId : fetchedAssignments[0].id;
+
+                    setSelectedAssignmentId(targetId);
+                    fetchSubmissions(targetId);
                 }
             }
         } catch (err) {
             console.error('Error fetching assignments for management:', err);
-            setError('Không thể tải danh sách bài tập.');
+            setError('Cannot load assignments list.');
         } finally {
             setLoadingAssignments(false);
         }
@@ -56,7 +82,7 @@ const AssignmentManagement = () => {
             }
         } catch (err) {
             console.error('Error fetching submissions:', err);
-            setError('Không thể tải danh sách bài nộp của bài tập này.');
+            setError('Cannot load submissions for this assignment.');
             setSubmissions([]);
         } finally {
             setLoadingSubmissions(false);
@@ -67,6 +93,29 @@ const AssignmentManagement = () => {
         const id = e.target.value;
         setSelectedAssignmentId(id);
         fetchSubmissions(id);
+    };
+
+    const handleTogglePublish = async () => {
+        const currentAssignment = assignments.find(a => a.id === selectedAssignmentId);
+        if (!currentAssignment) return;
+
+        const newStatus = !currentAssignment.isPublished;
+        if (!window.confirm(`Are you sure you want to ${newStatus ? 'PUBLISH' : 'UNPUBLISH'} this assignment?`)) return;
+
+        try {
+            await axiosInstance.put(`/v1/assignments/${currentAssignment.id}`, {
+                isPublished: newStatus
+            });
+
+            // Cập nhật local state
+            setAssignments(prev => prev.map(a =>
+                a.id === currentAssignment.id ? { ...a, isPublished: newStatus } : a
+            ));
+            alert('Visibility status updated successfully!');
+        } catch (err) {
+            console.error('Error toggling publish:', err);
+            alert('Error updating status!');
+        }
     };
 
     const openGradeModal = (submission) => {
@@ -88,7 +137,7 @@ const AssignmentManagement = () => {
             const scoreNum = Number(scoreInput);
 
             if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > maxScore) {
-                setModalError(`Điểm số phải là số từ 0 đến ${maxScore}`);
+                setModalError(`Score must be a number between 0 and ${maxScore}`);
                 setSavingGrade(false);
                 return;
             }
@@ -107,7 +156,7 @@ const AssignmentManagement = () => {
             }
         } catch (err) {
             console.error('Error grading submission:', err);
-            setModalError(err.response?.data?.message || 'Có lỗi xảy ra khi lưu điểm');
+            setModalError(err.response?.data?.message || 'Error saving score');
         } finally {
             setSavingGrade(false);
         }
@@ -135,16 +184,16 @@ const AssignmentManagement = () => {
             <div className="assignment-header">
                 <div className="assignment-header-info">
                     <h1>
-                        <span>👩‍🏫</span> Quản Lý & Chấm Bài Nộp
+                        <span>👩‍🏫</span> Manage & Grade Submissions
                     </h1>
-                    <p>Xem danh sách bài nộp của học viên, đánh giá điểm và gửi nhận xét phản hồi</p>
+                    <p>View student submissions, evaluate scores and send feedback</p>
                 </div>
                 <button
                     className="btn-card-action secondary"
                     style={{ width: 'auto', padding: '0.75rem 1.5rem' }}
                     onClick={() => navigate('/student/assignments')}
                 >
-                    ⬅ Quay lại bài tập
+                    ⬅ Back to assignments
                 </button>
             </div>
 
@@ -154,7 +203,7 @@ const AssignmentManagement = () => {
             <div className="filter-bar" style={{ alignItems: 'center' }}>
                 <div style={{ flex: 1, minWidth: '280px' }}>
                     <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#374151', marginBottom: '0.4rem' }}>
-                        Chọn Bài Tập Cần Chấm:
+                        Select Assignment to Grade:
                     </label>
                     <select
                         className="modal-form-control"
@@ -165,10 +214,26 @@ const AssignmentManagement = () => {
                     >
                         {assignments.map(a => (
                             <option key={a.id} value={a.id}>
-                                {a.title} ({a.isExpired ? 'Hết hạn' : 'Đang mở'})
+                                {a.title} ({a.isExpired ? 'Expired' : 'Open'})
                             </option>
                         ))}
                     </select>
+
+                    {currentAssignment && (
+                        <div style={{ marginTop: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <label className="switch" style={{ transform: 'scale(0.8)' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={currentAssignment.isPublished !== false}
+                                    onChange={handleTogglePublish}
+                                />
+                                <span className="slider round"></span>
+                            </label>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: currentAssignment.isPublished !== false ? '#10b981' : '#ef4444' }}>
+                                {currentAssignment.isPublished !== false ? 'Published (Public)' : 'Hidden (Unpublished)'}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 {currentAssignment && (
@@ -176,19 +241,19 @@ const AssignmentManagement = () => {
                         <div className="stat-card" style={{ padding: '0.75rem 1.25rem', minWidth: '130px' }}>
                             <div className="stat-content">
                                 <div className="stat-value" style={{ fontSize: '1.3rem' }}>{submissions.length}</div>
-                                <div className="stat-label">Tổng bài nộp</div>
+                                <div className="stat-label">Total Submissions</div>
                             </div>
                         </div>
                         <div className="stat-card" style={{ padding: '0.75rem 1.25rem', minWidth: '130px' }}>
                             <div className="stat-content">
                                 <div className="stat-value" style={{ fontSize: '1.3rem', color: '#10b981' }}>{gradedCount}</div>
-                                <div className="stat-label">Đã chấm</div>
+                                <div className="stat-label">Graded</div>
                             </div>
                         </div>
                         <div className="stat-card" style={{ padding: '0.75rem 1.25rem', minWidth: '130px' }}>
                             <div className="stat-content">
                                 <div className="stat-value" style={{ fontSize: '1.3rem', color: '#f59e0b' }}>{pendingCount}</div>
-                                <div className="stat-label">Chờ chấm</div>
+                                <div className="stat-label">Pending Grading</div>
                             </div>
                         </div>
                     </div>
@@ -199,16 +264,16 @@ const AssignmentManagement = () => {
             {loadingSubmissions ? (
                 <div className="loader-container">
                     <div className="spinner"></div>
-                    <p>Đang tải danh sách bài nộp...</p>
+                    <p>Loading submissions list...</p>
                 </div>
             ) : submissions.length === 0 ? (
                 <div className="details-main" style={{ textAlign: 'center', padding: '4rem 2rem', marginTop: '1.5rem' }}>
                     <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📭</div>
                     <h3 style={{ fontSize: '1.3rem', color: '#1f2937', margin: '0 0 0.5rem' }}>
-                        Chưa có sinh viên nào nộp bài
+                        No students have submitted yet
                     </h3>
                     <p style={{ color: '#6b7280', margin: 0 }}>
-                        Các bài nộp của sinh viên cho bài tập này sẽ hiển thị tại đây ngay khi được gửi.
+                        Student submissions for this assignment will appear here once sent.
                     </p>
                 </div>
             ) : (
@@ -217,13 +282,13 @@ const AssignmentManagement = () => {
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>Mã Sinh Viên</th>
-                                <th>Thời Gian Nộp</th>
-                                <th>Tệp Bài Làm</th>
-                                <th>Trạng Thái</th>
-                                <th>Điểm Số</th>
-                                <th>Nhận Xét</th>
-                                <th>Thao Tác</th>
+                                <th>Student ID</th>
+                                <th>Submission Time</th>
+                                <th>Submission File</th>
+                                <th>Status</th>
+                                <th>Score</th>
+                                <th>Feedback</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -238,7 +303,7 @@ const AssignmentManagement = () => {
                                     <td>
                                         <div>{formatDateTime(sub.submittedAt)}</div>
                                         <span className={`status-badge ${sub.isLate ? 'late' : 'graded'}`} style={{ marginTop: '4px' }}>
-                                            {sub.isLate ? 'Nộp muộn' : 'Đúng hạn'}
+                                            {sub.isLate ? 'Late' : 'On Time'}
                                         </span>
                                     </td>
                                     <td>
@@ -248,12 +313,12 @@ const AssignmentManagement = () => {
                                             rel="noreferrer"
                                             style={{ color: '#6366f1', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                                         >
-                                            📎 Xem tệp
+                                            📎 View File
                                         </a>
                                     </td>
                                     <td>
                                         <span className={`status-badge ${sub.isGraded ? 'graded' : 'open'}`}>
-                                            {sub.isGraded ? '✅ Đã chấm' : '⏳ Chờ chấm'}
+                                            {sub.isGraded ? '✅ Graded' : '⏳ Pending'}
                                         </span>
                                     </td>
                                     <td>
@@ -267,16 +332,20 @@ const AssignmentManagement = () => {
                                     </td>
                                     <td>
                                         <div style={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#64748b', fontSize: '0.85rem' }}>
-                                            {sub.feedback || 'Chưa có nhận xét'}
+                                            {sub.feedback || 'No feedback yet'}
                                         </div>
                                     </td>
                                     <td>
-                                        <button
-                                            className={`btn-action-small ${sub.isGraded ? 'success' : 'primary'}`}
-                                            onClick={() => openGradeModal(sub)}
-                                        >
-                                            {sub.isGraded ? 'Sửa điểm' : 'Chấm điểm'}
-                                        </button>
+                                        {userRole === 'ADMIN' ? (
+                                            <span style={{ fontSize: '0.85rem', color: '#9ca3af', fontStyle: 'italic' }}>Supervisor</span>
+                                        ) : (
+                                            <button
+                                                className={`btn-action-small ${sub.isGraded ? 'success' : 'primary'}`}
+                                                onClick={() => openGradeModal(sub)}
+                                            >
+                                                {sub.isGraded ? 'Edit Score' : 'Grade'}
+                                            </button>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
@@ -289,9 +358,9 @@ const AssignmentManagement = () => {
             {gradingSubmission && (
                 <div className="modal-overlay" onClick={() => setGradingSubmission(null)}>
                     <div className="modal-glass" style={{ maxWidth: '500px' }} onClick={(e) => e.stopPropagation()}>
-                        <h3>📝 Chấm Điểm Bài Nộp</h3>
+                        <h3>📝 Grade Submission</h3>
                         <p>
-                            Sinh viên ID: <strong>{gradingSubmission.studentId}</strong>
+                            Student ID: <strong>{gradingSubmission.studentId}</strong>
                         </p>
                         {modalError && (
                             <div className="error-message" style={{ marginBottom: '1rem', padding: '0.75rem' }}>
@@ -302,7 +371,7 @@ const AssignmentManagement = () => {
                         <form onSubmit={handleSaveGrade}>
                             <div className="modal-form-group">
                                 <label>
-                                    Điểm số (Thang điểm: 0 - {currentAssignment?.maxScore || 10}) *
+                                    Score (Scale: 0 - {currentAssignment?.maxScore || 10}) *
                                 </label>
                                 <input
                                     type="number"
@@ -311,18 +380,18 @@ const AssignmentManagement = () => {
                                     max={currentAssignment?.maxScore || 10}
                                     required
                                     className="modal-form-control"
-                                    placeholder="vd: 8.5"
+                                    placeholder="e.g. 8.5"
                                     value={scoreInput}
                                     onChange={(e) => setScoreInput(e.target.value)}
                                 />
                             </div>
 
                             <div className="modal-form-group">
-                                <label>Nhận xét / Lời góp ý của Giảng viên</label>
+                                <label>Lecturer Feedback / Comments</label>
                                 <textarea
                                     rows="4"
                                     className="modal-form-control"
-                                    placeholder="Ghi chú nhận xét chi tiết để học viên cải thiện..."
+                                    placeholder="Detailed feedback notes for student improvement..."
                                     value={feedbackInput}
                                     onChange={(e) => setFeedbackInput(e.target.value)}
                                 />
@@ -335,14 +404,14 @@ const AssignmentManagement = () => {
                                     onClick={() => setGradingSubmission(null)}
                                     disabled={savingGrade}
                                 >
-                                    Hủy bỏ
+                                    Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     className="btn-confirm"
                                     disabled={savingGrade}
                                 >
-                                    {savingGrade ? 'Đang lưu...' : 'Lưu kết quả chấm'}
+                                    {savingGrade ? 'Saving...' : 'Save grading result'}
                                 </button>
                             </div>
                         </form>

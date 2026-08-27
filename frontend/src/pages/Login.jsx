@@ -29,7 +29,7 @@ const Login = () => {
             console.log('[LOGIN DEBUG] role:', data?.role, '| accessToken:', data?.accessToken ? 'EXISTS' : 'MISSING');
 
             if (!data?.accessToken) {
-                setError('Phản hồi từ server không hợp lệ, vui lòng thử lại');
+                setError('Invalid server response, please try again');
                 setIsLoading(false);
                 return;
             }
@@ -51,13 +51,13 @@ const Login = () => {
             } else if (data.role === 'ADMIN') {
                 navigate('/admin/dashboard');
             } else if (data.role === 'LECTURER') {
-                navigate('/lecturer-home');
+                navigate('/student/student-home');
             } else {
                 console.log('[LOGIN DEBUG] Unknown role, defaulting to /student/quizzes');
                 navigate('/student/quizzes');
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Không thể kết nối đến máy chủ. Hãy thử lại!');
+            setError(err.response?.data?.message || 'Cannot connect to server. Please try again!');
         } finally {
             setIsLoading(false);
         }
@@ -69,34 +69,34 @@ const Login = () => {
                 <div className="login-header">
                     <div className="login-icon">🏫</div>
                     <h2>Educo LMS</h2>
-                    <p>Hệ thống Điểm danh Khuôn mặt AI</p>
+                    <p>AI Facial Recognition System</p>
                 </div>
 
                 {error && <div className="error-alert">{error}</div>}
 
                 <form onSubmit={handleLogin}>
                     <div className="form-group">
-                        <label>Email Cá Nhân</label>
+                        <label>Personal Email</label>
                         <input
                             type="email"
-                            placeholder="vd: admin@edu.vn"
+                            placeholder="e.g. admin@edu.vn"
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                         />
                     </div>
                     <div className="form-group">
-                        <label>Mật Khẩu</label>
+                        <label>Password</label>
                         <input
                             type="password"
-                            placeholder="Nhập mật khẩu của bạn"
+                            placeholder="Enter your password"
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                         />
                     </div>
                     <button type="submit" className="login-btn" disabled={isLoading}>
-                        {isLoading ? 'Đang xác thực...' : 'Đăng Nhập'}
+                        {isLoading ? 'Authenticating...' : 'Login'}
                     </button>
                 </form>
             </div>

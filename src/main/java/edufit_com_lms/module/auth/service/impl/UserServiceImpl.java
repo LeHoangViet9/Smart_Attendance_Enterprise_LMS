@@ -15,19 +15,23 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.security.SecureRandom;
-import java.time.LocalDateTime;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
-    private final PasswordEncoder passwordEncoder;
 
     @Override
+    @Transactional(readOnly = true)
     public Page<UserResponse> findAll(String keyword, Role role, Boolean isActive, Pageable pageable) {
-        Page<User> users = userRepository.searchUsers(keyword, role, isActive, pageable);
+        Page<User> users;
+        if (role != null) {
+            users = userRepository.searchUsersWithRole(keyword, role, isActive, pageable);
+        } else {
+            users = userRepository.searchUsersWithoutRole(keyword, isActive, pageable);
+        }
         return users.map(userMapper::toUserResponse);
     }
 

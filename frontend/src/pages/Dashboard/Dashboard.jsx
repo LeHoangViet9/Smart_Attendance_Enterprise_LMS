@@ -12,6 +12,15 @@ const Dashboard = () => {
         totalCourses: 0,
         totalSubmissions: 0
     });
+    const [adminNotifications, setAdminNotifications] = useState([]);
+
+    // Lecturer Stats State
+    const [lecturerStats, setLecturerStats] = useState({
+        totalCourses: 0,
+        pendingGradingSubmissions: 0,
+        attendanceRate: '0%',
+        activeCourses: []
+    });
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
@@ -24,6 +33,18 @@ const Dashboard = () => {
                         setAdminStats(res.data.data);
                     }
                 }).catch(err => console.error("Error fetching admin stats:", err));
+
+                axiosInstance.get('/v1/notifications').then(res => {
+                    if (res.data && res.data.success) {
+                        setAdminNotifications(res.data.data);
+                    }
+                }).catch(err => console.error("Error fetching notifications:", err));
+            } else if (parsed.role === 'LECTURER') {
+                axiosInstance.get('/v1/lecturer/stats').then(res => {
+                    if (res.data && res.data.success) {
+                        setLecturerStats(res.data.data);
+                    }
+                }).catch(err => console.error("Error fetching lecturer stats:", err));
             }
         } else {
             navigate('/login');
@@ -38,21 +59,21 @@ const Dashboard = () => {
                 <div className="stat-card glass-panel">
                     <div className="stat-icon purple">📚</div>
                     <div className="stat-info">
-                        <h3>Khóa học đang tham gia</h3>
+                        <h3>Enrolled Courses</h3>
                         <p className="stat-value">4</p>
                     </div>
                 </div>
                 <div className="stat-card glass-panel">
                     <div className="stat-icon orange">📝</div>
                     <div className="stat-info">
-                        <h3>Bài kiểm tra sắp tới</h3>
+                        <h3>Upcoming Quizzes</h3>
                         <p className="stat-value">2</p>
                     </div>
                 </div>
                 <div className="stat-card glass-panel">
                     <div className="stat-icon green">🏆</div>
                     <div className="stat-info">
-                        <h3>Điểm trung bình</h3>
+                        <h3>Average Score</h3>
                         <p className="stat-value">8.5</p>
                     </div>
                 </div>
@@ -61,45 +82,45 @@ const Dashboard = () => {
             <div className="dashboard-grid">
                 <div className="main-panel glass-panel">
                     <div className="panel-header">
-                        <h2>Hoạt động gần đây</h2>
-                        <button className="btn-text">Xem tất cả</button>
+                        <h2>Recent Activity</h2>
+                        <button className="btn-text">View All</button>
                     </div>
                     <ul className="activity-list">
                         <li className="activity-item">
                             <span className="activity-dot green"></span>
                             <div className="activity-details">
-                                <p><strong>Hoàn thành bài Quiz:</strong> React JS Basics</p>
-                                <span className="activity-time">2 giờ trước</span>
+                                <p><strong>Completed Quiz:</strong> React JS Basics</p>
+                                <span className="activity-time">2 hours ago</span>
                             </div>
                             <span className="activity-score text-green">9.0/10</span>
                         </li>
                         <li className="activity-item">
                             <span className="activity-dot blue"></span>
                             <div className="activity-details">
-                                <p><strong>Tham gia điểm danh:</strong> Hệ quản trị CSDL</p>
-                                <span className="activity-time">Hôm qua</span>
+                                <p><strong>Attended Session:</strong> Database Management</p>
+                                <span className="activity-time">Yesterday</span>
                             </div>
-                            <span className="activity-status">Thành công</span>
+                            <span className="activity-status">Success</span>
                         </li>
                     </ul>
                 </div>
 
                 <div className="side-panel glass-panel">
                     <div className="panel-header">
-                        <h2>Thông báo</h2>
+                        <h2>Notifications</h2>
                     </div>
                     <div className="notification-card">
                         <div className="notif-icon">🔔</div>
-                        <p>Bài kiểm tra môn Kỹ thuật phần mềm sẽ mở vào 10:00 sáng mai.</p>
+                        <p>Software Engineering Midterm will open at 10:00 AM tomorrow.</p>
                     </div>
                     <div className="notification-card">
                         <div className="notif-icon">🎉</div>
-                        <p>Kết quả bài thi cuối kỳ môn Java đã được cập nhật.</p>
+                        <p>Final Exam grades for Java Programming have been updated.</p>
                     </div>
                 </div>
             </div>
             <div style={{ marginTop: '20px' }}>
-                <button className="action-btn primary-gradient" onClick={() => navigate('/student/quizzes')}>Đi tới danh sách Quizzes</button>
+                <button className="action-btn primary-gradient" onClick={() => navigate('/student/quizzes')}>Go to Quizzes</button>
             </div>
         </div>
     );
@@ -110,49 +131,66 @@ const Dashboard = () => {
                 <div className="stat-card glass-panel">
                     <div className="stat-icon blue">👥</div>
                     <div className="stat-info">
-                        <h3>Tổng số người dùng</h3>
+                        <h3>Total Users</h3>
                         <p className="stat-value">{adminStats.totalUsers}</p>
                     </div>
                 </div>
                 <div className="stat-card glass-panel">
                     <div className="stat-icon purple">📝</div>
                     <div className="stat-info">
-                        <h3>Bài thi (Quizzes)</h3>
+                        <h3>Total Quizzes</h3>
                         <p className="stat-value">{adminStats.totalQuizzes}</p>
                     </div>
                 </div>
                 <div className="stat-card glass-panel">
                     <div className="stat-icon yellow">📚</div>
                     <div className="stat-info">
-                        <h3>Khóa học (Courses)</h3>
+                        <h3>Total Courses</h3>
                         <p className="stat-value">{adminStats.totalCourses}</p>
                     </div>
                 </div>
             </div>
 
-            <div className="dashboard-grid full-width">
+            <div className="dashboard-grid full-width" style={{ display: 'grid', gridTemplateColumns: 'revert' }}>
                 <div className="main-panel glass-panel">
                     <div className="panel-header">
-                        <h2>Quản lý hệ thống nhanh</h2>
+                        <h2>System Audit Logs & Reports</h2>
+                        <button className="btn-text">Refresh</button>
                     </div>
-                    <div className="quick-actions">
-                        <button className="action-card">
-                            <span className="action-icon">➕</span>
-                            Thêm người dùng mới
-                        </button>
-                        <button className="action-card">
-                            <span className="action-icon">📚</span>
-                            Tạo khóa học
-                        </button>
-                        <button className="action-card">
-                            <span className="action-icon">📊</span>
-                            Xem báo cáo
-                        </button>
-                        <button className="action-card">
-                            <span className="action-icon">⚙️</span>
-                            Cài đặt hệ thống
-                        </button>
-                    </div>
+                    {adminNotifications.length === 0 ? (
+                        <p style={{ color: '#64748b' }}>No new notifications at this time.</p>
+                    ) : (
+                        <ul className="activity-list">
+                            {adminNotifications.map(notif => (
+                                <li key={notif.id} className="activity-item" style={{ opacity: notif.isRead ? 0.7 : 1 }}>
+                                    <span className={`activity-dot ${notif.type === 'REPORT' ? 'red' : 'blue'}`}></span>
+                                    <div className="activity-details">
+                                        <p>
+                                            <strong>{notif.title}</strong>
+                                            {notif.isRead ? '' : <span className="stat-badge active" style={{ marginLeft: '10px', fontSize: '0.7em', padding: '2px 6px' }}>NEW</span>}
+                                        </p>
+                                        <p style={{ fontSize: '0.9em', color: '#475569', marginTop: '4px' }}>{notif.message}</p>
+                                        <span className="activity-time">{new Date(notif.createdAt).toLocaleString('en-US')}</span>
+                                    </div>
+                                    <div className="activity-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                        {notif.relatedCourseId && (
+                                            <button className="btn-outline" onClick={() => navigate(`/student/courses/${notif.relatedCourseId}`)}>
+                                                View Course
+                                            </button>
+                                        )}
+                                        {!notif.isRead && (
+                                            <button className="btn-outline" style={{ borderColor: '#6366f1', color: '#6366f1' }} onClick={async () => {
+                                                await axiosInstance.put(`/v1/notifications/${notif.id}/read`);
+                                                setAdminNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n));
+                                            }}>
+                                                Mark as Read
+                                            </button>
+                                        )}
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
             </div>
         </div>
@@ -164,22 +202,22 @@ const Dashboard = () => {
                 <div className="stat-card glass-panel">
                     <div className="stat-icon blue">👨‍🏫</div>
                     <div className="stat-info">
-                        <h3>Lớp đang phụ trách</h3>
-                        <p className="stat-value">6</p>
+                        <h3>Assigned Courses</h3>
+                        <p className="stat-value">{lecturerStats.totalCourses}</p>
                     </div>
                 </div>
                 <div className="stat-card glass-panel">
                     <div className="stat-icon orange">⏳</div>
                     <div className="stat-info">
-                        <h3>Bài tập chờ chấm</h3>
-                        <p className="stat-value">42</p>
+                        <h3>Pending Grading</h3>
+                        <p className="stat-value">{lecturerStats.pendingGradingSubmissions}</p>
                     </div>
                 </div>
                 <div className="stat-card glass-panel">
                     <div className="stat-icon green">📈</div>
                     <div className="stat-info">
-                        <h3>Tỷ lệ điểm danh</h3>
-                        <p className="stat-value">94%</p>
+                        <h3>Attendance Rate</h3>
+                        <p className="stat-value">{lecturerStats.attendanceRate}</p>
                     </div>
                 </div>
             </div>
@@ -187,48 +225,36 @@ const Dashboard = () => {
             <div className="dashboard-grid">
                 <div className="main-panel glass-panel">
                     <div className="panel-header">
-                        <h2>Lớp học của tôi</h2>
+                        <h2>My Classes</h2>
                     </div>
                     <div className="class-list">
-                        <div className="class-card">
-                            <div className="class-info">
-                                <h3>Kỹ thuật phần mềm (SE101)</h3>
-                                <p>45 Sinh viên</p>
-                            </div>
-                            <button className="btn-outline">Quản lý lớp</button>
-                        </div>
-                        <div className="class-card">
-                            <div className="class-info">
-                                <h3>Lập trình Web (WEB201)</h3>
-                                <p>60 Sinh viên</p>
-                            </div>
-                            <button className="btn-outline">Quản lý lớp</button>
-                        </div>
-                        <div className="class-card">
-                            <div className="class-info">
-                                <h3>Cơ sở dữ liệu nâng cao (DB301)</h3>
-                                <p>38 Sinh viên</p>
-                            </div>
-                            <button className="btn-outline">Quản lý lớp</button>
-                        </div>
+                        {lecturerStats.activeCourses && lecturerStats.activeCourses.length > 0 ? (
+                            lecturerStats.activeCourses.map(course => (
+                                <div className="class-card" key={course.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/student/courses/${course.id}`)}>
+                                    <div className="class-info">
+                                        <h3>{course.title}</h3>
+                                        <p>{course.description ? course.description.substring(0, 50) + '...' : 'No description'}</p>
+                                    </div>
+                                    <button className="btn-outline">Manage Class</button>
+                                </div>
+                            ))
+                        ) : (
+                            <p style={{ color: '#64748b' }}>You have no assigned classes yet.</p>
+                        )}
                     </div>
                 </div>
                 <div className="side-panel glass-panel">
                     <div className="panel-header">
-                        <h2>Công việc cần làm</h2>
+                        <h2>To-do List</h2>
                     </div>
-                    <div className="todo-item">
-                        <input type="checkbox" id="todo1" />
-                        <label htmlFor="todo1">Chấm điểm Quiz giữa kỳ SE101</label>
-                    </div>
-                    <div className="todo-item">
-                        <input type="checkbox" id="todo2" />
-                        <label htmlFor="todo2">Chuẩn bị bài giảng WEB201</label>
-                    </div>
-                    <div className="todo-item">
-                        <input type="checkbox" id="todo3" />
-                        <label htmlFor="todo3">Kiểm tra kết quả điểm danh tuần 4</label>
-                    </div>
+                    {lecturerStats.pendingGradingSubmissions > 0 ? (
+                        <div className="todo-item" style={{ cursor: 'pointer' }} onClick={() => navigate('/student/assignments/manage')}>
+                            <input type="checkbox" id="todo1" readOnly />
+                            <label htmlFor="todo1">Grade {lecturerStats.pendingGradingSubmissions} pending submissions</label>
+                        </div>
+                    ) : (
+                        <p style={{ color: '#64748b', fontSize: '0.9em' }}>No pending tasks at the moment.</p>
+                    )}
                 </div>
             </div>
         </div>
@@ -239,14 +265,14 @@ const Dashboard = () => {
             <div className="dashboard-header">
                 <div className="welcome-section">
                     <h1 className="welcome-text">
-                        Xin chào, <span className="highlight">{user.fullName || user.email || 'Người dùng'}</span> 👋
+                        Welcome, <span className="highlight">{user.fullName || user.email || 'User'}</span> 👋
                     </h1>
                     <p className="subtitle">
-                        Chào mừng bạn trở lại hệ thống Educo LMS (Vai trò: {user.role})
+                        Welcome back to Educo LMS (Role: {user.role})
                     </p>
                 </div>
                 <div className="date-widget">
-                    {new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </div>
             </div>
 

@@ -17,7 +17,9 @@ const AssignmentList = () => {
         classId: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
         dueDate: '',
         maxScore: 10,
-        attachmentUrl: ''
+        attachmentUrl: '',
+        isExam: false,
+        isPublished: true
     });
     const [creating, setCreating] = useState(false);
     const [createError, setCreateError] = useState(null);
@@ -47,7 +49,7 @@ const AssignmentList = () => {
             }
         } catch (err) {
             console.error('Error fetching assignments:', err);
-            setError('Không thể tải danh sách bài tập. Vui lòng kiểm tra lại kết nối!');
+            setError('Cannot load assignment list. Please check your connection!');
         } finally {
             setLoading(false);
         }
@@ -70,34 +72,36 @@ const AssignmentList = () => {
                 classId: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
                 dueDate: '',
                 maxScore: 10,
-                attachmentUrl: ''
+                attachmentUrl: '',
+                isExam: false,
+                isPublished: true
             });
             fetchAssignments();
         } catch (err) {
             console.error('Error creating assignment:', err);
-            setCreateError(err.response?.data?.message || 'Có lỗi xảy ra khi tạo bài tập');
+            setCreateError(err.response?.data?.message || 'Error creating assignment');
         } finally {
             setCreating(false);
         }
     };
 
     const calculateTimeStatus = (dueDate) => {
-        if (!dueDate) return { text: 'Không có hạn', isOverdue: false, urgent: false };
+        if (!dueDate) return { text: 'No deadline', isOverdue: false, urgent: false };
         const deadline = new Date(dueDate).getTime();
         const now = new Date().getTime();
         const diff = deadline - now;
 
         if (diff <= 0) {
-            return { text: 'Đã hết hạn', isOverdue: true, urgent: true };
+            return { text: 'Overdue', isOverdue: true, urgent: true };
         }
 
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
         const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
         if (days > 0) {
-            return { text: `Còn ${days} ngày ${hours} giờ`, isOverdue: false, urgent: days <= 1 };
+            return { text: `${days} days ${hours} hours left`, isOverdue: false, urgent: days <= 1 };
         }
-        return { text: `Còn ${hours} giờ nữa`, isOverdue: false, urgent: true };
+        return { text: `${hours} hours left`, isOverdue: false, urgent: true };
     };
 
     const formatDateTime = (dateStr) => {
@@ -114,6 +118,10 @@ const AssignmentList = () => {
 
     // Filter assignments
     const filteredAssignments = assignments.filter((item) => {
+        // Quyền hiển thị
+        if (userRole === 'STUDENT' && item.isPublished === false) return false;
+        if (userRole === 'ADMIN' && item.isExam === false) return false;
+
         const matchesSearch = item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.description?.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -129,8 +137,8 @@ const AssignmentList = () => {
     });
 
     // KPI Counts
-    const totalCount = assignments.length;
-    const overdueCount = assignments.filter(a => a.dueDate && new Date(a.dueDate).getTime() < new Date().getTime()).length;
+    const totalCount = filteredAssignments.length;
+    const overdueCount = filteredAssignments.filter(a => a.dueDate && new Date(a.dueDate).getTime() < new Date().getTime()).length;
     const openCount = totalCount - overdueCount;
 
     return (
@@ -139,9 +147,9 @@ const AssignmentList = () => {
             <div className="assignment-header">
                 <div className="assignment-header-info">
                     <h1>
-                        <span>📑</span> Bài Tập Lớn & Thực Hành
+                        <span>📑</span> {userRole === 'STUDENT' ? 'Assignments & Practices' : 'Assignment Management'}
                     </h1>
-                    <p>Quản lý danh sách bài tập, tiến độ nộp bài và nhận phản hồi từ giảng viên</p>
+                    <p>{userRole === 'STUDENT' ? 'Manage your assignments, submission progress, and lecturer feedback' : 'Assign tasks, manage submission progress, and evaluate students'}</p>
                 </div>
                 {(userRole === 'LECTURER' || userRole === 'ADMIN') && (
                     <button
@@ -149,7 +157,7 @@ const AssignmentList = () => {
                         style={{ width: 'auto', padding: '0.75rem 1.5rem' }}
                         onClick={() => setShowCreateModal(true)}
                     >
-                        ➕ Tạo bài tập mới
+                        ➕ Create Assignment
                     </button>
                 )}
             </div>
@@ -160,28 +168,28 @@ const AssignmentList = () => {
                     <div className="stat-icon purple">📚</div>
                     <div className="stat-content">
                         <div className="stat-value">{totalCount}</div>
-                        <div className="stat-label">Tổng bài tập</div>
+                        <div className="stat-label">Total Assignments</div>
                     </div>
                 </div>
                 <div className="stat-card">
                     <div className="stat-icon emerald">⏳</div>
                     <div className="stat-content">
                         <div className="stat-value">{openCount}</div>
-                        <div className="stat-label">Đang mở nộp</div>
+                        <div className="stat-label">Open</div>
                     </div>
                 </div>
                 <div className="stat-card">
                     <div className="stat-icon amber">⚠️</div>
                     <div className="stat-content">
                         <div className="stat-value">{overdueCount}</div>
-                        <div className="stat-label">Đã quá hạn</div>
+                        <div className="stat-label">Overdue</div>
                     </div>
                 </div>
                 <div className="stat-card">
                     <div className="stat-icon blue">⭐</div>
                     <div className="stat-content">
                         <div className="stat-value">10.0</div>
-                        <div className="stat-label">Thang điểm chuẩn</div>
+                        <div className="stat-label">Standard Max Score</div>
                     </div>
                 </div>
             </div>
@@ -193,7 +201,7 @@ const AssignmentList = () => {
                     <input
                         type="text"
                         className="search-input"
-                        placeholder="Tìm kiếm bài tập theo tên hoặc mô tả..."
+                        placeholder="Search assignments by title or description..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -204,19 +212,19 @@ const AssignmentList = () => {
                         className={`filter-pill ${statusFilter === 'ALL' ? 'active' : ''}`}
                         onClick={() => setStatusFilter('ALL')}
                     >
-                        Tất cả ({totalCount})
+                        All ({totalCount})
                     </button>
                     <button
                         className={`filter-pill ${statusFilter === 'OPEN' ? 'active' : ''}`}
                         onClick={() => setStatusFilter('OPEN')}
                     >
-                        Đang mở ({openCount})
+                        Open ({openCount})
                     </button>
                     <button
                         className={`filter-pill ${statusFilter === 'OVERDUE' ? 'active' : ''}`}
                         onClick={() => setStatusFilter('OVERDUE')}
                     >
-                        Quá hạn ({overdueCount})
+                        Overdue ({overdueCount})
                     </button>
                 </div>
             </div>
@@ -232,16 +240,16 @@ const AssignmentList = () => {
             {loading ? (
                 <div className="loader-container">
                     <div className="spinner"></div>
-                    <p>Đang tải danh sách bài tập...</p>
+                    <p>Loading assignment list...</p>
                 </div>
             ) : filteredAssignments.length === 0 ? (
                 <div className="details-main" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
                     <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>📂</div>
                     <h3 style={{ fontSize: '1.4rem', color: '#1f2937', margin: '0 0 0.5rem' }}>
-                        Chưa có bài tập nào
+                        No assignments available
                     </h3>
                     <p style={{ color: '#6b7280', margin: 0 }}>
-                        {searchTerm ? 'Không tìm thấy bài tập nào khớp với từ khóa tìm kiếm.' : 'Hiện tại chưa có bài tập nào được giao cho bạn.'}
+                        {searchTerm ? 'No assignments matching your search.' : 'No assignments have been assigned to you yet.'}
                     </p>
                 </div>
             ) : (
@@ -256,43 +264,49 @@ const AssignmentList = () => {
                                 <div className="card-top">
                                     <span className="class-tag">Assignment</span>
                                     <span className={`status-badge ${timeStatus.isOverdue ? 'overdue' : 'open'}`}>
-                                        {timeStatus.isOverdue ? '⛔ Đã đóng' : '🟢 Đang mở'}
+                                        {timeStatus.isOverdue ? '⛔ Closed' : '🟢 Open'}
                                     </span>
                                 </div>
 
                                 <h3 className="assignment-card-title">{item.title}</h3>
                                 <p className="assignment-card-desc">
-                                    {item.description || 'Không có mô tả chi tiết cho bài tập này.'}
+                                    {item.description || 'No detailed description for this assignment.'}
                                 </p>
 
                                 <div className="card-meta-list">
                                     <div className="meta-row">
-                                        <span className="meta-row-label">📅 Hạn nộp:</span>
+                                        <span className="meta-row-label">📅 Deadline:</span>
                                         <span className="meta-row-val">{formatDateTime(item.dueDate)}</span>
                                     </div>
                                     <div className="meta-row">
-                                        <span className="meta-row-label">⏱️ Trạng thái:</span>
+                                        <span className="meta-row-label">⏱️ Status:</span>
                                         <span className={`meta-row-val ${timeStatus.urgent ? 'urgent' : ''}`}>
                                             {timeStatus.text}
                                         </span>
                                     </div>
                                     <div className="meta-row">
-                                        <span className="meta-row-label">🏆 Điểm tối đa:</span>
-                                        <span className="meta-row-val">{item.maxScore || 10} điểm</span>
+                                        <span className="meta-row-label">🏆 Max Score:</span>
+                                        <span className="meta-row-val">{item.maxScore || 10} pts</span>
                                     </div>
                                     {item.attachmentUrl && (
                                         <div className="meta-row">
-                                            <span className="meta-row-label">📎 Đính kèm:</span>
-                                            <span className="meta-row-val" style={{ color: '#6366f1' }}>Có tài liệu</span>
+                                            <span className="meta-row-label">📎 Attachment:</span>
+                                            <span className="meta-row-val" style={{ color: '#6366f1' }}>Has document</span>
                                         </div>
                                     )}
                                 </div>
 
                                 <button
-                                    className="btn-card-action"
-                                    onClick={() => navigate(`/student/assignments/${item.id}`)}
+                                    className={`btn-card-action ${userRole !== 'STUDENT' ? 'secondary' : ''}`}
+                                    onClick={() => {
+                                        if (userRole === 'STUDENT') {
+                                            navigate(`/student/assignments/${item.id}`);
+                                        } else {
+                                            navigate(`/student/assignments/manage?id=${item.id}`);
+                                        }
+                                    }}
                                 >
-                                    <span>Xem chi tiết & Nộp bài</span>
+                                    <span>{userRole === 'STUDENT' ? 'View Details & Submit' : 'Grade / Manage'}</span>
                                     <span>➔</span>
                                 </button>
                             </div>
@@ -305,8 +319,8 @@ const AssignmentList = () => {
             {showCreateModal && (
                 <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
                     <div className="modal-glass" style={{ maxWidth: '540px' }} onClick={(e) => e.stopPropagation()}>
-                        <h3>📝 Tạo Bài Tập Mới</h3>
-                        <p>Nhập thông tin đề bài và hạn nộp cho sinh viên</p>
+                        <h3>📝 Create New Assignment</h3>
+                        <p>Enter assignment details and deadline for students</p>
 
                         {createError && (
                             <div className="error-message" style={{ marginBottom: '1rem', padding: '0.75rem' }}>
@@ -316,23 +330,23 @@ const AssignmentList = () => {
 
                         <form onSubmit={handleCreateAssignment}>
                             <div className="modal-form-group">
-                                <label>Tiêu đề bài tập *</label>
+                                <label>Assignment Title *</label>
                                 <input
                                     type="text"
                                     required
                                     className="modal-form-control"
-                                    placeholder="vd: Bài tập lớn môn Lập trình Web"
+                                    placeholder="e.g. Web Programming Project"
                                     value={newAssignment.title}
                                     onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })}
                                 />
                             </div>
 
                             <div className="modal-form-group">
-                                <label>Mô tả / Yêu cầu chi tiết</label>
+                                <label>Description / Detailed Requirements</label>
                                 <textarea
                                     rows="4"
                                     className="modal-form-control"
-                                    placeholder="Mô tả nội dung bài tập, định dạng nộp..."
+                                    placeholder="Describe assignment content, submission format..."
                                     value={newAssignment.description}
                                     onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })}
                                 />
@@ -340,7 +354,7 @@ const AssignmentList = () => {
 
                             <div className="modal-form-row">
                                 <div className="modal-form-group">
-                                    <label>Hạn nộp (Deadline) *</label>
+                                    <label>Deadline *</label>
                                     <input
                                         type="datetime-local"
                                         required
@@ -350,7 +364,7 @@ const AssignmentList = () => {
                                     />
                                 </div>
                                 <div className="modal-form-group">
-                                    <label>Điểm tối đa</label>
+                                    <label>Max Score</label>
                                     <input
                                         type="number"
                                         step="0.5"
@@ -362,7 +376,7 @@ const AssignmentList = () => {
                             </div>
 
                             <div className="modal-form-group">
-                                <label>Link tài liệu đính kèm (URL)</label>
+                                <label>Attachment URL</label>
                                 <input
                                     type="url"
                                     className="modal-form-control"
@@ -372,6 +386,31 @@ const AssignmentList = () => {
                                 />
                             </div>
 
+                            <div className="modal-form-row">
+                                <div className="modal-form-group checkbox-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1rem' }}>
+                                    <label className="switch">
+                                        <input
+                                            type="checkbox"
+                                            checked={newAssignment.isExam}
+                                            onChange={(e) => setNewAssignment({ ...newAssignment, isExam: e.target.checked })}
+                                        />
+                                        <span className="slider round"></span>
+                                    </label>
+                                    <span style={{ color: '#ef4444', fontWeight: 600 }}>Exam Flag (For Admin Monitoring)</span>
+                                </div>
+                                <div className="modal-form-group checkbox-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1rem' }}>
+                                    <label className="switch">
+                                        <input
+                                            type="checkbox"
+                                            checked={newAssignment.isPublished}
+                                            onChange={(e) => setNewAssignment({ ...newAssignment, isPublished: e.target.checked })}
+                                        />
+                                        <span className="slider round"></span>
+                                    </label>
+                                    <span>Visible (Public) to students</span>
+                                </div>
+                            </div>
+
                             <div className="modal-actions" style={{ marginTop: '1.5rem' }}>
                                 <button
                                     type="button"
@@ -379,14 +418,14 @@ const AssignmentList = () => {
                                     onClick={() => setShowCreateModal(false)}
                                     disabled={creating}
                                 >
-                                    Hủy bỏ
+                                    Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     className="btn-confirm"
                                     disabled={creating}
                                 >
-                                    {creating ? 'Đang tạo...' : 'Tạo bài tập'}
+                                    {creating ? 'Creating...' : 'Create Assignment'}
                                 </button>
                             </div>
                         </form>

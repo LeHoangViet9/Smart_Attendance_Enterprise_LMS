@@ -30,4 +30,13 @@ public class UserResponse {
     private String password;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    // Profile Fields
+    private String parentPhone;
+    private String className;
+    private Integer enrollmentYear;
+
+    private String degree;
+    private String major;
+    private String department;
 }

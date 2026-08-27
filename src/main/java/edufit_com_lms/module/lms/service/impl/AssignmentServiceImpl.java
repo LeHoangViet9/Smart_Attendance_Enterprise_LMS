@@ -34,6 +34,8 @@ public class AssignmentServiceImpl implements AssignmentService {
                 .dueDate(request.getDueDate())
                 .maxScore(request.getMaxScore() != null ? request.getMaxScore() : 10.0)
                 .attachmentUrl(request.getAttachmentUrl())
+                .isExam(request.getIsExam() != null ? request.getIsExam() : false)
+                .isPublished(request.getIsPublished() != null ? request.getIsPublished() : true)
                 .build();
 
         Assignment saved = assignmentRepository.save(assignment);
@@ -84,6 +86,12 @@ public class AssignmentServiceImpl implements AssignmentService {
         if (request.getAttachmentUrl() != null) {
             assignment.setAttachmentUrl(request.getAttachmentUrl());
         }
+        if (request.getIsExam() != null) {
+            assignment.setIsExam(request.getIsExam());
+        }
+        if (request.getIsPublished() != null) {
+            assignment.setIsPublished(request.getIsPublished());
+        }
 
         Assignment updated = assignmentRepository.save(assignment);
         return mapToResponse(updated);
@@ -110,6 +118,8 @@ public class AssignmentServiceImpl implements AssignmentService {
                 .attachmentUrl(assignment.getAttachmentUrl())
                 .createdAt(assignment.getCreatedAt())
                 .isExpired(isExpired)
+                .isExam(assignment.getIsExam())
+                .isPublished(assignment.getIsPublished())
                 .build();
     }
 }

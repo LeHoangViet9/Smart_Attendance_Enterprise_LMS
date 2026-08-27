@@ -3,7 +3,7 @@
 /* Hiệu ứng nền chuyển động Mesh Gradient tuyệt đẹp */
 @keyframes meshGradient {
   0% {
-    background-position: 0% 50%;
+    background-position: 0 50%;
   }
 
   50% {
@@ -11,7 +11,7 @@
   }
 
   100% {
-    background-position: 0% 50%;
+    background-position: 0 50%;
   }
 }
 
@@ -55,12 +55,12 @@ html {
 }
 
 /* Header */
-.login-header {
+.login-container .login-header {
   text-align: center;
   margin-bottom: 30px;
 }
 
-.login-icon {
+.login-container .login-icon {
   width: 60px;
   height: 60px;
   background: rgba(255, 255, 255, 0.2);
@@ -73,7 +73,7 @@ html {
   border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-.login-header h2 {
+.login-container .login-header h2 {
   margin: 0;
   color: #fff;
   font-size: 28px;
@@ -81,19 +81,19 @@ html {
   letter-spacing: 0.5px;
 }
 
-.login-header p {
+.login-container .login-header p {
   margin: 8px 0 0;
   color: rgba(255, 255, 255, 0.8);
   font-size: 14px;
 }
 
 /* Form Groups */
-.form-group {
+.login-container .form-group {
   margin-bottom: 24px;
   position: relative;
 }
 
-.form-group label {
+.login-container .form-group label {
   display: block;
   margin-bottom: 8px;
   color: rgba(255, 255, 255, 0.9);
@@ -101,7 +101,7 @@ html {
   font-weight: 500;
 }
 
-.form-group input {
+.login-container .form-group input {
   width: 100%;
   padding: 14px 16px;
   background: rgba(255, 255, 255, 0.1);
@@ -115,18 +115,18 @@ html {
   outline: none;
 }
 
-.form-group input::placeholder {
+.login-container .form-group input::placeholder {
   color: rgba(255, 255, 255, 0.5);
 }
 
-.form-group input:focus {
+.login-container .form-group input:focus {
   background: rgba(255, 255, 255, 0.2);
   border-color: rgba(255, 255, 255, 0.6);
   box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
 }
 
 /* Nút Submit Gradient */
-.login-btn {
+.login-container .login-btn {
   width: 100%;
   padding: 16px;
   background: linear-gradient(135deg, #6e8efb, #a777e3);
@@ -142,18 +142,18 @@ html {
   margin-top: 10px;
 }
 
-.login-btn:hover {
+.login-container .login-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
   background: linear-gradient(135deg, #7b98ff, #b588ee);
 }
 
-.login-btn:active {
+.login-container .login-btn:active {
   transform: translateY(1px);
 }
 
 /* Lỗi Alert */
-.error-alert {
+.login-container .error-alert {
   background-color: rgba(255, 75, 75, 0.15);
   border-left: 4px solid #ff4b4b;
   color: #ffeded;

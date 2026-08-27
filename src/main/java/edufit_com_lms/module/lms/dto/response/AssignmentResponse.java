@@ -22,4 +22,6 @@ public class AssignmentResponse {
     private String attachmentUrl;
     private LocalDateTime createdAt;
     private Boolean isExpired;
+    private Boolean isExam;
+    private Boolean isPublished;
 }

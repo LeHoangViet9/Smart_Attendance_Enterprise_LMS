@@ -21,4 +21,7 @@ public class UpdateAssignmentRequest {
     private Double maxScore;
 
     private String attachmentUrl;
+
+    private Boolean isExam;
+    private Boolean isPublished;
 }

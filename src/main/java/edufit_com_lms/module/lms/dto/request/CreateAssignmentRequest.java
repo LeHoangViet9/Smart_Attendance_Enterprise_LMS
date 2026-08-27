@@ -31,4 +31,7 @@ public class CreateAssignmentRequest {
     private Double maxScore;
 
     private String attachmentUrl;
+
+    private Boolean isExam;
+    private Boolean isPublished;
 }

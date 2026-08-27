@@ -11,11 +11,13 @@ import edufit_com_lms.module.lms.dto.response.CourseResponse;
 import edufit_com_lms.module.lms.dto.response.LessionResponse;
 import edufit_com_lms.module.lms.entity.Courses;
 import edufit_com_lms.module.lms.entity.Lession;
+import edufit_com_lms.module.lms.event.NotificationEvent;
 import edufit_com_lms.module.lms.repository.CourseRepository;
 import edufit_com_lms.module.lms.repository.LessionRepository;
 import edufit_com_lms.module.lms.service.CourseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +34,7 @@ public class CourseServiceImpl implements CourseService {
     private final CourseRepository courseRepository;
     private final LessionRepository lessionRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional(readOnly = true)
@@ -92,6 +95,14 @@ public class CourseServiceImpl implements CourseService {
 
         Courses saved = courseRepository.save(course);
         log.info("Created course: {} by lecturer {}", saved.getTitle(), lecturerId);
+
+        eventPublisher.publishEvent(NotificationEvent.builder()
+                .title("Khóa học mới: " + saved.getTitle())
+                .message("Giảng viên vừa tạo khóa học mới. Vui lòng kiểm duyệt.")
+                .type("SYSTEM_LOG")
+                .relatedCourseId(saved.getId())
+                .build());
+
         return mapToCourseSummaryResponse(saved);
     }
 
@@ -159,10 +170,20 @@ public class CourseServiceImpl implements CourseService {
                 .videoUrl(request.getVideoUrl())
                 .documentUrl(request.getDocumentUrl())
                 .orderIndex(nextOrder)
+                .isPublished(request.getIsPublished() != null ? request.getIsPublished() : true)
                 .build();
 
         Lession saved = lessionRepository.save(lession);
         log.info("Added lession: {} to course {}", saved.getTitle(), courseId);
+
+        eventPublisher.publishEvent(NotificationEvent.builder()
+                .title("Bài học mới: " + saved.getTitle())
+                .message("Giảng viên vừa thêm bài học mới. Vui lòng kiểm duyệt.")
+                .type("SYSTEM_LOG")
+                .relatedCourseId(courseId)
+                .relatedLessionId(saved.getId())
+                .build());
+
         return mapToLessionResponse(saved);
     }
 
@@ -185,6 +206,9 @@ public class CourseServiceImpl implements CourseService {
         }
         if (request.getOrderIndex() != null) {
             lession.setOrderIndex(request.getOrderIndex());
+        }
+        if (request.getIsPublished() != null) {
+            lession.setIsPublished(request.getIsPublished());
         }
 
         Lession updated = lessionRepository.save(lession);
@@ -233,6 +257,7 @@ public class CourseServiceImpl implements CourseService {
                 .videoUrl(lession.getVideoUrl())
                 .documentUrl(lession.getDocumentUrl())
                 .orderIndex(lession.getOrderIndex())
+                .isPublished(lession.getIsPublished())
                 .createdAt(lession.getCreatedAt())
                 .build();
     }

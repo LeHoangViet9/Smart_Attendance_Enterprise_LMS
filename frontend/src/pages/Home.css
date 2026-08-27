@@ -34,7 +34,7 @@
 }
 
 /* --- NAVBAR --- */
-.home-navbar {
+.home-container .home-navbar {
     position: relative;
     z-index: 10;
     display: flex;
@@ -45,7 +45,7 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.nav-logo {
+.home-container .nav-logo {
     font-size: 24px;
     font-weight: 700;
     display: flex;
@@ -54,28 +54,28 @@
     letter-spacing: -0.5px;
 }
 
-.logo-icon {
+.home-container .logo-icon {
     font-size: 28px;
 }
 
-.nav-links {
+.home-container .nav-links {
     display: flex;
     align-items: center;
     gap: 32px;
 }
 
-.nav-links a {
+.home-container .nav-links a {
     color: #94a3b8;
     text-decoration: none;
     font-weight: 500;
     transition: color 0.3s ease;
 }
 
-.nav-links a:hover {
+.home-container .nav-links a:hover {
     color: #fff;
 }
 
-.nav-login-btn {
+.home-container .nav-login-btn {
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -87,13 +87,13 @@
     transition: all 0.3s ease;
 }
 
-.nav-login-btn:hover {
+.home-container .nav-login-btn:hover {
     background: #fff;
     color: #0f172a;
 }
 
 /* --- HERO SECTION --- */
-.hero-section {
+.home-container .hero-section {
     position: relative;
     z-index: 10;
     display: flex;
@@ -105,11 +105,11 @@
     gap: 60px;
 }
 
-.hero-content {
+.home-container .hero-content {
     flex: 1;
 }
 
-.badge-animated {
+.home-container .badge-animated {
     display: inline-block;
     padding: 8px 16px;
     background: rgba(123, 97, 255, 0.15);
@@ -122,7 +122,7 @@
     animation: floatUp 3s ease-in-out infinite;
 }
 
-.hero-content h1 {
+.home-container .hero-content h1 {
     font-size: 64px;
     line-height: 1.1;
     margin: 0 0 24px;
@@ -130,13 +130,13 @@
     letter-spacing: -1.5px;
 }
 
-.text-gradient {
+.home-container .text-gradient {
     background: linear-gradient(135deg, #38bdf8 0%, #7b61ff 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
-.hero-content p {
+.home-container .hero-content p {
     font-size: 18px;
     color: #94a3b8;
     line-height: 1.6;
@@ -145,12 +145,12 @@
 }
 
 /* Các nút trong Hero */
-.hero-actions {
+.home-container .hero-actions {
     display: flex;
     gap: 16px;
 }
 
-.primary-btn {
+.home-container .primary-btn {
     background: linear-gradient(135deg, #38bdf8 0%, #7b61ff 100%);
     color: white;
     border: none;
@@ -163,12 +163,12 @@
     box-shadow: 0 10px 20px -5px rgba(123, 97, 255, 0.4);
 }
 
-.primary-btn:hover {
+.home-container .primary-btn:hover {
     transform: translateY(-3px);
     box-shadow: 0 15px 25px -5px rgba(123, 97, 255, 0.6);
 }
 
-.secondary-btn {
+.home-container .secondary-btn {
     background: rgba(255, 255, 255, 0.05);
     color: #fff;
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -180,20 +180,20 @@
     transition: all 0.2s;
 }
 
-.secondary-btn:hover {
+.home-container .secondary-btn:hover {
     background: rgba(255, 255, 255, 0.1);
     border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* --- HERO GRAPHIC (ẢNH MINH HỌA) --- */
-.hero-graphic {
+.home-container .hero-graphic {
     flex: 1;
     position: relative;
     display: flex;
     justify-content: center;
 }
 
-.glass-card {
+.home-container .glass-card {
     background: rgba(255, 255, 255, 0.03);
     backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -206,39 +206,39 @@
     z-index: 2;
 }
 
-.card-header {
+.home-container .card-header {
     display: flex;
     gap: 8px;
     margin-bottom: 30px;
 }
 
-.dot {
+.home-container .dot {
     width: 12px;
     height: 12px;
     border-radius: 50%;
 }
 
-.dot.red {
+.home-container .dot.red {
     background-color: #ff5f56;
 }
 
-.dot.yellow {
+.home-container .dot.yellow {
     background-color: #ffbd2e;
 }
 
-.dot.green {
+.home-container .dot.green {
     background-color: #27c93f;
 }
 
 /* Kịch bản Quét Ảo Diệu */
-.scan-animation {
+.home-container .scan-animation {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 20px;
 }
 
-.face-frame {
+.home-container .face-frame {
     width: 180px;
     height: 180px;
     border: 2px dashed rgba(56, 189, 248, 0.5);
@@ -252,7 +252,7 @@
 }
 
 /* Tia quét sành điệu */
-.scan-line {
+.home-container .scan-line {
     position: absolute;
     top: 0;
     left: 0;
@@ -263,7 +263,7 @@
     animation: scan 2s linear infinite;
 }
 
-.status.success {
+.home-container .status.success {
     background: rgba(39, 201, 63, 0.1);
     color: #2ce849;
     padding: 8px 16px;
@@ -274,7 +274,7 @@
 }
 
 /* Hình khối nổi */
-.floating-bubble {
+.home-container .floating-bubble {
     position: absolute;
     border-radius: 50%;
     background: linear-gradient(135deg, rgba(56, 189, 248, 0.4), rgba(123, 97, 255, 0.4));
@@ -282,7 +282,7 @@
     z-index: 1;
 }
 
-.bubble-1 {
+.home-container .bubble-1 {
     width: 150px;
     height: 150px;
     top: -20px;
@@ -290,7 +290,7 @@
     animation: floatUp 4s ease-in-out infinite alternate;
 }
 
-.bubble-2 {
+.home-container .bubble-2 {
     width: 200px;
     height: 200px;
     bottom: -40px;

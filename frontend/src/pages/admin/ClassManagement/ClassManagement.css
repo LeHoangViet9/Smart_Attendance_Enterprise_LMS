@@ -1,0 +1,16 @@
+.class-management-container {
+    animation: fadeIn 0.4s ease-in-out;
+}
+
+.class-management-container .admin-header-title h1 {
+    font-size: 1.8rem;
+    color: #111827;
+    margin: 0;
+    font-weight: 800;
+}
+
+.class-management-container .admin-header-title p {
+    color: #6b7280;
+    margin-top: 0.5rem;
+    margin-bottom: 2rem;
+}

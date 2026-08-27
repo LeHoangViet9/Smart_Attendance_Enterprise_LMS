@@ -23,7 +23,7 @@ const Layout = () => {
     const handlePasswordChange = async (e) => {
         e.preventDefault();
         if (pwdData.newPassword !== pwdData.confirmPassword) {
-            setAlert({ type: 'error', text: 'Mật khẩu mới không khớp!' });
+            setAlert({ type: 'error', text: 'New passwords do not match!' });
             return;
         }
 
@@ -40,14 +40,14 @@ const Layout = () => {
                 newPassword: pwdData.newPassword
             });
             if (response.data.success) {
-                setAlert({ type: 'success', text: response.data.message || 'Đổi mật khẩu thành công!' });
+                setAlert({ type: 'success', text: response.data.message || 'Password changed successfully!' });
                 setTimeout(() => {
                     setShowModal(false);
                     setPwdData({ oldPassword: '', newPassword: '', confirmPassword: '' });
                 }, 1500);
             }
         } catch (error) {
-            setAlert({ type: 'error', text: error.response?.data?.message || 'Có lỗi xảy ra khi đổi mật khẩu!' });
+            setAlert({ type: 'error', text: error.response?.data?.message || 'Error changing password!' });
         } finally {
             setIsSubmitting(false);
         }
@@ -61,20 +61,28 @@ const Layout = () => {
                         <span className="logo-sparkle">✨</span> Edufit LMS
                     </Link>
                     <div className="nav-links">
-                        <NavLink to="/student/courses" className="nav-link">Courses</NavLink>
-                        <NavLink to="/student/quizzes" end className="nav-link">Quizzes</NavLink>
-                        <NavLink to="/student/assignments" className="nav-link">Assignments</NavLink>
-                        <NavLink to="/student/quizzes/history" className="nav-link">My History</NavLink>
+                        <NavLink to="/student/courses" className="nav-link">
+                            Courses
+                        </NavLink>
+                        <NavLink to="/student/quizzes" end className="nav-link">
+                            Quizzes
+                        </NavLink>
+                        <NavLink to="/student/assignments" className="nav-link">
+                            Assignments
+                        </NavLink>
+                        {userRole === 'STUDENT' && (
+                            <NavLink to="/student/quizzes/history" className="nav-link">My History</NavLink>
+                        )}
                         {(userRole === 'LECTURER' || userRole === 'ADMIN') && (
                             <NavLink to="/student/assignments/manage" className="nav-link" style={{ color: '#6366f1', fontWeight: 600 }}>
-                                👩‍🏫 Chấm bài
+                                👩‍🏫 Grading & Report
                             </NavLink>
                         )}
                     </div>
                     <div className="nav-user">
                         <div className="avatar">{userName.charAt(0).toUpperCase()}</div>
                         <span className="user-name">{userName}</span>
-                        <button className="btn-logout" onClick={() => { setShowModal(true); setAlert(null); }}>Đổi Mật Khẩu</button>
+                        <button className="btn-logout" onClick={() => { setShowModal(true); setAlert(null); }}>Change Password</button>
                         <button className="btn-logout" onClick={handleLogout}>Logout</button>
                     </div>
                 </div>
@@ -88,27 +96,27 @@ const Layout = () => {
                 <div className="modal-overlay">
                     <div className="modal-content">
                         <div className="modal-header">
-                            <h3>Đổi Mật Khẩu</h3>
+                            <h3>Change Password</h3>
                             <button className="close-btn" onClick={() => setShowModal(false)}>✕</button>
                         </div>
                         {alert && <div className={`alert-box ${alert.type}`}>{alert.text}</div>}
                         <form onSubmit={handlePasswordChange}>
                             <div className="form-group">
-                                <label>Mật Khẩu Cũ</label>
+                                <label>Current Password</label>
                                 <input type="password" value={pwdData.oldPassword} onChange={e => setPwdData({ ...pwdData, oldPassword: e.target.value })} required className="layout-input" />
                             </div>
                             <div className="form-group">
-                                <label>Mật Khẩu Mới</label>
+                                <label>New Password</label>
                                 <input type="password" value={pwdData.newPassword} onChange={e => setPwdData({ ...pwdData, newPassword: e.target.value })} required className="layout-input" />
                             </div>
                             <div className="form-group">
-                                <label>Nhập Lại Mật Khẩu Mới</label>
+                                <label>Confirm New Password</label>
                                 <input type="password" value={pwdData.confirmPassword} onChange={e => setPwdData({ ...pwdData, confirmPassword: e.target.value })} required className="layout-input" />
                             </div>
                             <div className="modal-actions" style={{ marginTop: '15px' }}>
-                                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>Hủy</button>
+                                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
                                 <button type="submit" className="btn-primary" disabled={isSubmitting}>
-                                    {isSubmitting ? 'Đang xử lý...' : 'Đổi Mật Khẩu'}
+                                    {isSubmitting ? 'Processing...' : 'Change Password'}
                                 </button>
                             </div>
                         </form>

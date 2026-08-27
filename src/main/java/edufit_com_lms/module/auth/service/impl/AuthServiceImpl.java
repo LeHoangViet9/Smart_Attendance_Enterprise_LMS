@@ -8,18 +8,24 @@ import edufit_com_lms.module.auth.dto.request.ChangePasswordRequest;
 import edufit_com_lms.module.auth.dto.request.LoginRequest;
 import edufit_com_lms.module.auth.dto.response.UserResponse;
 import edufit_com_lms.module.auth.entity.User;
+import edufit_com_lms.module.auth.entity.Role;
+import edufit_com_lms.module.auth.entity.StudentProfile;
+import edufit_com_lms.module.auth.entity.LecturerProfile;
 import edufit_com_lms.module.auth.repository.UserRepository;
+import edufit_com_lms.module.auth.repository.StudentProfileRepository;
+import edufit_com_lms.module.auth.repository.LecturerProfileRepository;
 import edufit_com_lms.module.auth.service.AuthService;
 import edufit_com_lms.module.auth.service.TokenService;
 import edufit_com_lms.security.CustomUserDetail;
 import edufit_com_lms.security.JwtTokenProvider;
+import edufit_com_lms.module.lms.repository.SchoolClassRepository;
+import edufit_com_lms.module.lms.entity.SchoolClass;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
 
 @Service
@@ -29,6 +35,9 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final TokenService tokenService;
+    private final StudentProfileRepository studentProfileRepository;
+    private final LecturerProfileRepository lecturerProfileRepository;
+    private final SchoolClassRepository schoolClassRepository;
 
     @Override
     public UserResponse register(AdminRegisterRequest registerRequest) {
@@ -48,7 +57,33 @@ public class AuthServiceImpl implements AuthService {
         user.setIsActive(true);
         user.setCreatedAt(LocalDateTime.now());
         User savedUser = userRepository.save(user);
+
+        // CREATE PROFILE BASED ON ROLE
+        if (savedUser.getRole() == Role.STUDENT) {
+            SchoolClass linkedClass = null;
+            if (registerRequest.getClassName() != null && !registerRequest.getClassName().isEmpty()) {
+                linkedClass = schoolClassRepository.findByClassName(registerRequest.getClassName()).orElse(null);
+            }
+
+            StudentProfile profile = StudentProfile.builder()
+                    .user(savedUser)
+                    .parentPhone(registerRequest.getParentPhone())
+                    .schoolClass(linkedClass)
+                    .enrollmentYear(registerRequest.getEnrollmentYear())
+                    .build();
+            studentProfileRepository.save(profile);
+        } else if (savedUser.getRole() == Role.LECTURER) {
+            LecturerProfile profile = LecturerProfile.builder()
+                    .user(savedUser)
+                    .degree(registerRequest.getDegree())
+                    .major(registerRequest.getMajor())
+                    .department(registerRequest.getDepartment())
+                    .build();
+            lecturerProfileRepository.save(profile);
+        }
+
         return UserResponse.builder()
+                .userId(savedUser.getUserId())
                 .email(savedUser.getEmail())
                 .role(savedUser.getRole())
                 .code(savedUser.getCode())
@@ -56,25 +91,13 @@ public class AuthServiceImpl implements AuthService {
                 .isActive(savedUser.getIsActive())
                 .password(password)
                 .createdAt(savedUser.getCreatedAt())
+                .parentPhone(registerRequest.getParentPhone())
+                .className(registerRequest.getClassName())
+                .enrollmentYear(registerRequest.getEnrollmentYear())
+                .degree(registerRequest.getDegree())
+                .major(registerRequest.getMajor())
+                .department(registerRequest.getDepartment())
                 .build();
-    }
-
-    private String generatePassword() {
-        String upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        String lower = "abcdefghijklmnopqrstuvwxyz";
-        String digits = "0123456789";
-        String special = "!@#$%^&*";
-        String charSet = upper + lower + digits + special;
-
-        SecureRandom random = new SecureRandom();
-        StringBuilder password = new StringBuilder(8);
-
-        for (int i = 0; i < 8; i++) {
-            int randomIndex = random.nextInt(charSet.length());
-            password.append(charSet.charAt(randomIndex));
-        }
-
-        return password.toString();
     }
 
     @Override

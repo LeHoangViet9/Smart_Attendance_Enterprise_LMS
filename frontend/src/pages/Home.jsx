@@ -36,21 +36,21 @@ const Home = () => {
                     <span className="logo-icon">🏫</span> Educo LMS
                 </div>
                 <div className="nav-links">
-                    <a href="#features">Tính năng</a>
-                    <a href="#about">Về chúng tôi</a>
+                    <a href="#features">Features</a>
+                    <a href="#about">About Us</a>
                     {user ? (
                         <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                            <span style={{ fontWeight: '600', color: '#10b981' }}>Chào, {user.fullName || user.email}</span>
+                            <span style={{ fontWeight: '600', color: '#10b981' }}>Welcome, {user.fullName || user.email}</span>
                             <button className="nav-login-btn" style={{ background: '#3b82f6', color: 'white', border: 'none' }} onClick={handleGoToSystem}>
-                                Vào hệ thống
+                                Go to System
                             </button>
                             <button className="nav-login-btn" style={{ background: '#ef4444', color: 'white', border: 'none' }} onClick={handleLogout}>
-                                Đăng xuất
+                                Logout
                             </button>
                         </div>
                     ) : (
                         <button className="nav-login-btn" onClick={() => navigate('/login')}>
-                            Đăng Nhập
+                            Login
                         </button>
                     )}
                 </div>
@@ -61,25 +61,24 @@ const Home = () => {
                 <div className="hero-content">
                     <div className="badge-animated">🚀 The Future of Education</div>
                     <h1>
-                        Điểm danh thông minh <br />
-                        <span className="text-gradient">Bằng Công Nghệ AI</span>
+                        Smart Attendance <br />
+                        <span className="text-gradient">Powered by AI</span>
                     </h1>
                     <p>
-                        Hệ thống quản lý học tập (LMS) tiên tiến tích hợp trí tuệ nhân tạo,
-                        nhận diện khuôn mặt sinh viên tức thì, ngăn chặn gian lận 100%
-                        chỉ với một cú lướt cam!
+                        Advanced Learning Management System integrated with artificial intelligence for instant facial recognition,
+                        completely preventing fraud with just a camera scan!
                     </p>
                     <div className="hero-actions">
                         {user ? (
                             <button className="primary-btn" onClick={handleGoToSystem}>
-                                Tiếp tục học tập 👋
+                                Continue Learning 👋
                             </button>
                         ) : (
                             <button className="primary-btn" onClick={() => navigate('/login')}>
-                                Bắt đầu ngay 👋
+                                Get Started 👋
                             </button>
                         )}
-                        <button className="secondary-btn">Xem Hướng dẫn</button>
+                        <button className="secondary-btn">View Guide</button>
                     </div>
                 </div>
 
@@ -96,7 +95,7 @@ const Home = () => {
                                 <div className="scan-line"></div>
                                 👤
                             </div>
-                            <div className="status success">Nhận diện: Khuôn mặt (100%)</div>
+                            <div className="status success">Identity Match: Face (100%)</div>
                         </div>
                     </div>
 

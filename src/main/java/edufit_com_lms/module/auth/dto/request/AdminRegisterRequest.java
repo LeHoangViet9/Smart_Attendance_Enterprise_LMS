@@ -26,4 +26,14 @@ public class AdminRegisterRequest {
 
     @NotNull(message = "Role is required")
     private Role role;
+
+    // Student Profile Fields
+    private String parentPhone;
+    private String className;
+    private Integer enrollmentYear;
+
+    // Lecturer Profile Fields
+    private String degree;
+    private String major;
+    private String department;
 }

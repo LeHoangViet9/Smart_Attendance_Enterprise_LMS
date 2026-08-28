@@ -56,31 +56,29 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
     public QuizAttemptResponse startAttempt(Long quizId, Long studentId) {
         Quiz quiz = quizRepository.findById(quizId).orElseThrow(() -> new ResourceNotFound("Can not found quiz"));
         User student = userRepository.findById(studentId).orElseThrow(() -> new ResourceNotFound("Can not found user"));
-        Optional<QuizAttempt> existingAttemptOpt = quizAttemptRepository.findByQuizIdAndStudentUserId(quizId,
-                studentId);
-        if (existingAttemptOpt.isPresent()) {
-            QuizAttempt existingAttempt = existingAttemptOpt.get();
-            if (existingAttempt.getStatus() == QuizStatus.IN_PROGRESS) {
-                // Khôi phục dữ liệu nháp từ Redis và nhả về cho sinh viên thi tiếp tục
-                QuizAttemptResponse res = quizAttemptMapper.toResponse(existingAttempt);
-                try {
-                    String cachedData = stringRedisTemplate.opsForValue()
-                            .get("quiz:attempt:" + existingAttempt.getId());
-                    if (cachedData != null) {
-                        List<StudentAnswerRequest> cachedAnswers = objectMapper.readValue(cachedData,
-                                new TypeReference<>() {
-                                });
-                        res.setCachedAnswers(cachedAnswers);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
+        List<QuizAttempt> existingAttempts = quizAttemptRepository.findByQuizIdAndStudentUserId(quizId, studentId);
+
+        Optional<QuizAttempt> inProgressAttempt = existingAttempts.stream()
+                .filter(a -> a.getStatus() == QuizStatus.IN_PROGRESS)
+                .findFirst();
+
+        if (inProgressAttempt.isPresent()) {
+            QuizAttempt existingAttempt = inProgressAttempt.get();
+            // Khôi phục dữ liệu nháp từ Redis và nhả về cho sinh viên thi tiếp tục
+            QuizAttemptResponse res = quizAttemptMapper.toResponse(existingAttempt);
+            try {
+                String cachedData = stringRedisTemplate.opsForValue()
+                        .get("quiz:attempt:" + existingAttempt.getId());
+                if (cachedData != null) {
+                    List<StudentAnswerRequest> cachedAnswers = objectMapper.readValue(cachedData,
+                            new TypeReference<>() {
+                            });
+                    res.setCachedAnswers(cachedAnswers);
                 }
-                return res; // Trả về attempt cũ thay vì quăng lỗi
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            // (Tuỳ hệ thống): Nếu chỉ cho phép thi 1 lần duy nhất, thì check COMPLETED cũng
-            // chặn luôn
-            // if (existingAttempt.getStatus() == QuizStatus.COMPLETED) throw new
-            // ConflictException("Bạn đã nộp bài này rồi!");
+            return res; // Trả về attempt cũ thay vì quăng lỗi
         }
         LocalDateTime now = LocalDateTime.now();
         if (quiz.getStartTime() != null && now.isBefore(quiz.getStartTime())) {

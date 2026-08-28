@@ -15,4 +15,5 @@ public class UpdateLessionRequest {
     private String videoUrl;
     private String documentUrl;
     private Integer orderIndex;
+    private Boolean isPublished;
 }

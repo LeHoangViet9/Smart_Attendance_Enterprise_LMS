@@ -21,4 +21,7 @@ public class CreateLessionRequest {
     private String documentUrl;
 
     private Integer orderIndex;
+
+    @Builder.Default
+    private Boolean isPublished = true;
 }

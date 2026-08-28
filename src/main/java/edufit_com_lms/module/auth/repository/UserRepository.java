@@ -26,14 +26,25 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
         @Query("SELECT u FROM User u WHERE " +
                         "u.role != edufit_com_lms.module.auth.entity.Role.ADMIN " +
-                        "AND (:role IS NULL OR u.role = :role) " +
+                        "AND (u.role = :role) " +
                         "AND (:isActive IS NULL OR u.isActive = :isActive) " +
                         "AND (:keyword IS NULL OR :keyword = '' OR " +
                         "  LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
                         "  LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
                         "  LOWER(u.code) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-        Page<User> searchUsers(@Param("keyword") String keyword,
+        Page<User> searchUsersWithRole(@Param("keyword") String keyword,
                         @Param("role") Role role,
+                        @Param("isActive") Boolean isActive,
+                        Pageable pageable);
+
+        @Query("SELECT u FROM User u WHERE " +
+                        "u.role != edufit_com_lms.module.auth.entity.Role.ADMIN " +
+                        "AND (:isActive IS NULL OR u.isActive = :isActive) " +
+                        "AND (:keyword IS NULL OR :keyword = '' OR " +
+                        "  LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                        "  LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                        "  LOWER(u.code) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+        Page<User> searchUsersWithoutRole(@Param("keyword") String keyword,
                         @Param("isActive") Boolean isActive,
                         Pageable pageable);
 }

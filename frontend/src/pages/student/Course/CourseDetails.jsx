@@ -22,7 +22,8 @@ const CourseDetails = () => {
         content: '',
         videoUrl: '',
         documentUrl: '',
-        orderIndex: 1
+        orderIndex: 1,
+        isPublished: true
     });
     const [savingLesson, setSavingLesson] = useState(false);
     const [lessonError, setLessonError] = useState(null);
@@ -35,6 +36,11 @@ const CourseDetails = () => {
         thumbnailUrl: ''
     });
     const [savingCourse, setSavingCourse] = useState(false);
+
+    // Report Modal State
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportReason, setReportReason] = useState('');
+    const [submittingReport, setSubmittingReport] = useState(false);
 
     useEffect(() => {
         const stored = localStorage.getItem('user');
@@ -76,7 +82,7 @@ const CourseDetails = () => {
             }
         } catch (err) {
             console.error('Error loading course:', err);
-            setError('Không thể tải thông tin khóa học.');
+            setError('Cannot load course details.');
         } finally {
             setLoading(false);
         }
@@ -90,7 +96,8 @@ const CourseDetails = () => {
             content: '',
             videoUrl: '',
             documentUrl: '',
-            orderIndex: (course?.lessions?.length || 0) + 1
+            orderIndex: (course?.lessions?.length || 0) + 1,
+            isPublished: true
         });
         setLessonError(null);
         setShowLessonModal(true);
@@ -103,7 +110,8 @@ const CourseDetails = () => {
             content: lesson.content || '',
             videoUrl: lesson.videoUrl || '',
             documentUrl: lesson.documentUrl || '',
-            orderIndex: lesson.orderIndex || 1
+            orderIndex: lesson.orderIndex || 1,
+            isPublished: lesson.isPublished !== false
         });
         setLessonError(null);
         setShowLessonModal(true);
@@ -126,20 +134,20 @@ const CourseDetails = () => {
             loadCourse();
         } catch (err) {
             console.error('Error saving lesson:', err);
-            setLessonError(err.response?.data?.message || 'Có lỗi xảy ra khi lưu bài giảng');
+            setLessonError(err.response?.data?.message || 'Error saving lesson');
         } finally {
             setSavingLesson(false);
         }
     };
 
     const handleDeleteLesson = async (lessonId) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa bài giảng này không?')) return;
+        if (!window.confirm('Are you sure you want to delete this lesson?')) return;
         try {
             await axiosInstance.delete(`/v1/courses/lessions/${lessonId}`);
             loadCourse();
         } catch (err) {
             console.error('Error deleting lesson:', err);
-            alert('Không thể xóa bài giảng. Vui lòng thử lại!');
+            alert('Cannot delete lesson. Please try again!');
         }
     };
 
@@ -152,20 +160,40 @@ const CourseDetails = () => {
             loadCourse();
         } catch (err) {
             console.error('Error updating course:', err);
-            alert('Không thể cập nhật khóa học.');
+            alert('Cannot update course.');
         } finally {
             setSavingCourse(false);
         }
     };
 
     const handleDeleteCourse = async () => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa toàn bộ khóa học này? Hành động này không thể hoàn tác.')) return;
+        if (!window.confirm('Are you sure you want to delete this entire course? This action cannot be undone.')) return;
         try {
             await axiosInstance.delete(`/v1/courses/${id}`);
             navigate('/student/courses');
         } catch (err) {
             console.error('Error deleting course:', err);
-            alert('Không thể xóa khóa học.');
+            alert('Cannot delete course.');
+        }
+    };
+
+    const handleReportSubmit = async (e) => {
+        e.preventDefault();
+        setSubmittingReport(true);
+        try {
+            await axiosInstance.post('/v1/notifications/report', {
+                reason: reportReason,
+                relatedCourseId: id,
+                relatedLessionId: activeLesson?.id
+            });
+            alert('Report submitted successfully. Administrators will review it.');
+            setShowReportModal(false);
+            setReportReason('');
+        } catch (err) {
+            console.error('Error reporting:', err);
+            alert('Error submitting report!');
+        } finally {
+            setSubmittingReport(false);
         }
     };
 
@@ -186,7 +214,7 @@ const CourseDetails = () => {
         return (
             <div className="loader-container">
                 <div className="spinner"></div>
-                <p>Đang chuẩn bị nội dung bài giảng...</p>
+                <p>Preparing lesson content...</p>
             </div>
         );
     }
@@ -194,27 +222,27 @@ const CourseDetails = () => {
     if (!course && !loading) {
         return (
             <div className="course-container">
-                <div className="error-message">⚠️ Không tìm thấy khóa học hoặc khóa học đã bị xóa.</div>
+                <div className="error-message">⚠️ Course not found or has been deleted.</div>
                 <button className="btn-card-action" style={{ width: '200px' }} onClick={() => navigate('/student/courses')}>
-                    Quay lại danh sách
+                    Back to list
                 </button>
             </div>
         );
     }
 
-    const lessions = course.lessions || [];
+    const isLecturerOrAdmin = userRole === 'LECTURER' || userRole === 'ADMIN';
+    const lessions = (course.lessions || []).filter(l => isLecturerOrAdmin || l.isPublished !== false);
     const currentIndex = lessions.findIndex(l => l.id === activeLesson?.id);
     const prevLesson = currentIndex > 0 ? lessions[currentIndex - 1] : null;
     const nextLesson = currentIndex < lessions.length - 1 ? lessions[currentIndex + 1] : null;
-    const isLecturerOrAdmin = userRole === 'LECTURER' || userRole === 'ADMIN';
 
     return (
         <div className="course-container">
             {/* Breadcrumbs */}
             <div className="details-breadcrumb">
-                <Link to="/student/student-home" className="breadcrumb-link">Trang chủ</Link>
+                <Link to="/student/student-home" className="breadcrumb-link">Home</Link>
                 <span>/</span>
-                <Link to="/student/courses" className="breadcrumb-link">Khóa học</Link>
+                <Link to="/student/courses" className="breadcrumb-link">Courses</Link>
                 <span>/</span>
                 <span>{course.title}</span>
             </div>
@@ -227,7 +255,7 @@ const CourseDetails = () => {
                     <h1 style={{ fontSize: '1.75rem' }}>
                         <span>📚</span> {course.title}
                     </h1>
-                    <p>Giảng viên: <strong>{course.lecturerName || 'Bộ môn LMS'}</strong> • Tổng số: <strong>{lessions.length} bài giảng</strong></p>
+                    <p>Lecturer: <strong>{course.lecturerName || 'LMS Department'}</strong> • Total: <strong>{lessions.length} lessons</strong></p>
                 </div>
                 {isLecturerOrAdmin && (
                     <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -236,14 +264,14 @@ const CourseDetails = () => {
                             style={{ width: 'auto', padding: '0.6rem 1.25rem' }}
                             onClick={() => setShowEditCourseModal(true)}
                         >
-                            ✏️ Sửa khóa học
+                            ✏️ Edit Course
                         </button>
                         <button
                             className="btn-card-action secondary"
                             style={{ width: 'auto', padding: '0.6rem 1rem', color: '#ef4444' }}
                             onClick={handleDeleteCourse}
                         >
-                            🗑️ Xóa
+                            🗑️ Delete
                         </button>
                     </div>
                 )}
@@ -268,14 +296,14 @@ const CourseDetails = () => {
                                         />
                                     ) : (
                                         <video controls className="video-iframe" src={activeLesson.videoUrl}>
-                                            Trình duyệt của bạn không hỗ trợ phát video HTML5.
+                                            Your browser does not support HTML5 video.
                                         </video>
                                     )
                                 ) : (
                                     <div className="video-placeholder">
                                         <div className="video-placeholder-icon">📖</div>
-                                        <h3 style={{ color: 'white', margin: '0 0 0.5rem' }}>Tài Liệu Đọc & Thực Hành</h3>
-                                        <p style={{ margin: 0 }}>Bài giảng này không có video hướng dẫn. Vui lòng đọc tài liệu bên dưới.</p>
+                                        <h3 style={{ color: 'white', margin: '0 0 0.5rem' }}>Reading & Practical Materials</h3>
+                                        <p style={{ margin: 0 }}>This lesson has no video. Please read the document below.</p>
                                     </div>
                                 )}
                             </div>
@@ -285,7 +313,7 @@ const CourseDetails = () => {
                                 <div className="lesson-header">
                                     <div>
                                         <span className="class-tag" style={{ marginBottom: '0.4rem', display: 'inline-block' }}>
-                                            Bài {activeLesson.orderIndex || (currentIndex + 1)}
+                                            Lesson {activeLesson.orderIndex || (currentIndex + 1)}
                                         </span>
                                         <h2 className="lesson-title">{activeLesson.title}</h2>
                                     </div>
@@ -295,16 +323,21 @@ const CourseDetails = () => {
                                                 className="btn-action-small primary"
                                                 onClick={() => handleOpenEditLesson(activeLesson)}
                                             >
-                                                ✏️ Sửa bài này
+                                                ✏️ Edit Lesson
                                             </button>
                                             <button
                                                 className="btn-action-small"
                                                 style={{ background: '#fee2e2', color: '#ef4444' }}
                                                 onClick={() => handleDeleteLesson(activeLesson.id)}
                                             >
-                                                🗑️ Xóa
+                                                🗑️ Delete
                                             </button>
                                         </div>
+                                    )}
+                                    {(!isLecturerOrAdmin) && (
+                                        <button className="btn-action-small" style={{ background: '#fef2f2', color: '#b91c1c' }} onClick={() => setShowReportModal(true)}>
+                                            🚩 Report Issue
+                                        </button>
                                     )}
                                 </div>
 
@@ -314,8 +347,8 @@ const CourseDetails = () => {
                                         <div className="attachment-left">
                                             <div className="file-icon">📑</div>
                                             <div className="attachment-info">
-                                                <h4>Slide & Tài liệu bài giảng</h4>
-                                                <p>Tệp đính kèm học phần</p>
+                                                <h4>Slides & Documents</h4>
+                                                <p>Lesson Attachments</p>
                                             </div>
                                         </div>
                                         <a
@@ -324,17 +357,17 @@ const CourseDetails = () => {
                                             rel="noreferrer"
                                             className="btn-download"
                                         >
-                                            <span>⬇️</span> Tải tài liệu
+                                            <span>⬇️</span> Download
                                         </a>
                                     </div>
                                 )}
 
                                 {/* Lesson Text Body */}
                                 <h4 className="section-subheading">
-                                    <span>📝</span> Nội dung chi tiết bài học
+                                    <span>📝</span> Detailed Lesson Content
                                 </h4>
                                 <div className="lesson-body">
-                                    {activeLesson.content || 'Bài giảng này chưa có ghi chú văn bản chi tiết.'}
+                                    {activeLesson.content || 'This lesson currently has no detailed written notes.'}
                                 </div>
 
                                 {/* Previous / Next Lesson Navigation */}
@@ -345,10 +378,10 @@ const CourseDetails = () => {
                                         disabled={!prevLesson}
                                         onClick={() => prevLesson && setActiveLesson(prevLesson)}
                                     >
-                                        ⬅ Bài trước
+                                        ⬅ Previous
                                     </button>
                                     <span style={{ fontSize: '0.9rem', color: '#6b7280', fontWeight: 600 }}>
-                                        Bài {currentIndex + 1} / {lessions.length}
+                                        Lesson {currentIndex + 1} / {lessions.length}
                                     </span>
                                     <button
                                         className="btn-card-action"
@@ -356,7 +389,7 @@ const CourseDetails = () => {
                                         disabled={!nextLesson}
                                         onClick={() => nextLesson && setActiveLesson(nextLesson)}
                                     >
-                                        Bài tiếp theo ➔
+                                        Next Lesson ➔
                                     </button>
                                 </div>
                             </div>
@@ -364,9 +397,9 @@ const CourseDetails = () => {
                     ) : (
                         <div className="lesson-card" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
                             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📂</div>
-                            <h3 style={{ fontSize: '1.3rem', color: '#1f2937' }}>Khóa học này chưa có bài giảng nào</h3>
+                            <h3 style={{ fontSize: '1.3rem', color: '#1f2937' }}>This course has no lessons yet</h3>
                             <p style={{ color: '#6b7280' }}>
-                                {isLecturerOrAdmin ? 'Hãy nhấn nút "Thêm bài giảng" bên phải để tải lên bài học đầu tiên.' : 'Vui lòng quay lại sau khi giảng viên cập nhật nội dung.'}
+                                {isLecturerOrAdmin ? 'Click "Add New Lesson" on the right sidebar to upload the first lesson.' : 'Please check back later after the lecturer updates the content.'}
                             </p>
                         </div>
                     )}
@@ -375,9 +408,9 @@ const CourseDetails = () => {
                 {/* Right Side: Curriculum Sidebar */}
                 <div className="curriculum-sidebar">
                     <div className="curriculum-header">
-                        <h3 className="curriculum-title">📑 Danh Sách Bài Học</h3>
+                        <h3 className="curriculum-title">📑 Curriculum</h3>
                         <span style={{ fontSize: '0.85rem', color: '#6366f1', fontWeight: 700 }}>
-                            {lessions.length} bài
+                            {lessions.length} lessons
                         </span>
                     </div>
 
@@ -396,7 +429,7 @@ const CourseDetails = () => {
                                     <div className="curriculum-item-info">
                                         <h5 className="curriculum-item-title">{lesson.title}</h5>
                                         <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                            {lesson.videoUrl ? '🎬 Video' : '📄 Tài liệu'}
+                                            {lesson.videoUrl ? '🎬 Video' : '📄 Document'}
                                         </span>
                                     </div>
                                 </div>
@@ -406,7 +439,7 @@ const CourseDetails = () => {
 
                     {isLecturerOrAdmin && (
                         <button className="btn-add-lesson" onClick={handleOpenAddLesson}>
-                            ➕ Thêm bài giảng mới
+                            ➕ Add New Lesson
                         </button>
                     )}
                 </div>
@@ -416,8 +449,8 @@ const CourseDetails = () => {
             {showLessonModal && (
                 <div className="modal-overlay" onClick={() => setShowLessonModal(false)}>
                     <div className="modal-glass" style={{ maxWidth: '560px' }} onClick={(e) => e.stopPropagation()}>
-                        <h3>{editingLessonId ? '✏️ Sửa Bài Giảng' : '➕ Thêm Bài Giảng Mới'}</h3>
-                        <p>Nhập tiêu đề, đường dẫn video hoặc slide tài liệu</p>
+                        <h3>{editingLessonId ? '✏️ Edit Lesson' : '➕ Add New Lesson'}</h3>
+                        <p>Enter title, video URL, or document slide URL</p>
 
                         {lessonError && (
                             <div className="error-message" style={{ marginBottom: '1rem', padding: '0.75rem' }}>
@@ -427,19 +460,19 @@ const CourseDetails = () => {
 
                         <form onSubmit={handleSaveLesson}>
                             <div className="modal-form-group">
-                                <label>Tiêu đề bài giảng *</label>
+                                <label>Lesson Title *</label>
                                 <input
                                     type="text"
                                     required
                                     className="modal-form-control"
-                                    placeholder="vd: Bài 1: Cấu trúc ứng dụng Spring Boot"
+                                    placeholder="e.g. Lesson 1: Spring Boot Architecture"
                                     value={lessonForm.title}
                                     onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })}
                                 />
                             </div>
 
                             <div className="modal-form-group">
-                                <label>Link Video bài giảng (YouTube URL / MinIO URL)</label>
+                                <label>Video URL (YouTube / MinIO)</label>
                                 <input
                                     type="url"
                                     className="modal-form-control"
@@ -450,7 +483,7 @@ const CourseDetails = () => {
                             </div>
 
                             <div className="modal-form-group">
-                                <label>Link Slide / Tài liệu đính kèm (PDF, PPTX, Drive...)</label>
+                                <label>Slide / Document URL (PDF, PPTX, Drive...)</label>
                                 <input
                                     type="url"
                                     className="modal-form-control"
@@ -461,18 +494,18 @@ const CourseDetails = () => {
                             </div>
 
                             <div className="modal-form-group">
-                                <label>Nội dung / Ghi chú bài học</label>
+                                <label>Lesson Content / Notes</label>
                                 <textarea
                                     rows="4"
                                     className="modal-form-control"
-                                    placeholder="Nội dung tóm tắt kiến thức cốt lõi của bài học..."
+                                    placeholder="Summary of core knowledge for this lesson..."
                                     value={lessonForm.content}
                                     onChange={(e) => setLessonForm({ ...lessonForm, content: e.target.value })}
                                 />
                             </div>
 
                             <div className="modal-form-group">
-                                <label>Thứ tự hiển thị (Số nguyên)</label>
+                                <label>Display Order (Integer)</label>
                                 <input
                                     type="number"
                                     min="1"
@@ -482,6 +515,18 @@ const CourseDetails = () => {
                                 />
                             </div>
 
+                            <div className="modal-form-group checkbox-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1rem' }}>
+                                <label className="switch">
+                                    <input
+                                        type="checkbox"
+                                        checked={lessonForm.isPublished}
+                                        onChange={(e) => setLessonForm({ ...lessonForm, isPublished: e.target.checked })}
+                                    />
+                                    <span className="slider round"></span>
+                                </label>
+                                <span>Visible (Public) to students</span>
+                            </div>
+
                             <div className="modal-actions" style={{ marginTop: '1.5rem' }}>
                                 <button
                                     type="button"
@@ -489,14 +534,14 @@ const CourseDetails = () => {
                                     onClick={() => setShowLessonModal(false)}
                                     disabled={savingLesson}
                                 >
-                                    Hủy bỏ
+                                    Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     className="btn-confirm"
                                     disabled={savingLesson}
                                 >
-                                    {savingLesson ? 'Đang lưu...' : (editingLessonId ? 'Cập nhật bài giảng' : 'Thêm bài giảng')}
+                                    {savingLesson ? 'Saving...' : (editingLessonId ? 'Update Lesson' : 'Add Lesson')}
                                 </button>
                             </div>
                         </form>
@@ -508,12 +553,12 @@ const CourseDetails = () => {
             {showEditCourseModal && (
                 <div className="modal-overlay" onClick={() => setShowEditCourseModal(false)}>
                     <div className="modal-glass" style={{ maxWidth: '500px' }} onClick={(e) => e.stopPropagation()}>
-                        <h3>✏️ Chỉnh Sửa Khóa Học</h3>
-                        <p>Cập nhật tiêu đề và mô tả khóa học</p>
+                        <h3>✏️ Edit Course</h3>
+                        <p>Update course title and description</p>
 
                         <form onSubmit={handleSaveCourse}>
                             <div className="modal-form-group">
-                                <label>Tên khóa học *</label>
+                                <label>Course Title *</label>
                                 <input
                                     type="text"
                                     required
@@ -524,7 +569,7 @@ const CourseDetails = () => {
                             </div>
 
                             <div className="modal-form-group">
-                                <label>Mô tả khóa học</label>
+                                <label>Course Description</label>
                                 <textarea
                                     rows="3"
                                     className="modal-form-control"
@@ -550,14 +595,40 @@ const CourseDetails = () => {
                                     onClick={() => setShowEditCourseModal(false)}
                                     disabled={savingCourse}
                                 >
-                                    Hủy bỏ
+                                    Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     className="btn-confirm"
                                     disabled={savingCourse}
                                 >
-                                    {savingCourse ? 'Đang lưu...' : 'Lưu thay đổi'}
+                                    {savingCourse ? 'Saving...' : 'Save Changes'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Report Modal */}
+            {showReportModal && (
+                <div className="modal-overlay" onClick={() => setShowReportModal(false)}>
+                    <div className="modal-glass" style={{ maxWidth: '450px' }} onClick={(e) => e.stopPropagation()}>
+                        <h3 style={{ color: '#b91c1c' }}>🚩 Report Issue</h3>
+                        <p>Please provide a reason for reporting so Administrators can review this content.</p>
+                        <form onSubmit={handleReportSubmit}>
+                            <textarea
+                                rows="4"
+                                className="modal-form-control"
+                                value={reportReason}
+                                onChange={(e) => setReportReason(e.target.value)}
+                                placeholder="Describe the issue (e.g., Broken video, incorrect content...)"
+                                required
+                            />
+                            <div className="modal-actions" style={{ marginTop: '1.5rem' }}>
+                                <button type="button" className="btn-cancel" onClick={() => setShowReportModal(false)}>Cancel</button>
+                                <button type="submit" className="btn-confirm" style={{ background: '#dc2626' }} disabled={submittingReport}>
+                                    {submittingReport ? 'Submitting...' : 'Submit Report'}
                                 </button>
                             </div>
                         </form>

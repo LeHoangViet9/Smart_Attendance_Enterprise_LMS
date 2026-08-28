@@ -20,5 +20,6 @@ public class LessionResponse {
     private String videoUrl;
     private String documentUrl;
     private Integer orderIndex;
+    private Boolean isPublished;
     private LocalDateTime createdAt;
 }

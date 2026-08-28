@@ -8,7 +8,9 @@ import java.util.UUID;
 @Entity
 @Table(name = "courses")
 @Getter
-@Setter @NoArgsConstructor @AllArgsConstructor
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Courses {
     @Id
@@ -34,4 +36,8 @@ public class Courses {
     @Column(name = "created_at", updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "major_id")
+    private Major major;
 }

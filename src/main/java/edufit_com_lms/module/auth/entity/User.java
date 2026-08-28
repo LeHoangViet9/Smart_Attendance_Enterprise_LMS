@@ -23,7 +23,7 @@ public class User {
     private String email;
     @Column(name = "password", nullable = false)
     private String password;
-    @Column(name = "phone", nullable = false, unique = true)
+    @Column(name = "phone", unique = true)
     private String phone;
     @Column(name = "full_name")
     private String fullName;
@@ -36,8 +36,9 @@ public class User {
     private String address;
     @Column(name = "avatar_url", unique = true)
     private String avatarUrl;
-    @Column(name = "face_embedding", columnDefinition = "vector(512)")
-    @org.hibernate.annotations.ColumnTransformer(read = "face_embedding::text", write = "?::vector")
+    @Column(name = "face_embedding", columnDefinition = "TEXT")
+    // @org.hibernate.annotations.ColumnTransformer(read = "face_embedding::text",
+    // write = "?::vector")
     private String faceEmbedding;
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -46,4 +47,9 @@ public class User {
     @Column(name = "is_active")
     private Boolean isActive;
 
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private StudentProfile studentProfile;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private LecturerProfile lecturerProfile;
 }

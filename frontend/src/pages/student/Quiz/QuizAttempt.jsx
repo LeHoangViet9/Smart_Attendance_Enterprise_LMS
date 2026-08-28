@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosInstance from '../../../api/axios';
 import './QuizStyles.css';
@@ -28,7 +28,7 @@ const QuizAttempt = () => {
         try {
             // 1. Fetch attempt history to find our attempt and its quizId
             const historyRes = await axiosInstance.get('/v1/student/quizzes/attempts/history');
-            const history = historyRes.data?.data || [];
+            const history = historyRes.data?.data?.content || [];
             const currentAttempt = history.find(a => a.id.toString() === attemptId);
 
             if (!currentAttempt) {
@@ -128,7 +128,7 @@ const QuizAttempt = () => {
             navigate('/student/quizzes/history');
         } catch (err) {
             console.error('Submit failed', err);
-            setSubmitError('Không thể nộp bài do lỗi máy chủ. Vui lòng nhấn thử lại.');
+            setSubmitError('Server error during submission. Please retry.');
             setSubmitting(false);
         }
     };
@@ -153,10 +153,7 @@ const QuizAttempt = () => {
         });
     };
 
-    const hasAnswered = (questionId) => {
-        const ans = answers.find(a => a.questionId === questionId);
-        return ans && (ans.selectedOptionId || (ans.answerText && ans.answerText.trim() !== ''));
-    };
+
 
     const isChecked = (questionId, optionId) => {
         const ans = answers.find(a => a.questionId === questionId);
@@ -256,12 +253,12 @@ const QuizAttempt = () => {
             {showSubmitModal && (
                 <div className="modal-overlay" onClick={() => setShowSubmitModal(false)}>
                     <div className="modal-glass" onClick={(e) => e.stopPropagation()}>
-                        <h3>Hoàn thành bài thi?</h3>
-                        <p>Bạn đã trả lời {answers.filter(a => a.selectedOptionId || (a.answerText && a.answerText.trim() !== '')).length} trên tổng số {quiz?.questions?.length} câu hỏi. Bạn có chắc chắn muốn nộp bài ngay lúc này không?</p>
+                        <h3>Finish Quiz?</h3>
+                        <p>You have answered {answers.filter(a => a.selectedOptionId || (a.answerText && a.answerText.trim() !== '')).length} out of {quiz?.questions?.length} questions. Are you sure you want to submit your quiz right now?</p>
                         <div className="modal-actions">
-                            <button className="btn-cancel" onClick={() => setShowSubmitModal(false)} disabled={submitting}>Quay lại làm tiếp</button>
+                            <button className="btn-cancel" onClick={() => setShowSubmitModal(false)} disabled={submitting}>Continue taking quiz</button>
                             <button className="btn-confirm" onClick={handleConfirmSubmit} disabled={submitting}>
-                                {submitting ? 'Đang nộp...' : 'Nộp Bài Ngay'}
+                                {submitting ? 'Submitting...' : 'Submit Now'}
                             </button>
                         </div>
                     </div>
@@ -273,9 +270,9 @@ const QuizAttempt = () => {
                 <div className="modal-overlay">
                     <div className="modal-glass" style={{ maxWidth: '420px', textAlign: 'center' }}>
                         <div style={{ fontSize: '3rem', marginBottom: '0.75rem', animation: 'pulse 1s infinite alternate' }}>⏰</div>
-                        <h3 style={{ color: '#dc2626', margin: '0 0 0.5rem 0' }}>Hết Giờ Làm Bài!</h3>
+                        <h3 style={{ color: '#dc2626', margin: '0 0 0.5rem 0' }}>Time's Up!</h3>
                         <p style={{ color: '#4b5563', margin: '0 0 1.5rem 0', lineHeight: 1.5 }}>
-                            Thời gian làm bài thi của bạn đã kết thúc. Hệ thống đang tự động tổng hợp câu trả lời và nộp bài thi...
+                            Your time limit has been reached. The system is automatically processing and submitting your answers...
                         </p>
                         {submitError ? (
                             <div>
@@ -283,13 +280,13 @@ const QuizAttempt = () => {
                                     <span>⚠️</span> {submitError}
                                 </div>
                                 <button className="btn-confirm" onClick={executeSubmit}>
-                                    Thử nộp lại ngay
+                                    Retry submission
                                 </button>
                             </div>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
                                 <div className="spinner"></div>
-                                <span style={{ fontSize: '0.9rem', color: '#6b7280', fontWeight: 600 }}>Đang tự động nộp bài thi...</span>
+                                <span style={{ fontSize: '0.9rem', color: '#6b7280', fontWeight: 600 }}>Submitting automatically...</span>
                             </div>
                         )}
                     </div>

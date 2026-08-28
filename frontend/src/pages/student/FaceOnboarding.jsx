@@ -23,7 +23,7 @@ const FaceOnboarding = () => {
             }
             setStep(1); // Bắt đầu chụp mặt chính diện
         } catch (err) {
-            setError('Không thể truy cập camera. Vui lòng cấp quyền để tiếp tục.');
+            setError('Cannot access camera. Please grant permission to continue.');
         }
     };
 
@@ -72,12 +72,12 @@ const FaceOnboarding = () => {
 
     const getInstruction = () => {
         switch (step) {
-            case 0: return 'Hệ thống chống gian lận yêu cầu nhận diện khuôn mặt.\nVui lòng khởi động Camera.';
-            case 1: return 'Nhìn thẳng vào camera và giữ nguyên đầu.';
-            case 2: return 'Từ từ quay mặt sang TRÁI một góc 45 độ.';
-            case 3: return 'Từ từ quay mặt sang PHẢI một góc 45 độ.';
-            case 4: return 'Đang thiết lập dữ liệu Face ID của bạn...';
-            case 5: return 'Xác thực khuôn mặt hoàn tất!';
+            case 0: return 'The anti-cheating system requires facial recognition.\nPlease start the camera.';
+            case 1: return 'Look straight into the camera and keep your head still.';
+            case 2: return 'Slowly turn your face to the LEFT by 45 degrees.';
+            case 3: return 'Slowly turn your face to the RIGHT by 45 degrees.';
+            case 4: return 'Configuring your Face ID data...';
+            case 5: return 'Facial verification completed!';
             default: return '';
         }
     };
@@ -127,8 +127,8 @@ const FaceOnboarding = () => {
                     {step === 5 && (
                         <div className="success-container">
                             <div className="success-checkmark">✅</div>
-                            <h3>Hồ sơ sinh trắc học đã được lưu!</h3>
-                            <p>Bạn đã có thể tham gia các bài thi.</p>
+                            <h3>Biometric profile saved!</h3>
+                            <p>You can now participate in exams.</p>
                         </div>
                     )}
 
@@ -146,19 +146,19 @@ const FaceOnboarding = () => {
                 <div className="onboarding-actions">
                     {step === 0 && (
                         <button className="cyber-btn btn-start" onClick={startCamera}>
-                            Khởi động Camera
+                            Start Camera
                         </button>
                     )}
 
                     {step >= 1 && step <= 3 && (
                         <button className="cyber-btn btn-capture" onClick={handleCapture}>
-                            📸 Chụp ảnh ({step}/3)
+                            📸 Capture ({step}/3)
                         </button>
                     )}
 
                     {step === 5 && (
                         <button className="cyber-btn btn-finish" onClick={() => navigate('/student/quizzes')}>
-                            Vào hệ thống thi 🚀
+                            Enter Exam System 🚀
                         </button>
                     )}
                 </div>

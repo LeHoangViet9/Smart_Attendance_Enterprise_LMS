@@ -28,17 +28,30 @@ public class StudentQuizController {
         private final QuizAttemptService quizAttemptService;
         private final QuizService quizService;
 
+        // Method xóa cờ isCorrect để sinh viên không thể dùng F12 soi đáp án
+        private void scrubCorrectAnswers(QuizResponse res) {
+                if (res != null && res.getQuestions() != null) {
+                        res.getQuestions().forEach(q -> {
+                                if (q.getOptions() != null) {
+                                        q.getOptions().forEach(opt -> opt.setIsCorrect(null));
+                                }
+                        });
+                }
+        }
+
         // API: Xem danh sách đề thi hiện có
         @GetMapping
         public ResponseEntity<ApiResponse<Page<QuizResponse>>> getAvailableQuizzes(
                         @RequestParam(required = false) String keyword,
                         @PageableDefault(page = 0, size = 10) Pageable pageable) {
                 try {
+                        Page<QuizResponse> page = quizService.getQuizzes(keyword, null, pageable);
+                        page.forEach(this::scrubCorrectAnswers);
                         return new ResponseEntity<>(new ApiResponse<>(
                                         true,
                                         "List available quizzes successfully",
                                         null,
-                                        quizService.getQuizzes(keyword, null, pageable),
+                                        page,
                                         HttpStatus.OK), HttpStatus.OK);
                 } catch (Exception e) {
                         e.printStackTrace();
@@ -55,11 +68,13 @@ public class StudentQuizController {
         @GetMapping("/{quizId}/details")
         public ResponseEntity<ApiResponse<QuizResponse>> getQuizForStudent(
                         @PathVariable Long quizId) {
+                QuizResponse quizResponse = quizService.findQuizById(quizId);
+                scrubCorrectAnswers(quizResponse);
                 return new ResponseEntity<>(new ApiResponse<>(
                                 true,
                                 "Fetch quiz details successfully",
                                 null,
-                                quizService.findQuizById(quizId),
+                                quizResponse,
                                 HttpStatus.OK), HttpStatus.OK);
         }
 

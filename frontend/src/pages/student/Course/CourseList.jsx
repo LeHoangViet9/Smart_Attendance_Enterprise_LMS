@@ -47,7 +47,7 @@ const CourseList = () => {
             }
         } catch (err) {
             console.error('Error fetching courses:', err);
-            setError('Không thể tải danh sách khóa học. Vui lòng kiểm tra lại kết nối!');
+            setError('Cannot load course list. Please check your connection!');
         } finally {
             setLoading(false);
         }
@@ -69,7 +69,7 @@ const CourseList = () => {
             fetchCourses();
         } catch (err) {
             console.error('Error creating course:', err);
-            setCreateError(err.response?.data?.message || 'Có lỗi xảy ra khi tạo khóa học');
+            setCreateError(err.response?.data?.message || 'Error creating course');
         } finally {
             setCreating(false);
         }
@@ -87,9 +87,9 @@ const CourseList = () => {
             <div className="course-header">
                 <div className="course-header-info">
                     <h1>
-                        <span>🎓</span> Khóa Học & Bài Giảng Trực Tuyến
+                        <span>🎓</span> {userRole === 'STUDENT' ? 'Online Courses & Lessons' : 'Course Management'}
                     </h1>
-                    <p>Kho học liệu, slide bài giảng và video hướng dẫn chuyên sâu từ nhà trường</p>
+                    <p>{userRole === 'STUDENT' ? 'Learning materials, slides, and video tutorials' : 'Design syllabus, upload lectures, and manage digital content'}</p>
                 </div>
                 {(userRole === 'LECTURER' || userRole === 'ADMIN') && (
                     <button
@@ -97,7 +97,7 @@ const CourseList = () => {
                         style={{ width: 'auto', padding: '0.75rem 1.5rem' }}
                         onClick={() => setShowCreateModal(true)}
                     >
-                        ➕ Tạo khóa học mới
+                        ➕ Create New Course
                     </button>
                 )}
             </div>
@@ -109,7 +109,7 @@ const CourseList = () => {
                     <input
                         type="text"
                         className="search-input"
-                        placeholder="Tìm kiếm khóa học theo tên, mô tả hoặc giảng viên..."
+                        placeholder="Search courses by name, description, or lecturer..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -117,7 +117,7 @@ const CourseList = () => {
                 <div className="stat-card" style={{ padding: '0.6rem 1.25rem' }}>
                     <div className="stat-content">
                         <div className="stat-value" style={{ fontSize: '1.25rem' }}>{courses.length}</div>
-                        <div className="stat-label">Tổng số khóa học</div>
+                        <div className="stat-label">Total Courses</div>
                     </div>
                 </div>
             </div>
@@ -127,16 +127,16 @@ const CourseList = () => {
             {loading ? (
                 <div className="loader-container">
                     <div className="spinner"></div>
-                    <p>Đang tải danh sách khóa học...</p>
+                    <p>Loading course list...</p>
                 </div>
             ) : filteredCourses.length === 0 ? (
                 <div className="lesson-card" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
                     <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>📚</div>
                     <h3 style={{ fontSize: '1.4rem', color: '#1f2937', margin: '0 0 0.5rem' }}>
-                        Chưa có khóa học nào
+                        No Courses Yet
                     </h3>
                     <p style={{ color: '#6b7280', margin: 0 }}>
-                        {searchTerm ? 'Không tìm thấy khóa học nào phù hợp với từ khóa.' : 'Hiện tại chưa có khóa học nào được đăng tải.'}
+                        {searchTerm ? 'No courses found matching your search.' : 'No courses have been published yet.'}
                     </p>
                 </div>
             ) : (
@@ -154,14 +154,14 @@ const CourseList = () => {
                                     <span className="course-thumbnail-placeholder">📖</span>
                                 )}
                                 <div className="course-lesson-badge">
-                                    <span>🎬</span> {course.totalLessons || 0} bài giảng
+                                    <span>🎬</span> {course.totalLessons || 0} lessons
                                 </div>
                             </div>
 
                             <div className="course-card-body">
                                 <h3 className="course-card-title">{course.title}</h3>
                                 <p className="course-card-desc">
-                                    {course.description || 'Chưa có mô tả chi tiết cho khóa học này.'}
+                                    {course.description || 'No detailed description for this course yet.'}
                                 </p>
 
                                 <div className="course-lecturer-row">
@@ -169,7 +169,7 @@ const CourseList = () => {
                                         {(course.lecturerName || 'G').charAt(0).toUpperCase()}
                                     </div>
                                     <span className="lecturer-name-text">
-                                        {course.lecturerName || 'Giảng viên'}
+                                        {course.lecturerName || 'Lecturer'}
                                     </span>
                                 </div>
 
@@ -177,7 +177,7 @@ const CourseList = () => {
                                     className="btn-card-action"
                                     onClick={() => navigate(`/student/courses/${course.id}`)}
                                 >
-                                    <span>Vào học ngay</span>
+                                    <span>{userRole === 'STUDENT' ? 'Start Learning' : 'Manage Course'}</span>
                                     <span>➔</span>
                                 </button>
                             </div>
@@ -190,8 +190,8 @@ const CourseList = () => {
             {showCreateModal && (
                 <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
                     <div className="modal-glass" style={{ maxWidth: '520px' }} onClick={(e) => e.stopPropagation()}>
-                        <h3>📘 Tạo Khóa Học Mới</h3>
-                        <p>Nhập thông tin khóa học và lưu trữ bài giảng</p>
+                        <h3>📘 Create New Course</h3>
+                        <p>Enter course details and organize lessons</p>
 
                         {createError && (
                             <div className="error-message" style={{ marginBottom: '1rem', padding: '0.75rem' }}>
@@ -201,30 +201,30 @@ const CourseList = () => {
 
                         <form onSubmit={handleCreateCourse}>
                             <div className="modal-form-group">
-                                <label>Tên khóa học *</label>
+                                <label>Course Title *</label>
                                 <input
                                     type="text"
                                     required
                                     className="modal-form-control"
-                                    placeholder="vd: Lập trình Java Enterprise & Spring Boot"
+                                    placeholder="e.g. Java Enterprise & Spring Boot"
                                     value={newCourse.title}
                                     onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
                                 />
                             </div>
 
                             <div className="modal-form-group">
-                                <label>Mô tả khóa học</label>
+                                <label>Course Description</label>
                                 <textarea
                                     rows="3"
                                     className="modal-form-control"
-                                    placeholder="Mô tả nội dung, lộ trình khóa học..."
+                                    placeholder="Describe the course content and learning path..."
                                     value={newCourse.description}
                                     onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
                                 />
                             </div>
 
                             <div className="modal-form-group">
-                                <label>Link ảnh đại diện (Thumbnail URL)</label>
+                                <label>Thumbnail URL</label>
                                 <input
                                     type="url"
                                     className="modal-form-control"
@@ -241,14 +241,14 @@ const CourseList = () => {
                                     onClick={() => setShowCreateModal(false)}
                                     disabled={creating}
                                 >
-                                    Hủy bỏ
+                                    Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     className="btn-confirm"
                                     disabled={creating}
                                 >
-                                    {creating ? 'Đang tạo...' : 'Tạo khóa học'}
+                                    {creating ? 'Creating...' : 'Create Course'}
                                 </button>
                             </div>
                         </form>

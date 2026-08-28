@@ -94,15 +94,14 @@ const QuizHistory = () => {
                                                     className="btn-resume"
                                                     onClick={() => navigate(`/student/quizzes/attempts/${attempt.id}`)}
                                                 >
-                                                    Tiếp Tục Thi
+                                                    Resume Quiz
                                                 </button>
                                             ) : attempt.status === 'COMPLETED' ? (
                                                 <button
-                                                    className="btn-resume"
-                                                    style={{ background: '#3b82f6', color: 'white' }}
+                                                    className="btn-review"
                                                     onClick={() => navigate(`/student/quizzes/attempts/${attempt.id}/review`)}
                                                 >
-                                                    Xem Lại Kết Quả
+                                                    Review Results
                                                 </button>
                                             ) : null}
                                         </div>

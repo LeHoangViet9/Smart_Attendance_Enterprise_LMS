@@ -57,24 +57,24 @@ const QuizReview = () => {
     return (
         <div className="quiz-container attempt-layout review-layout">
             <div className="attempt-header review-header">
-                <h2 className="attempt-title">{review?.quizTitle} - Xem Lại Kết Quả</h2>
+                <h2 className="attempt-title">{review?.quizTitle} - Review Results</h2>
                 <div className="review-score">
-                    🏆 Điểm Đạt Được: {review?.score}
+                    🏆 Score Achieved: {review?.score}
                 </div>
             </div>
 
             <div className="attempt-content">
                 <div className="review-legend">
-                    <span className="legend-item"><span className="legend-box correct"></span> Chọn Đúng</span>
-                    <span className="legend-item"><span className="legend-box wrong"></span> Chọn Sai</span>
-                    <span className="legend-item"><span className="legend-box correct-unselected"></span> Đáp Án Đúng</span>
+                    <span className="legend-item"><span className="legend-box correct"></span> Correctly Selected</span>
+                    <span className="legend-item"><span className="legend-box wrong"></span> Incorrectly Selected</span>
+                    <span className="legend-item"><span className="legend-box correct-unselected"></span> Correct Answer</span>
                 </div>
 
                 {review?.questions?.map((q, index) => (
                     <div key={q.id} className={`question-card ${q.studentAnswer?.isAwarded ? 'card-correct' : 'card-wrong'}`}>
                         <h4 className="question-header">
-                            <span className="question-number">Câu {index + 1}</span>
-                            <span className="question-points">({q.points} pts) - {q.studentAnswer?.isAwarded ? '✅ ĐÚNG' : '❌ SAI'}</span>
+                            <span className="question-number">Question {index + 1}</span>
+                            <span className="question-points">({q.points} pts) - {q.studentAnswer?.isAwarded ? '✅ CORRECT' : '❌ INCORRECT'}</span>
                         </h4>
                         <div className="question-text">{q.content}</div>
 
@@ -82,17 +82,17 @@ const QuizReview = () => {
                             {['SINGLE_CHOICE', 'TRUE_FALSE', 'MULTIPLE_CHOICE'].includes(q.questionType) && q.options?.map(opt => (
                                 <div key={opt.id} className={getOptionClass(q, opt)}>
                                     <span className="option-text">{opt.content}</span>
-                                    {isOptionSelected(q, opt.id) && <span className="selection-badge">Sự lựa chọn của bạn</span>}
+                                    {isOptionSelected(q, opt.id) && <span className="selection-badge">Your choice</span>}
                                 </div>
                             ))}
 
                             {['FILL_BLANK', 'ESSAY'].includes(q.questionType) && (
                                 <div className="text-answer-review">
-                                    <p><strong>Câu trả lời của bạn:</strong></p>
+                                    <p><strong>Your answer:</strong></p>
                                     <div className="student-textarea-review">
-                                        {q.studentAnswer?.answerText || <i style={{ color: '#94a3b8' }}>Không có câu trả lời</i>}
+                                        {q.studentAnswer?.answerText || <i style={{ color: '#94a3b8' }}>No answer provided</i>}
                                     </div>
-                                    <p className="status-text">{q.studentAnswer?.isAwarded ? '✅ Hệ thống ghi nhận Đúng' : '❌ Sai hoặc chờ chấm điểm'}</p>
+                                    <p className="status-text">{q.studentAnswer?.isAwarded ? '✅ System marked as Correct' : '❌ Incorrect or pending grading'}</p>
                                 </div>
                             )}
                         </div>
@@ -105,7 +105,7 @@ const QuizReview = () => {
                     className="btn-submit"
                     onClick={() => navigate('/student/quizzes/history')}
                 >
-                    ⬅ Quay về lịch sử
+                    ⬅ Back to history
                 </button>
             </div>
         </div>

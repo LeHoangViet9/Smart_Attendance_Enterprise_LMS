@@ -14,16 +14,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class QuestionServiceImpl implements QuestionService {
     private final QuestionRepository questionRepository;
     private final QuizRepository quizRepository;
     private final QuizMapper quizMapper;
-
 
     public QuestionResponse findById(Long id) {
         Question question = questionRepository.findById(id)
@@ -100,7 +101,12 @@ public class QuestionServiceImpl implements QuestionService {
         }
 
         String kw = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
-        Page<Question> questions = questionRepository.findByQuizIdAndKeyword(quizId, kw, pageable);
+        Page<Question> questions;
+        if (kw != null) {
+            questions = questionRepository.findByQuizIdAndKeyword(quizId, kw, pageable);
+        } else {
+            questions = questionRepository.findByQuizId(quizId, pageable);
+        }
 
         return questions.map(quizMapper::toQuestionResponse);
     }

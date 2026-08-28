@@ -6,8 +6,11 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name= "lessions")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@Table(name = "lessions")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Lession {
     @Id
@@ -35,4 +38,8 @@ public class Lession {
     @Column(name = "created_at", updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "is_published")
+    @Builder.Default
+    private Boolean isPublished = true;
 }

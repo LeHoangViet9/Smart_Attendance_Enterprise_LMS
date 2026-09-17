@@ -1,0 +1,383 @@
+/* LecturerSmartAttendance.css */
+
+.smart-attendance-container {
+    min-height: 100vh;
+    background-color: #0b0f19; /* Very dark blue/black background */
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+.sa-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 16px;
+}
+
+.sa-title {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.sa-title h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.sa-class-info {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    padding-left: 16px;
+    border-left: 1px solid #334155;
+}
+
+.sa-main-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 24px;
+    height: calc(100vh - 120px);
+}
+
+/* Glassmorphism Panel Base */
+.sa-panel {
+    background: rgba(30, 41, 59, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    min-height: 0;
+}
+
+/* --- Left Side: Live Feed --- */
+.sa-feed-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.sa-feed-header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #e2e8f0;
+}
+
+.sa-status-badges {
+    display: flex;
+    gap: 12px;
+}
+
+.sa-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sa-badge.live {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.sa-badge.live::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background-color: #ef4444;
+    border-radius: 50%;
+    animation: blink 1.5s infinite;
+}
+
+.sa-badge.count {
+    background: rgba(59, 130, 246, 0.1);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+}
+
+.sa-video-container {
+    flex: 1;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    background: #000;
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.15) inset;
+}
+
+.sa-video-feed {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Bounding box AI Overlay simulation */
+.ai-bounding-box {
+    position: absolute;
+    border: 2px solid #06b6d4;
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+    transition: all 0.3s ease;
+}
+
+.ai-bounding-box::after {
+    content: attr(data-name);
+    position: absolute;
+    bottom: -24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.8);
+    color: #22d3ee;
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+/* Scanning line overlay */
+.sa-scan-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: rgba(6, 182, 212, 0.8);
+    box-shadow: 0 0 10px #06b6d4, 0 0 20px #06b6d4;
+    animation: scan-down 3s ease-in-out infinite alternate;
+}
+
+@keyframes scan-down {
+    0% { top: 0%; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { top: 98%; opacity: 0; }
+}
+
+/* --- Right Side: Student List --- */
+.sa-list-header {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.sa-list-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.sa-search-bar input {
+    width: 100%;
+    padding: 10px 16px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: white;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.sa-search-bar input:focus {
+    border-color: #3b82f6;
+}
+
+.sa-filters {
+    display: flex;
+    gap: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 12px;
+}
+
+.sa-filter-btn {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 6px 12px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.sa-filter-btn:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.sa-filter-btn.active {
+    color: white;
+    background: rgba(59, 130, 246, 0.2);
+}
+
+.sa-student-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-right: 8px;
+}
+
+/* Scrollbar styling */
+.sa-student-list::-webkit-scrollbar {
+    width: 6px;
+}
+.sa-student-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+.sa-student-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.sa-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 16px;
+    margin-top: auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sa-pagination button {
+    background: rgba(59, 130, 246, 0.2);
+    border: none;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.sa-pagination button:hover:not(:disabled) {
+    background: rgba(59, 130, 246, 0.5);
+}
+
+.sa-pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.sa-pagination span {
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+.sa-student-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 12px 16px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.sa-student-item:hover {
+    background: rgba(30, 41, 59, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Animation when student marked present */
+@keyframes pop-success {
+    0% { transform: scale(1); box-shadow: none; }
+    50% { transform: scale(1.02); box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); border-color: rgba(16, 185, 129, 0.5); }
+    100% { transform: scale(1); box-shadow: none; }
+}
+
+.sa-student-item.just-marked {
+    animation: pop-success 1s ease-out forwards;
+}
+
+.sa-student-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sa-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.sa-student-details h4 {
+    margin: 0 0 4px 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.sa-student-details span {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.sa-status {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.sa-status.present {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.sa-status.absent {
+    background: rgba(148, 163, 184, 0.1);
+    color: #94a3b8;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.sa-start-btn {
+    margin-top: 16px;
+    padding: 14px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+}
+
+.sa-start-btn:hover {
+    opacity: 0.9;
+}
+
+.sa-start-btn:active {
+    transform: scale(0.98);
+}

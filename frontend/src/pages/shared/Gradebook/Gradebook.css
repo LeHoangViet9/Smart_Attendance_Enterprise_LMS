@@ -1,0 +1,113 @@
+.gradebook-container {
+    padding: 2rem;
+    background: #f8fafc;
+    min-height: 100vh;
+}
+
+.gradebook-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.gradebook-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.gradebook-btn-export {
+    background-color: #10b981;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.gradebook-btn-export:hover {
+    background-color: #059669;
+}
+
+.gradebook-table-wrapper {
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    overflow: hidden;
+}
+
+.gradebook-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.gradebook-table th {
+    background-color: #f1f5f9;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #475569;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.gradebook-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    color: #334155;
+}
+
+.gradebook-table tr:hover {
+    background-color: #f8fafc;
+}
+
+.gradebook-input {
+    width: 4rem;
+    padding: 0.25rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.25rem;
+    text-align: center;
+}
+
+.gradebook-input-text {
+    width: 100%;
+    padding: 0.25rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.25rem;
+}
+
+.gradebook-btn-save {
+    background-color: #3b82f6;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.25rem;
+    border: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+    margin-right: 0.5rem;
+}
+
+.gradebook-btn-save:hover {
+    background-color: #2563eb;
+}
+
+.gradebook-btn-edit {
+    background-color: #eab308;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.25rem;
+    border: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.gradebook-btn-edit:hover {
+    background-color: #ca8a04;
+}
+
+.gradebook-gpa {
+    font-weight: 700;
+    color: #2563eb;
+}

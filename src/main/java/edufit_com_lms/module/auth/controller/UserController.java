@@ -33,7 +33,7 @@ public class UserController {
                 HttpStatus.OK), HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(@PathVariable Long id,
             @RequestBody AdminRegisterRequest adminRegisterRequest) {
@@ -45,7 +45,7 @@ public class UserController {
                 HttpStatus.OK), HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
@@ -54,6 +54,16 @@ public class UserController {
                 "Delete user successfully",
                 null,
                 null,
+                HttpStatus.OK), HttpStatus.OK);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponse>> getMe() {
+        return new ResponseEntity<>(new ApiResponse<>(
+                true,
+                "Get current user profile successfully",
+                null,
+                userService.getCurrentUserProfile(),
                 HttpStatus.OK), HttpStatus.OK);
     }
 }

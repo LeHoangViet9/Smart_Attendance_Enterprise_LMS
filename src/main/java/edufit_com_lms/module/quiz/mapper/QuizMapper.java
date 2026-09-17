@@ -13,6 +13,8 @@ import org.mapstruct.ReportingPolicy;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface QuizMapper {
 
+    @org.mapstruct.Mapping(source = "major.id", target = "majorId")
+    @org.mapstruct.Mapping(source = "createdBy.userId", target = "createdBy")
     QuizResponse toResponse(Quiz quiz);
 
     QuestionResponse toQuestionResponse(Question question);

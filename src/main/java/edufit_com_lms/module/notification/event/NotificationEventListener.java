@@ -1,6 +1,6 @@
-package edufit_com_lms.module.lms.event;
+package edufit_com_lms.module.notification.event;
 
-import edufit_com_lms.module.lms.service.AppNotificationService;
+import edufit_com_lms.module.notification.service.AppNotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;

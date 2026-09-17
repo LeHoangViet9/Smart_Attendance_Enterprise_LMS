@@ -1,5 +1,6 @@
 package edufit_com_lms.module.auth.entity;
 
+import edufit_com_lms.module.lms.entity.Major;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,8 +27,9 @@ public class LecturerProfile {
     @Column(name = "degree")
     private String degree;
 
-    @Column(name = "major")
-    private String major;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "major_id")
+    private Major major;
 
     @Column(name = "department")
     private String department;

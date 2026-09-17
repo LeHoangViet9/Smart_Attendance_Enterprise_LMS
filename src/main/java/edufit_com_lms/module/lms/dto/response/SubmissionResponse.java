@@ -15,7 +15,7 @@ import java.util.UUID;
 public class SubmissionResponse {
     private UUID id;
     private UUID assignmentId;
-    private UUID studentId;
+    private Long studentId;
     private String fileUrl;
     private LocalDateTime submittedAt;
     private Double score;

@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -19,4 +20,6 @@ public class QuizResponse {
     private Integer timeLimitMinutes;
     private LocalDateTime endTime;
     private List<QuestionResponse> questions; // Toàn bộ đề thi được nhồi vào cục này để ném về React
+    private UUID majorId;
+    private Long createdBy;
 }

@@ -6,13 +6,13 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "lessions")
+@Table(name = "lessons")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Lession {
+public class Lesson {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;

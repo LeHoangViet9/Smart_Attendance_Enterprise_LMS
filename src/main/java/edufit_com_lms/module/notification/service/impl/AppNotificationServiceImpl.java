@@ -1,8 +1,8 @@
-package edufit_com_lms.module.lms.service.impl;
+package edufit_com_lms.module.notification.service.impl;
 
-import edufit_com_lms.module.lms.entity.AppNotification;
-import edufit_com_lms.module.lms.repository.AppNotificationRepository;
-import edufit_com_lms.module.lms.service.AppNotificationService;
+import edufit_com_lms.module.notification.entity.AppNotification;
+import edufit_com_lms.module.notification.repository.AppNotificationRepository;
+import edufit_com_lms.module.notification.service.AppNotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

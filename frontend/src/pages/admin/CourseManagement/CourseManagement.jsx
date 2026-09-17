@@ -17,18 +17,39 @@ const CourseManagement = () => {
         isPublished: true
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const [deleteModal, setDeleteModal] = useState({ show: false, courseId: null, courseName: '' });
 
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+
     useEffect(() => {
-        fetchCourses();
+        fetchCourses(0);
     }, []);
 
-    const fetchCourses = async () => {
+    const fetchCourses = async (page = currentPage) => {
         setLoading(true);
         try {
-            const response = await axiosInstance.get('/v1/courses');
+            const response = await axiosInstance.get('/v1/courses', {
+                params: {
+                    page: page,
+                    size: 8
+                }
+            });
             if (response.data && response.data.success) {
-                setCourses(response.data.data);
+                const pageData = response.data.data;
+                setCourses(pageData.content !== undefined ? pageData.content : pageData);
+                if (pageData.page) {
+                    setTotalPages(pageData.page.totalPages || 0);
+                    setCurrentPage(pageData.page.number || 0);
+                } else if (pageData.pageable) {
+                    setTotalPages(pageData.totalPages || 0);
+                    setCurrentPage(pageData.pageable.pageNumber || 0);
+                } else {
+                    setTotalPages(pageData.totalPages || 0);
+                    setCurrentPage(pageData.number || 0);
+                }
             }
         } catch (error) {
             console.error('Error fetching courses:', error);
@@ -168,7 +189,11 @@ const CourseManagement = () => {
                                 </div>
                             </div>
                             <div className="cm-card-actions">
-                                <button className="btn-icon view" onClick={() => navigate(`/student/courses/${course.id}`)} title="Quản lý Bài Học">
+                                <button className="btn-icon view" onClick={() => {
+                                    const user = JSON.parse(localStorage.getItem('user'));
+                                    const prefix = user?.role === 'ADMIN' ? '/admin' : user?.role === 'LECTURER' ? '/lecturer' : '/student';
+                                    navigate(`${prefix}/courses/${course.id}`);
+                                }} title="Quản lý Bài Học">
                                     📖 Lessons
                                 </button>
                                 <button className="btn-icon edit" onClick={() => openEditModal(course)} title="Edit">
@@ -180,6 +205,29 @@ const CourseManagement = () => {
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && !loading && filteredCourses.length > 0 && (
+                <div className="pagination-container" style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem', gap: '1rem', alignItems: 'center' }}>
+                    <button
+                        className="cm-btn-secondary"
+                        disabled={currentPage === 0}
+                        onClick={() => fetchCourses(currentPage - 1)}
+                    >
+                        Previous
+                    </button>
+                    <span style={{ fontWeight: 600, color: '#374151' }}>
+                        Page {currentPage + 1} of {totalPages}
+                    </span>
+                    <button
+                        className="cm-btn-secondary"
+                        disabled={currentPage === totalPages - 1}
+                        onClick={() => fetchCourses(currentPage + 1)}
+                    >
+                        Next
+                    </button>
                 </div>
             )}
 
@@ -215,13 +263,57 @@ const CourseManagement = () => {
                             </div>
                             <div className="form-group">
                                 <label>Thumbnail URL</label>
-                                <input
-                                    type="url"
-                                    name="thumbnailUrl"
-                                    value={currentCourse.thumbnailUrl}
-                                    onChange={handleInput}
-                                    placeholder="https://example.com/image.jpg"
-                                />
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <input
+                                        type="url"
+                                        name="thumbnailUrl"
+                                        value={currentCourse.thumbnailUrl}
+                                        onChange={handleInput}
+                                        placeholder="https://example.com/image.jpg"
+                                        style={{ flex: 1 }}
+                                    />
+                                    <input 
+                                        type="file" 
+                                        accept="image/*"
+                                        id="thumbnailUploadAdmin"
+                                        style={{ display: 'none' }}
+                                        onChange={async (e) => {
+                                            const file = e.target.files[0];
+                                            if (!file) return;
+                                            setIsUploading(true);
+                                            try {
+                                                const presignedRes = await axiosInstance.post('/v1/courses/upload-url', {
+                                                    fileName: file.name,
+                                                    contentType: file.type || 'image/jpeg'
+                                                });
+                                                if (presignedRes.data && presignedRes.data.data) {
+                                                    const { uploadUrl, fileUrl } = presignedRes.data.data;
+                                                    await fetch(uploadUrl, {
+                                                        method: 'PUT',
+                                                        headers: { 'Content-Type': file.type || 'image/jpeg' },
+                                                        body: file
+                                                    });
+                                                    setCurrentCourse({ ...currentCourse, thumbnailUrl: fileUrl });
+                                                }
+                                            } catch (err) {
+                                                console.error('Error uploading thumbnail:', err);
+                                                alert('Failed to upload thumbnail.');
+                                            } finally {
+                                                setIsUploading(false);
+                                                e.target.value = null;
+                                            }
+                                        }}
+                                    />
+                                    <button 
+                                        type="button" 
+                                        className="btn-action-small" 
+                                        onClick={() => document.getElementById('thumbnailUploadAdmin').click()}
+                                        disabled={isUploading}
+                                        style={{ flexShrink: 0, padding: '0 1rem', background: '#e0e7ff', color: '#4338ca', borderRadius: '4px', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+                                    >
+                                        {isUploading ? '...' : '📁 Upload'}
+                                    </button>
+                                </div>
                             </div>
                             <div className="form-group checkbox-group">
                                 <label className="switch">
@@ -238,8 +330,8 @@ const CourseManagement = () => {
 
                             <div className="cm-modal-footer">
                                 <button type="button" className="cm-btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                                <button type="submit" className="cm-btn-primary" disabled={isSubmitting}>
-                                    {isSubmitting ? 'Processing...' : (modalMode === 'add' ? 'Create Course' : 'Save Changes')}
+                                <button type="submit" className="cm-btn-primary" disabled={isSubmitting || isUploading}>
+                                    {isSubmitting || isUploading ? 'Processing...' : (modalMode === 'add' ? 'Create Course' : 'Save Changes')}
                                 </button>
                             </div>
                         </form>

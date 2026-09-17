@@ -16,17 +16,39 @@ const AdminClassManagement = () => {
     const [autoAssignLoading, setAutoAssignLoading] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', action: null });
 
+    // Modal state for viewing students
+    const [showStudentsModal, setShowStudentsModal] = useState(false);
+    const [classStudents, setClassStudents] = useState([]);
+    const [studentsLoading, setStudentsLoading] = useState(false);
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+
     useEffect(() => {
-        loadClasses();
+        loadClasses(0);
         loadLecturers();
     }, []);
 
-    const loadClasses = async () => {
+    const loadClasses = async (page = currentPage) => {
         try {
             setLoading(true);
-            const response = await axiosInstance.get('/v1/admin/classes');
+            const response = await axiosInstance.get('/v1/admin/classes', {
+                params: { page: page, size: 8 }
+            });
             if (response.data.success) {
-                setClasses(response.data.data);
+                const pageData = response.data.data;
+                setClasses(pageData.content !== undefined ? pageData.content : pageData);
+                if (pageData.page) {
+                    setTotalPages(pageData.page.totalPages || 0);
+                    setCurrentPage(pageData.page.number || 0);
+                } else if (pageData.pageable) {
+                    setTotalPages(pageData.totalPages || 0);
+                    setCurrentPage(pageData.pageable.pageNumber || 0);
+                } else {
+                    setTotalPages(pageData.totalPages || 0);
+                    setCurrentPage(pageData.number || 0);
+                }
             }
         } catch (error) {
             console.error('Error loading classes:', error);
@@ -51,7 +73,7 @@ const AdminClassManagement = () => {
 
     const openAssignModal = (cls) => {
         setSelectedClass(cls);
-        setSelectedLecturerId(cls.homeroomLecturerId || '');
+        setSelectedLecturerId(cls.lecturerId || '');
         setShowLecturerModal(true);
     };
 
@@ -72,6 +94,23 @@ const AdminClassManagement = () => {
         } finally {
             setAssignLoading(false);
             setTimeout(() => setAlertMsg(null), 3000);
+        }
+    };
+
+    const handleViewStudents = async (cls) => {
+        setSelectedClass(cls);
+        setShowStudentsModal(true);
+        setStudentsLoading(true);
+        try {
+            const response = await axiosInstance.get(`/v1/admin/classes/${cls.id}/students`);
+            if (response.data.success) {
+                setClassStudents(response.data.data);
+            }
+        } catch (error) {
+            console.error('Error loading students:', error);
+            setAlertMsg({ type: 'error', text: 'Failed to load students for this class.' });
+        } finally {
+            setStudentsLoading(false);
         }
     };
 
@@ -193,11 +232,11 @@ const AdminClassManagement = () => {
                                         </div>
                                     </td>
                                     <td>
-                                        {cls.homeroomLecturerName ? (
+                                        {cls.lecturerName ? (
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                 <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>👨‍🏫</div>
                                                 <span style={{ fontWeight: '600', color: '#334155' }}>
-                                                    {cls.homeroomLecturerName}
+                                                    {cls.lecturerName}
                                                 </span>
                                             </div>
                                         ) : (
@@ -205,12 +244,28 @@ const AdminClassManagement = () => {
                                         )}
                                     </td>
                                     <td style={{ textAlign: 'right' }}>
-                                        <button
-                                            className="btn-assign"
-                                            onClick={() => openAssignModal(cls)}
-                                        >
-                                            ✏️ Assign Lecturer
-                                        </button>
+                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                            <button
+                                                className="btn-card-action secondary"
+                                                onClick={() => handleViewStudents(cls)}
+                                                style={{ border: '1px solid #cbd5e1', background: 'white', color: '#475569', borderRadius: '6px', padding: '6px 12px', fontSize: '0.9rem' }}
+                                            >
+                                                👁️ View Students
+                                            </button>
+                                            <button
+                                                className="btn-card-action"
+                                                onClick={() => navigate(`/admin/classes/${cls.id}/gradebook`)}
+                                                style={{ border: 'none', background: '#10b981', color: 'white', borderRadius: '6px', padding: '6px 12px', fontSize: '0.9rem', cursor: 'pointer' }}
+                                            >
+                                                📊 Gradebook
+                                            </button>
+                                            <button
+                                                className="btn-assign"
+                                                onClick={() => openAssignModal(cls)}
+                                            >
+                                                ✏️ Assign Lecturer
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -226,6 +281,31 @@ const AdminClassManagement = () => {
                     </table>
                 )}
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && !loading && classes.length > 0 && (
+                <div className="pagination-container" style={{ display: 'flex', justifyContent: 'center', marginTop: '2.5rem', gap: '1rem', alignItems: 'center' }}>
+                    <button
+                        className="btn-card-action secondary"
+                        style={{ width: 'auto', padding: '0.5rem 1rem', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: currentPage === 0 ? 'not-allowed' : 'pointer', background: 'white', color: currentPage === 0 ? '#94a3b8' : '#334155' }}
+                        disabled={currentPage === 0}
+                        onClick={() => loadClasses(currentPage - 1)}
+                    >
+                        ⬅️ Previous
+                    </button>
+                    <span style={{ fontWeight: 600, color: '#374151', fontSize: '1.1rem' }}>
+                        Page {currentPage + 1} of {totalPages}
+                    </span>
+                    <button
+                        className="btn-card-action secondary"
+                        style={{ width: 'auto', padding: '0.5rem 1rem', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: currentPage === totalPages - 1 ? 'not-allowed' : 'pointer', background: 'white', color: currentPage === totalPages - 1 ? '#94a3b8' : '#334155' }}
+                        disabled={currentPage === totalPages - 1}
+                        onClick={() => loadClasses(currentPage + 1)}
+                    >
+                        Next ➡️
+                    </button>
+                </div>
+            )}
 
             {/* Modal */}
             {showLecturerModal && (
@@ -286,6 +366,63 @@ const AdminClassManagement = () => {
                             >
                                 Xác Nhận
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* View Students Modal */}
+            {showStudentsModal && (
+                <div className="modal-overlay" onClick={() => setShowStudentsModal(false)}>
+                    <div className="modal-content" style={{ maxWidth: '800px', width: '90%' }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <h3 style={{ margin: 0, color: '#0f172a', fontSize: '1.4rem' }}>
+                                Class Roster: {selectedClass?.className}
+                            </h3>
+                            <button onClick={() => setShowStudentsModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#64748b' }}>&times;</button>
+                        </div>
+                        
+                        {studentsLoading ? (
+                            <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>Loading students...</div>
+                        ) : (
+                            <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                                {classStudents.length === 0 ? (
+                                    <div style={{ padding: '30px', textAlign: 'center', color: '#64748b', background: '#f8fafc', borderRadius: '8px' }}>
+                                        No students assigned to this class yet.
+                                    </div>
+                                ) : (
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <thead>
+                                            <tr style={{ background: '#f1f5f9', textAlign: 'left' }}>
+                                                <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', color: '#475569', fontSize: '0.9rem' }}>#</th>
+                                                <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', color: '#475569', fontSize: '0.9rem' }}>Full Name</th>
+                                                <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', color: '#475569', fontSize: '0.9rem' }}>Email</th>
+                                                <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', color: '#475569', fontSize: '0.9rem' }}>Phone</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {classStudents.map((st, index) => (
+                                                <tr key={st.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                                                    <td style={{ padding: '12px', color: '#64748b' }}>{index + 1}</td>
+                                                    <td style={{ padding: '12px', fontWeight: '600', color: '#1e293b' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                            <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#e0e7ff', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.8rem' }}>
+                                                                {st.fullName.charAt(0)}
+                                                            </div>
+                                                            {st.fullName}
+                                                        </div>
+                                                    </td>
+                                                    <td style={{ padding: '12px', color: '#475569', fontSize: '0.95rem' }}>{st.email}</td>
+                                                    <td style={{ padding: '12px', color: '#475569', fontSize: '0.95rem' }}>{st.phone || 'N/A'}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+                        )}
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #e2e8f0' }}>
+                            <button onClick={() => setShowStudentsModal(false)} style={{ padding: '0.75rem 1.5rem', background: '#f1f5f9', color: '#334155', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>Close</button>
                         </div>
                     </div>
                 </div>

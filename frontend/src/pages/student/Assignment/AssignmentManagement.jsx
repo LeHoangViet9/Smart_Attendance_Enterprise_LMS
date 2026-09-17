@@ -44,7 +44,8 @@ const AssignmentManagement = () => {
         try {
             const res = await axiosInstance.get('/v1/assignments');
             if (res.data && res.data.data) {
-                let fetchedAssignments = res.data.data;
+                const pageData = res.data.data;
+                let fetchedAssignments = pageData.content !== undefined ? pageData.content : (Array.isArray(pageData) ? pageData : []);
 
                 // Admin chỉ xem đề thi quan trọng
                 if (role === 'ADMIN') {
@@ -76,7 +77,10 @@ const AssignmentManagement = () => {
         try {
             const res = await axiosInstance.get(`/v1/assignments/${assignmentId}/submissions`);
             if (res.data && res.data.data) {
-                setSubmissions(res.data.data);
+                // Handle paginated response structure (Spring Data Page)
+                const pageData = res.data.data;
+                const content = pageData.content !== undefined ? pageData.content : pageData;
+                setSubmissions(Array.isArray(content) ? content : []);
             } else {
                 setSubmissions([]);
             }
@@ -214,7 +218,7 @@ const AssignmentManagement = () => {
                     >
                         {assignments.map(a => (
                             <option key={a.id} value={a.id}>
-                                {a.title} ({a.isExpired ? 'Expired' : 'Open'})
+                                [{a.className}] {a.title} ({a.isExpired ? 'Expired' : 'Open'})
                             </option>
                         ))}
                     </select>

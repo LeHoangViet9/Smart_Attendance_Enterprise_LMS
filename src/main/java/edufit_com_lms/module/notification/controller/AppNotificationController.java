@@ -1,9 +1,9 @@
-package edufit_com_lms.module.lms.controller;
+package edufit_com_lms.module.notification.controller;
 
 import edufit_com_lms.common.response.ApiResponse;
-import edufit_com_lms.module.lms.dto.request.ReportRequest;
-import edufit_com_lms.module.lms.entity.AppNotification;
-import edufit_com_lms.module.lms.service.AppNotificationService;
+import edufit_com_lms.module.notification.dto.request.ReportRequest;
+import edufit_com_lms.module.notification.entity.AppNotification;
+import edufit_com_lms.module.notification.service.AppNotificationService;
 import edufit_com_lms.security.CustomUserDetail;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

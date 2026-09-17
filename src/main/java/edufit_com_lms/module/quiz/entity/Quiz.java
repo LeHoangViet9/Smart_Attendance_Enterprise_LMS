@@ -43,6 +43,11 @@ public class Quiz {
     @JoinColumn(name = "created_by_user_id")
     private User createdBy;
 
+    // Trỏ tới Chuyên ngành (Quiz thuộc chuyên ngành nào)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "major_id")
+    private edufit_com_lms.module.lms.entity.Major major;
+
     // Danh sách Câu hỏi (Xóa quiz thì xóa luôn dàn câu hỏi)
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Question> questions;
@@ -53,6 +58,10 @@ public class Quiz {
     @Column(name = "review_type")
     @Enumerated(EnumType.STRING)
     private ReviewType reviewType;
+
+    @Column(name = "requires_proctoring")
+    @Builder.Default
+    private Boolean requiresProctoring = false;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

@@ -9,8 +9,15 @@ import java.util.UUID;
 
 public interface SubmissionService {
     SubmissionResponse submitAssignment(UUID assignmentId, SubmitAssignmentRequest request);
+
     SubmissionResponse gradeSubmission(UUID submissionId, GradeSubmissionRequest request);
+
     SubmissionResponse getSubmissionById(UUID id);
-    SubmissionResponse getSubmissionByAssignmentAndStudent(UUID assignmentId, UUID studentId);
+
+    SubmissionResponse getSubmissionByAssignmentAndStudent(UUID assignmentId, Long studentId);
+
     List<SubmissionResponse> getSubmissionsByAssignment(UUID assignmentId);
+
+    org.springframework.data.domain.Page<SubmissionResponse> getPaginatedSubmissionsByAssignment(UUID assignmentId,
+            org.springframework.data.domain.Pageable pageable);
 }

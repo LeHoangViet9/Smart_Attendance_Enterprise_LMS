@@ -47,11 +47,11 @@ const Login = () => {
             // Luồng điều hướng thông minh
             console.log('[LOGIN DEBUG] Navigating for role:', data.role);
             if (data.role === 'STUDENT') {
-                navigate('/face-onboarding');
+                navigate('/student/student-home');
             } else if (data.role === 'ADMIN') {
                 navigate('/admin/dashboard');
             } else if (data.role === 'LECTURER') {
-                navigate('/student/student-home');
+                navigate('/lecturer/dashboard');
             } else {
                 console.log('[LOGIN DEBUG] Unknown role, defaulting to /student/quizzes');
                 navigate('/student/quizzes');

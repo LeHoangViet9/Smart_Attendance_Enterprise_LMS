@@ -24,6 +24,10 @@ const AssignmentList = () => {
     const [creating, setCreating] = useState(false);
     const [createError, setCreateError] = useState(null);
 
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -36,16 +40,32 @@ const AssignmentList = () => {
                 console.error(e);
             }
         }
-        fetchAssignments();
+        fetchAssignments(0);
     }, []);
 
-    const fetchAssignments = async () => {
+    const fetchAssignments = async (page = currentPage) => {
         setLoading(true);
         setError(null);
         try {
-            const response = await axiosInstance.get('/v1/assignments');
-            if (response.data && response.data.data) {
-                setAssignments(response.data.data);
+            const response = await axiosInstance.get('/v1/assignments', {
+                params: {
+                    page: page,
+                    size: 8
+                }
+            });
+            if (response.data && response.data.success) {
+                const pageData = response.data.data;
+                setAssignments(pageData.content !== undefined ? pageData.content : pageData);
+                if (pageData.page) {
+                    setTotalPages(pageData.page.totalPages || 0);
+                    setCurrentPage(pageData.page.number || 0);
+                } else if (pageData.pageable) {
+                    setTotalPages(pageData.totalPages || 0);
+                    setCurrentPage(pageData.pageable.pageNumber || 0);
+                } else {
+                    setTotalPages(pageData.totalPages || 0);
+                    setCurrentPage(pageData.number || 0);
+                }
             }
         } catch (err) {
             console.error('Error fetching assignments:', err);
@@ -268,7 +288,12 @@ const AssignmentList = () => {
                                     </span>
                                 </div>
 
-                                <h3 className="assignment-card-title">{item.title}</h3>
+                                <h3 className="assignment-card-title">
+                                    <span style={{ fontSize: '0.85rem', padding: '0.2rem 0.5rem', background: '#eef2ff', color: '#4f46e5', borderRadius: '4px', marginRight: '0.5rem', verticalAlign: 'middle' }}>
+                                        {item.className || 'Unknown Class'}
+                                    </span>
+                                    {item.title}
+                                </h3>
                                 <p className="assignment-card-desc">
                                     {item.description || 'No detailed description for this assignment.'}
                                 </p>
@@ -312,6 +337,31 @@ const AssignmentList = () => {
                             </div>
                         );
                     })}
+                </div>
+            )}
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && !loading && filteredAssignments.length > 0 && (
+                <div className="pagination-container" style={{ display: 'flex', justifyContent: 'center', marginTop: '2.5rem', gap: '1rem', alignItems: 'center', paddingBottom: '2rem' }}>
+                    <button
+                        className="btn-card-action secondary"
+                        style={{ width: 'auto' }}
+                        disabled={currentPage === 0}
+                        onClick={() => fetchAssignments(currentPage - 1)}
+                    >
+                        ⬅️ Previous
+                    </button>
+                    <span style={{ fontWeight: 600, color: '#374151', fontSize: '1.1rem' }}>
+                        Page {currentPage + 1} of {totalPages}
+                    </span>
+                    <button
+                        className="btn-card-action secondary"
+                        style={{ width: 'auto' }}
+                        disabled={currentPage === totalPages - 1}
+                        onClick={() => fetchAssignments(currentPage + 1)}
+                    >
+                        Next ➡️
+                    </button>
                 </div>
             )}
 

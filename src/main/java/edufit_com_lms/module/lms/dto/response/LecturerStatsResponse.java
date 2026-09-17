@@ -11,8 +11,9 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class LecturerStatsResponse {
-    private long totalCourses;
+    private long totalClasses;
     private long pendingGradingSubmissions;
     private String attendanceRate;
-    private List<CourseResponse> activeCourses;
+    /** BRD 8.3: Danh sách Lớp học phần (Class) của Giảng viên */
+    private List<SchoolClassResponse> activeClasses;
 }

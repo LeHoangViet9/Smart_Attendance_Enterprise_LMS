@@ -20,6 +20,8 @@ import edufit_com_lms.security.CustomUserDetail;
 import edufit_com_lms.security.JwtTokenProvider;
 import edufit_com_lms.module.lms.repository.SchoolClassRepository;
 import edufit_com_lms.module.lms.entity.SchoolClass;
+import edufit_com_lms.module.lms.repository.MajorRepository;
+import edufit_com_lms.module.lms.entity.Major;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -38,6 +40,7 @@ public class AuthServiceImpl implements AuthService {
     private final StudentProfileRepository studentProfileRepository;
     private final LecturerProfileRepository lecturerProfileRepository;
     private final SchoolClassRepository schoolClassRepository;
+    private final MajorRepository majorRepository;
 
     @Override
     public UserResponse register(AdminRegisterRequest registerRequest) {
@@ -73,10 +76,14 @@ public class AuthServiceImpl implements AuthService {
                     .build();
             studentProfileRepository.save(profile);
         } else if (savedUser.getRole() == Role.LECTURER) {
+            Major major = null;
+            if (registerRequest.getMajor() != null && !registerRequest.getMajor().isBlank()) {
+                major = majorRepository.findByCodeIgnoreCaseOrNameIgnoreCase(registerRequest.getMajor(), registerRequest.getMajor()).orElse(null);
+            }
             LecturerProfile profile = LecturerProfile.builder()
                     .user(savedUser)
                     .degree(registerRequest.getDegree())
-                    .major(registerRequest.getMajor())
+                    .major(major)
                     .department(registerRequest.getDepartment())
                     .build();
             lecturerProfileRepository.save(profile);

@@ -1,4 +1,4 @@
-package edufit_com_lms.module.lms.dto.request;
+package edufit_com_lms.module.notification.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;

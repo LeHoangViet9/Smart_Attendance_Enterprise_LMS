@@ -1,6 +1,6 @@
-package edufit_com_lms.module.lms.service;
+package edufit_com_lms.module.notification.service;
 
-import edufit_com_lms.module.lms.entity.AppNotification;
+import edufit_com_lms.module.notification.entity.AppNotification;
 
 import java.util.List;
 import java.util.UUID;

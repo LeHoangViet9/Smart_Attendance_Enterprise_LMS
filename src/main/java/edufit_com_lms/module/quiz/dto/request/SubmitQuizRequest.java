@@ -14,4 +14,5 @@ import java.util.List;
 public class SubmitQuizRequest {
     private Long quizAttemptId;
     private List<StudentAnswerRequest> answers; // Danh sách hòm chứa toàn bộ tick A B C của SV
+    private String proctoringImageUrl;
 }

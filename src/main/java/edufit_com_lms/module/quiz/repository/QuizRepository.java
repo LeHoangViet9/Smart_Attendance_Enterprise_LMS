@@ -18,9 +18,11 @@ public interface QuizRepository extends JpaRepository<Quiz, Long> {
 
         // Dùng cho tìm kiếm nhiều trường (title, description, hoặc thời gian)
         @Query("SELECT q FROM Quiz q WHERE " +
+                        "(:majorId IS NULL OR q.major.id = :majorId) AND " +
                         "(:keyword IS NULL OR LOWER(q.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
                         "OR LOWER(q.description) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
                         "OR CAST(q.timeLimitMinutes AS string) LIKE CONCAT('%', :keyword, '%'))")
         Page<Quiz> searchByKeyword(@Param("keyword") String keyword,
+                        @Param("majorId") java.util.UUID majorId,
                         Pageable pageable);
 }

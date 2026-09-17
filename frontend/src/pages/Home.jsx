@@ -25,7 +25,7 @@ const Home = () => {
         if (!user) return;
         if (user.role === 'STUDENT') navigate('/student/student-home');
         else if (user.role === 'ADMIN') navigate('/admin/dashboard');
-        else if (user.role === 'LECTURER') navigate('/lecturer-home');
+        else if (user.role === 'LECTURER') navigate('/lecturer/dashboard');
     };
 
     return (

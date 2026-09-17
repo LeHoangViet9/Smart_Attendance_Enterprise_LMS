@@ -1,4 +1,4 @@
-package edufit_com_lms.module.lms.event;
+package edufit_com_lms.module.notification.event;
 
 import lombok.Builder;
 import lombok.Getter;

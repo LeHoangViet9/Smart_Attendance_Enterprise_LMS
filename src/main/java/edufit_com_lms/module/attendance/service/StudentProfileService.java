@@ -2,11 +2,22 @@ package edufit_com_lms.module.attendance.service;
 
 import java.util.UUID;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
+import edufit_com_lms.module.attendance.dto.request.FaceOnboardingRequest;
 import edufit_com_lms.module.attendance.dto.response.FaceOnboardingResponse;
 import edufit_com_lms.module.auth.entity.User;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edufit_com_lms.common.exception.ResourceNotFound;
 import edufit_com_lms.module.auth.repository.UserRepository;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.core.io.ByteArrayResource;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -16,32 +27,61 @@ import lombok.extern.slf4j.Slf4j;
 public class StudentProfileService {
 
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public FaceOnboardingResponse onboardFace(String email, MultipartFile faceImage) {
-        if (faceImage == null || faceImage.isEmpty()) {
-            throw new RuntimeException("Face image is required");
+    public FaceOnboardingResponse onboardFace(String email, MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new RuntimeException("Image file is required");
         }
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFound("User not found"));
 
-        // 1. Upload to MinIO / S3 and get the URL
-        String dummyAvatarUrl = "http://localhost:9000/lms-media-bucket/" + UUID.randomUUID().toString() + ".jpg";
+        try {
+            // Call Python AI Microservice
+            RestTemplate restTemplate = new RestTemplate();
+            String aiServiceUrl = "http://localhost:8000/api/v1/ai/extract-vector";
 
-        // 2. Call AI Module to extract 512-dimensional vector string
-        String dummyVectorStr = "[0.0, 0.0, 0.0]"; // MUST BE LENGTH 512 LATER
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
-        // 3. Save to database
-        user.setAvatarUrl(dummyAvatarUrl);
-        user.setFaceEmbedding(dummyVectorStr);
-        userRepository.save(user);
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("file", new ByteArrayResource(file.getBytes()) {
+                @Override
+                public String getFilename() {
+                    return file.getOriginalFilename() != null ? file.getOriginalFilename() : "face.jpg";
+                }
+            });
 
-        log.info("Face onboarding successful for user: {}", email);
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+            ResponseEntity<JsonNode> aiResponse = restTemplate.postForEntity(aiServiceUrl, requestEntity, JsonNode.class);
 
-        return FaceOnboardingResponse.builder()
-                .message("Khuôn mặt đã được đăng ký thành công!")
-                .avatarUrl(dummyAvatarUrl)
-                .isVectorGenerated(true)
-                .build();
+            if (!aiResponse.getStatusCode().is2xxSuccessful() || aiResponse.getBody() == null) {
+                throw new RuntimeException("Lỗi kết nối tới AI Service");
+            }
+
+            JsonNode responseBody = aiResponse.getBody();
+            if (!responseBody.get("success").asBoolean()) {
+                throw new RuntimeException(responseBody.get("message").asText());
+            }
+
+            JsonNode descriptorNode = responseBody.get("descriptor");
+            String descriptorJson = objectMapper.writeValueAsString(descriptorNode);
+            
+            // Save to database
+            user.setFaceEmbedding(descriptorJson);
+            userRepository.save(user);
+
+            log.info("Face onboarding successful for user: {}", email);
+
+            return FaceOnboardingResponse.builder()
+                    .message("Khuôn mặt đã được đăng ký thành công!")
+                    .avatarUrl(user.getAvatarUrl())
+                    .isVectorGenerated(true)
+                    .build();
+        } catch (Exception e) {
+            log.error("Error saving face descriptor for user: {}", email, e);
+            throw new RuntimeException("Lỗi lưu dữ liệu sinh trắc học: " + e.getMessage());
+        }
     }
 }

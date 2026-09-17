@@ -1,4 +1,4 @@
-package edufit_com_lms.module.lms.entity;
+package edufit_com_lms.module.notification.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

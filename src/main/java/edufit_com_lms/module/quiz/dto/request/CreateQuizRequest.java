@@ -21,4 +21,6 @@ public class CreateQuizRequest {
 
     // Mảng dữ liệu móng vuốt chứa tất tần tật câu hỏi
     private List<QuestionRequest> questions;
+    
+    private Boolean requiresProctoring;
 }

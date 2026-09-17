@@ -35,7 +35,7 @@ public class DataSeeder implements CommandLineRunner {
         @Override
         @Transactional
         public void run(String... args) throws Exception {
-                if (userRepository.count() == 0) {
+                if (!userRepository.existsByEmail("admin@edu.vn")) {
                         log.info("Bắt đầu khởi tạo dữ liệu mẫu (Seeder)...");
 
                         // 1. Tài khoản Admin
@@ -52,7 +52,9 @@ public class DataSeeder implements CommandLineRunner {
                                         .updatedAt(LocalDateTime.now())
                                         .build();
                         userRepository.save(admin);
+                }
 
+                if (!userRepository.existsByEmail("sinhvien@edu.vn")) {
                         // 2. Tài khoản Sinh Viên (để test Face Onboarding)
                         User student = User.builder()
                                         .email("sinhvien@edu.vn")
@@ -67,9 +69,9 @@ public class DataSeeder implements CommandLineRunner {
                                         .updatedAt(LocalDateTime.now())
                                         .build();
                         userRepository.save(student);
-
-                        log.info("Đã tạo xong dữ liệu mẫu! Mật khẩu chung là: 123456");
                 }
+                
+                log.info("Đã tạo xong dữ liệu mẫu! Mật khẩu chung là: 123456");
 
                 if (quizRepository.count() == 0) {
                         log.info("Bắt đầu khởi tạo dữ liệu đề thi mẫu (Quiz Seeder)...");
@@ -223,6 +225,32 @@ public class DataSeeder implements CommandLineRunner {
                                                         .build());
 
                         log.info("Khởi tạo đề thi mẫu hoàn tất!");
+                }
+
+                // Generate 10 extra generic quizzes to fill up the table
+                if (quizRepository.count() <= 3) {
+                        for (int i = 4; i <= 15; i++) {
+                                Quiz extraQuiz = Quiz.builder()
+                                                .title("General Knowledge Quiz " + i)
+                                                .description("This is an auto-generated mock quiz for testing purposes.")
+                                                .timeLimitMinutes(15 + (i * 5))
+                                                .startTime(LocalDateTime.now().minusDays(i))
+                                                .endTime(LocalDateTime.now().plusMonths(3))
+                                                .createdAt(LocalDateTime.now())
+                                                .updatedAt(LocalDateTime.now())
+                                                .build();
+                                extraQuiz = quizRepository.save(extraQuiz);
+                                
+                                Question eq1 = Question.builder()
+                                                .quiz(extraQuiz)
+                                                .content("Mock Question 1 for Quiz " + i)
+                                                .questionType(QuestionType.TRUE_FALSE)
+                                                .points(10.0)
+                                                .build();
+                                eq1 = questionRepository.save(eq1);
+                                questionOptionRepository.save(QuestionOption.builder().question(eq1).content("True").isCorrect(true).build());
+                                questionOptionRepository.save(QuestionOption.builder().question(eq1).content("False").isCorrect(false).build());
+                        }
                 }
         }
 }

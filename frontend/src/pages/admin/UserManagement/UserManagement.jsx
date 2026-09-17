@@ -54,9 +54,15 @@ const UserManagement = () => {
 
             const response = await axiosInstance.get('/v1/users', { params });
             if (response.data.success) {
-                setUsers(response.data.data.content);
-                setTotalPages(response.data.data.totalPages);
-                setCurrentPage(response.data.data.number);
+                const pageData = response.data.data;
+                setUsers(pageData.content !== undefined ? pageData.content : pageData);
+                if (pageData.page) {
+                    setTotalPages(pageData.page.totalPages || 0);
+                    setCurrentPage(pageData.page.number || 0);
+                } else {
+                    setTotalPages(pageData.totalPages || 0);
+                    setCurrentPage(pageData.number || 0);
+                }
             }
         } catch (error) {
             console.error('Error loading users:', error);

@@ -24,6 +24,11 @@ const CourseList = () => {
     const [creating, setCreating] = useState(false);
     const [createError, setCreateError] = useState(null);
 
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+    const [totalCoursesCount, setTotalCoursesCount] = useState(0); // Added for Total Courses display
+
     useEffect(() => {
         const stored = localStorage.getItem('user');
         if (stored) {
@@ -34,16 +39,39 @@ const CourseList = () => {
                 console.error(e);
             }
         }
-        fetchCourses();
+        fetchCourses(0);
     }, []);
 
-    const fetchCourses = async () => {
+    const fetchCourses = async (page = currentPage) => {
         setLoading(true);
         setError(null);
         try {
-            const res = await axiosInstance.get('/v1/courses');
+            const res = await axiosInstance.get('/v1/courses', {
+                params: {
+                    page: page,
+                    size: 8
+                }
+            });
             if (res.data && res.data.data) {
-                setCourses(res.data.data);
+                const pageData = res.data.data;
+                const fetchedCourses = pageData.content !== undefined ? pageData.content : (Array.isArray(pageData) ? pageData : []);
+                setCourses(fetchedCourses);
+                
+                let totElements = fetchedCourses.length;
+                if (pageData.page) {
+                    setTotalPages(pageData.page.totalPages || 0);
+                    setCurrentPage(pageData.page.number || 0);
+                    if (pageData.page.totalElements !== undefined) totElements = pageData.page.totalElements;
+                } else if (pageData.pageable) {
+                    setTotalPages(pageData.totalPages || 0);
+                    setCurrentPage(pageData.pageable.pageNumber || 0);
+                    if (pageData.totalElements !== undefined) totElements = pageData.totalElements;
+                } else {
+                    setTotalPages(pageData.totalPages || 0);
+                    setCurrentPage(pageData.number || 0);
+                    if (pageData.totalElements !== undefined) totElements = pageData.totalElements;
+                }
+                setTotalCoursesCount(totElements);
             }
         } catch (err) {
             console.error('Error fetching courses:', err);
@@ -116,7 +144,7 @@ const CourseList = () => {
                 </div>
                 <div className="stat-card" style={{ padding: '0.6rem 1.25rem' }}>
                     <div className="stat-content">
-                        <div className="stat-value" style={{ fontSize: '1.25rem' }}>{courses.length}</div>
+                        <div className="stat-value" style={{ fontSize: '1.25rem' }}>{totalCoursesCount}</div>
                         <div className="stat-label">Total Courses</div>
                     </div>
                 </div>
@@ -183,6 +211,31 @@ const CourseList = () => {
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && !loading && filteredCourses.length > 0 && (
+                <div className="pagination-container" style={{ display: 'flex', justifyContent: 'center', marginTop: '2.5rem', gap: '1rem', alignItems: 'center', paddingBottom: '2rem' }}>
+                    <button
+                        className="btn-card-action secondary"
+                        style={{ width: 'auto' }}
+                        disabled={currentPage === 0}
+                        onClick={() => fetchCourses(currentPage - 1)}
+                    >
+                        ⬅️ Previous
+                    </button>
+                    <span style={{ fontWeight: 600, color: '#374151', fontSize: '1.1rem' }}>
+                        Page {currentPage + 1} of {totalPages}
+                    </span>
+                    <button
+                        className="btn-card-action secondary"
+                        style={{ width: 'auto' }}
+                        disabled={currentPage === totalPages - 1}
+                        onClick={() => fetchCourses(currentPage + 1)}
+                    >
+                        Next ➡️
+                    </button>
                 </div>
             )}
 

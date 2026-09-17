@@ -2,12 +2,20 @@ package edufit_com_lms.module.lms.controller;
 
 import edufit_com_lms.common.response.ApiResponse;
 import edufit_com_lms.module.attendance.dto.response.EnrolledStudentResponse;
-import edufit_com_lms.module.lms.dto.response.CourseResponse;
-import edufit_com_lms.module.lms.entity.CourseEnrollment;
-import edufit_com_lms.module.lms.entity.Courses;
-import edufit_com_lms.module.lms.repository.CourseEnrollmentRepository;
-import edufit_com_lms.module.lms.repository.CourseRepository;
+import edufit_com_lms.module.attendance.dto.response.StudentFaceDTO;
+import edufit_com_lms.module.lms.dto.response.SchoolClassResponse;
+import edufit_com_lms.module.lms.entity.ClassEnrollment;
+import edufit_com_lms.module.lms.entity.SchoolClass;
+import edufit_com_lms.module.lms.repository.ClassEnrollmentRepository;
+import edufit_com_lms.module.lms.repository.SchoolClassRepository;
 import edufit_com_lms.security.CustomUserDetail;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import edufit_com_lms.module.attendance.repository.AttendanceRepository;
+import edufit_com_lms.module.lms.repository.SubmissionRepository;
+import edufit_com_lms.module.lms.repository.AssignmentRepository;
+import edufit_com_lms.module.lms.entity.Assignment;
+import edufit_com_lms.module.lms.entity.Submission;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,93 +29,63 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * Controller quản lý Lớp học phần của Giảng viên.
+ * BRD 6.2: Lecturer xem Class được phân công, xem danh sách Student, điểm danh.
+ * BRD 8.3: Một Class thuộc một Course. Một Class có Lecturer phụ trách.
+ */
 @RestController
 @RequestMapping("/api/v1/lecturer/classes")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyAuthority('LECTURER', 'ROLE_LECTURER')")
+@PreAuthorize("hasRole('LECTURER')")
 public class LecturerClassController {
 
-    private final CourseRepository courseRepository;
-    private final CourseEnrollmentRepository enrollmentRepository;
-    private final edufit_com_lms.module.lms.repository.SchoolClassRepository schoolClassRepository;
-    private final edufit_com_lms.module.auth.repository.StudentProfileRepository studentProfileRepository;
+    private final SchoolClassRepository schoolClassRepository;
+    private final ClassEnrollmentRepository classEnrollmentRepository;
+    private final AttendanceRepository attendanceRepository;
+    private final SubmissionRepository submissionRepository;
+    private final AssignmentRepository assignmentRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Transactional(readOnly = true)
-    @GetMapping("/homeroom")
-    public ResponseEntity<ApiResponse<List<edufit_com_lms.module.lms.dto.response.SchoolClassResponse>>> getMyHomeroomClasses() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetail userDetails = (CustomUserDetail) authentication.getPrincipal();
-        Long lecturerId = userDetails.getId();
-
-        List<edufit_com_lms.module.lms.entity.SchoolClass> classes = schoolClassRepository
-                .findByHomeroomLecturer_UserId(lecturerId);
-        List<edufit_com_lms.module.lms.dto.response.SchoolClassResponse> responses = classes.stream()
-                .map(c -> edufit_com_lms.module.lms.dto.response.SchoolClassResponse.builder()
-                        .id(c.getId())
-                        .className(c.getClassName())
-                        .majorName(c.getMajor() != null ? c.getMajor().getName() : "N/A")
-                        .entryYear(c.getEntryYear())
-                        .studentCount(studentProfileRepository.countBySchoolClass(c))
-                        .build())
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(new ApiResponse<>(true, "Fetched homeroom classes", null, responses, HttpStatus.OK));
-    }
-
-    @GetMapping("/homeroom/{classId}/students")
-    public ResponseEntity<ApiResponse<List<EnrolledStudentResponse>>> getHomeroomClassStudents(
-            @PathVariable UUID classId) {
-        // Technically should check if this class belongs to the lecturer, omitted for
-        // brevity
-        List<edufit_com_lms.module.auth.entity.StudentProfile> profiles = studentProfileRepository
-                .findBySchoolClassId(classId);
-
-        List<EnrolledStudentResponse> responses = profiles.stream().map(profile -> {
-            var student = profile.getUser();
-            return EnrolledStudentResponse.builder()
-                    .id(student.getUserId())
-                    .fullName(student.getFullName())
-                    .email(student.getEmail())
-                    .phone(student.getPhone())
-                    .avatarUrl(student.getAvatarUrl())
-                    .className(profile.getSchoolClass().getClassName())
-                    .enrollmentId(null) // Unused in homeroom context
-                    .averageScore(null) // Unused in homeroom context
-                    .attendanceRate(null) // Unused in homeroom context
-                    .build();
-        }).collect(Collectors.toList());
-
-        return ResponseEntity.ok(new ApiResponse<>(true, "Fetched homeroom students", null, responses, HttpStatus.OK));
-    }
-
+    /**
+     * GET /v1/lecturer/classes
+     * Trả về danh sách Lớp học phần (Class) mà Giảng viên đang phụ trách.
+     * BRD 8.3: Lecturer Assignment.
+     */
     @Transactional(readOnly = true)
     @GetMapping
-    public ResponseEntity<ApiResponse<List<CourseResponse>>> getMyClasses() {
+    public ResponseEntity<ApiResponse<List<SchoolClassResponse>>> getMyClasses() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetail userDetails = (CustomUserDetail) authentication.getPrincipal();
         Long lecturerId = userDetails.getId();
 
-        List<Courses> courses = courseRepository.findByLecturerId(lecturerId);
-        List<CourseResponse> responses = courses.stream().map(c -> CourseResponse.builder()
-                .id(c.getId())
-                .title(c.getTitle())
-                .description(c.getDescription())
-                .thumbnailUrl(c.getThumbnailUrl())
-                // Basic info mapped for quick viewing
-                .build()).collect(Collectors.toList());
+        List<SchoolClass> classes = schoolClassRepository.findByLecturer_UserId(lecturerId);
+        List<SchoolClassResponse> responses = classes.stream()
+                .map(cls -> SchoolClassResponse.builder()
+                        .id(cls.getId())
+                        .className(cls.getClassName())
+                        .majorName(cls.getMajor() != null ? cls.getMajor().getName() : "N/A")
+                        .entryYear(cls.getEntryYear())
+                        .lecturerId(cls.getLecturer() != null ? cls.getLecturer().getUserId() : null)
+                        .lecturerName(cls.getLecturer() != null ? cls.getLecturer().getFullName() : null)
+                        .courseId(cls.getCourse() != null ? cls.getCourse().getId() : null)
+                        .courseName(cls.getCourse() != null ? cls.getCourse().getTitle() : null)
+                        .studentCount(classEnrollmentRepository.findBySchoolClassId(cls.getId()).size())
+                        .build())
+                .collect(Collectors.toList());
 
         return ResponseEntity.ok(new ApiResponse<>(true, "Fetched your classes", null, responses, HttpStatus.OK));
     }
 
+    /**
+     * GET /v1/lecturer/classes/{classId}/students
+     * Trả về danh sách Sinh viên trong một Lớp học phần.
+     * BRD 8.3: Student chỉ được truy cập Class mà mình được enrollment.
+     */
     @Transactional(readOnly = true)
-    @GetMapping("/{courseId}/students")
-    public ResponseEntity<ApiResponse<List<EnrolledStudentResponse>>> getEnrolledStudents(@PathVariable UUID courseId) {
-        // Check if this course belongs to the lecturer (omitted for brevity)
-
-        // Technically we should check if this course belongs to the lecturer, omitted
-        // for brevity
-
-        List<CourseEnrollment> enrollments = enrollmentRepository.findByCourseId(courseId);
+    @GetMapping("/{classId}/students")
+    public ResponseEntity<ApiResponse<List<EnrolledStudentResponse>>> getEnrolledStudents(@PathVariable UUID classId) {
+        List<ClassEnrollment> enrollments = classEnrollmentRepository.findBySchoolClassId(classId);
 
         List<EnrolledStudentResponse> responses = enrollments.stream().map(enrollment -> {
             var student = enrollment.getStudent();
@@ -118,6 +96,21 @@ public class LecturerClassController {
                 className = profile.getSchoolClass().getClassName();
             }
 
+            long totalAttendance = attendanceRepository.countTotalAttendanceByClassAndStudent(classId, student.getUserId());
+            long presentAttendance = attendanceRepository.countPresentAttendanceByClassAndStudent(classId, student.getUserId());
+            double attendanceRate = totalAttendance == 0 ? 0.0 : ((double) presentAttendance / totalAttendance) * 100;
+            
+            // Tính điểm trung bình qua Java để tránh bug Hibernate 7 UUID/bigint type mismatch
+            List<UUID> assignmentIds = assignmentRepository.findByClassId(classId)
+                    .stream().map(Assignment::getId).collect(Collectors.toList());
+            List<Submission> studentSubmissions = submissionRepository
+                    .findByStudentIdAndAssignmentIdIn(student.getUserId(), assignmentIds);
+            double avgScore = studentSubmissions.stream()
+                    .filter(s -> s.getScore() != null)
+                    .mapToDouble(Submission::getScore)
+                    .average()
+                    .orElse(0.0);
+
             return EnrolledStudentResponse.builder()
                     .id(student.getUserId())
                     .fullName(student.getFullName())
@@ -126,11 +119,44 @@ public class LecturerClassController {
                     .avatarUrl(student.getAvatarUrl())
                     .className(className)
                     .enrollmentId(enrollment.getId())
-                    .averageScore(9.0) // Mock logic for 'Điểm số' for now
-                    .attendanceRate(100.0) // Mock logic for 'Điểm danh' for now
+                    .averageScore(Math.round(avgScore * 10.0) / 10.0)
+                    .attendanceRate(Math.round(attendanceRate * 10.0) / 10.0)
                     .build();
         }).collect(Collectors.toList());
 
         return ResponseEntity.ok(new ApiResponse<>(true, "Fetched enrolled students", null, responses, HttpStatus.OK));
+    }
+
+    /**
+     * GET /v1/lecturer/classes/{classId}/students/faces
+     * Trả về Face Descriptor của từng Sinh viên trong Lớp học phần để Smart Attendance.
+     * BRD OBJ-05: Face Recognition hỗ trợ điểm danh.
+     */
+    @Transactional(readOnly = true)
+    @GetMapping("/{classId}/students/faces")
+    public ResponseEntity<ApiResponse<List<StudentFaceDTO>>> getEnrolledStudentsFaces(@PathVariable UUID classId) {
+        List<ClassEnrollment> enrollments = classEnrollmentRepository.findBySchoolClassId(classId);
+
+        List<StudentFaceDTO> responses = enrollments.stream()
+                .filter(enrollment -> enrollment.getStudent() != null)
+                .map(enrollment -> {
+                    var student = enrollment.getStudent();
+                    List<Float> descriptor = null;
+                    if (student.getFaceEmbedding() != null) {
+                        try {
+                            descriptor = objectMapper.readValue(student.getFaceEmbedding(), new TypeReference<List<Float>>() {});
+                        } catch (Exception e) {
+                            // ignore parsing error
+                        }
+                    }
+                    return StudentFaceDTO.builder()
+                            .id(student.getUserId())
+                            .fullName(student.getFullName())
+                            .faceDescriptor(descriptor)
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(new ApiResponse<>(true, "Fetched student face descriptors", null, responses, HttpStatus.OK));
     }
 }

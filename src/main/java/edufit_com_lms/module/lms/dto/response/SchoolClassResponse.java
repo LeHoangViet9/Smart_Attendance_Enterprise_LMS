@@ -6,6 +6,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.util.UUID;
 
+/**
+ * DTO response cho Lớp học phần (Class).
+ * BRD 8.3: Một Class có Lecturer phụ trách và thuộc về một Course.
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -15,7 +19,14 @@ public class SchoolClassResponse {
     private String className;
     private String majorName;
     private Integer entryYear;
-    private Long homeroomLecturerId;
-    private String homeroomLecturerName;
+
+    // BRD: Lecturer phụ trách lớp học phần
+    private Long lecturerId;
+    private String lecturerName;
+
+    // BRD: Môn học mà lớp này thuộc về
+    private UUID courseId;
+    private String courseName;
+
     private Integer studentCount;
 }

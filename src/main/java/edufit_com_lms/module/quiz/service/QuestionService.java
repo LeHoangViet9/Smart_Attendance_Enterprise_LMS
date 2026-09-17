@@ -15,4 +15,6 @@ public interface QuestionService {
     void deleteQuestion(Long quizId, Long questionId);
 
     Page<QuestionResponse> findAllQuestions(Long quizId, String keyword, Pageable pageable);
+
+    void importQuestionsFromExcel(Long quizId, org.springframework.web.multipart.MultipartFile file);
 }

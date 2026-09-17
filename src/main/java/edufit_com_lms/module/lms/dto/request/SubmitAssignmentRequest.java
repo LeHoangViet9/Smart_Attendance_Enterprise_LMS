@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
 
 @Data
 @Builder
@@ -15,7 +14,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class SubmitAssignmentRequest {
     @NotNull(message = "studentId must not be null")
-    private UUID studentId;
+    private Long studentId;
 
     @NotBlank(message = "fileUrl must not be blank")
     private String fileUrl;

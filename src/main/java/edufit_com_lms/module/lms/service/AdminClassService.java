@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,19 +29,18 @@ public class AdminClassService {
     private final MajorRepository majorRepository;
 
     @Transactional(readOnly = true)
-    public List<SchoolClassResponse> getAllClasses() {
-        return schoolClassRepository.findAll().stream().map(c -> {
+    public Page<SchoolClassResponse> getAllClasses(Pageable pageable) {
+        return schoolClassRepository.findAll(pageable).map(c -> {
             return SchoolClassResponse.builder()
                     .id(c.getId())
                     .className(c.getClassName())
                     .majorName(c.getMajor() != null ? c.getMajor().getName() : "N/A")
                     .entryYear(c.getEntryYear())
-                    .homeroomLecturerId(c.getHomeroomLecturer() != null ? c.getHomeroomLecturer().getUserId() : null)
-                    .homeroomLecturerName(
-                            c.getHomeroomLecturer() != null ? c.getHomeroomLecturer().getFullName() : null)
+                    .lecturerId(c.getLecturer() != null ? c.getLecturer().getUserId() : null)
+                    .lecturerName(c.getLecturer() != null ? c.getLecturer().getFullName() : null)
                     .studentCount(studentProfileRepository.countBySchoolClass(c))
                     .build();
-        }).collect(Collectors.toList());
+        });
     }
 
     @Transactional
@@ -54,7 +55,7 @@ public class AdminClassService {
             throw new IllegalArgumentException("User must be a lecturer");
         }
 
-        schoolClass.setHomeroomLecturer(lecturer);
+        schoolClass.setLecturer(lecturer);
         schoolClassRepository.save(schoolClass);
     }
 
@@ -121,12 +122,12 @@ public class AdminClassService {
     public void autoAssignLecturers() {
         List<SchoolClass> allIncludedClasses = schoolClassRepository.findAll();
         List<SchoolClass> classesWithoutLecturer = allIncludedClasses.stream()
-                .filter(c -> c.getHomeroomLecturer() == null && c.getMajor() != null)
+                .filter(c -> c.getLecturer() == null && c.getMajor() != null)
                 .collect(Collectors.toList());
 
         Set<Long> assignedLecturerIds = allIncludedClasses.stream()
-                .filter(c -> c.getHomeroomLecturer() != null)
-                .map(c -> c.getHomeroomLecturer().getUserId())
+                .filter(c -> c.getLecturer() != null)
+                .map(c -> c.getLecturer().getUserId())
                 .collect(Collectors.toSet());
 
         // We can fetch LECTURER users, assuming we have a custom way.
@@ -148,17 +149,16 @@ public class AdminClassService {
             Optional<User> match = availableLecturers.stream()
                     .filter(l -> l.getLecturerProfile() != null &&
                             l.getLecturerProfile().getMajor() != null &&
-                            c.getMajor().getName().toLowerCase()
-                                    .contains(l.getLecturerProfile().getMajor().toLowerCase()))
+                            c.getMajor().getId().equals(l.getLecturerProfile().getMajor().getId()))
                     .findFirst();
 
             if (match.isPresent()) {
-                c.setHomeroomLecturer(match.get());
+                c.setLecturer(match.get());
                 availableLecturers.remove(match.get());
             } else {
                 // If no exact match, just pick the first available
                 User fallback = availableLecturers.get(0);
-                c.setHomeroomLecturer(fallback);
+                c.setLecturer(fallback);
                 availableLecturers.remove(fallback);
             }
             classesToUpdate.add(c);

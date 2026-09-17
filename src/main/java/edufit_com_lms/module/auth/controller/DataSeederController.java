@@ -18,7 +18,7 @@ public class DataSeederController {
     private final DataSeederService dataSeederService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<String>> runDataSeeder() {
         dataSeederService.seedData();
         return new ResponseEntity<>(new ApiResponse<>(

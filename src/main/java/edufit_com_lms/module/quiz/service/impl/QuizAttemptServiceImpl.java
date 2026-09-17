@@ -120,6 +120,14 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
             }
         }
 
+        // Check proctoring image if required
+        if (Boolean.TRUE.equals(quizAttempt.getQuiz().getRequiresProctoring())) {
+            if (submitRequest.getProctoringImageUrl() == null || submitRequest.getProctoringImageUrl().trim().isEmpty()) {
+                throw new ConflictException("Bài thi này yêu cầu xác thực khuôn mặt! Vui lòng cung cấp ảnh đính kèm.");
+            }
+            quizAttempt.setProctoringImageUrl(submitRequest.getProctoringImageUrl());
+        }
+
         double earnedPoints = 0.0;
         List<StudentAnswer> studentAnswers = new ArrayList<>();
 

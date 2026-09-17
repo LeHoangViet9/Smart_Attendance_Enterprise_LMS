@@ -3,9 +3,6 @@ import axios from 'axios';
 // Cấu hình base URL chọc vào cổng 8080 của Spring Boot
 const axiosInstance = axios.create({
   baseURL: 'http://localhost:8080/api',
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // Interceptor Can thiệp trước khi GỬI request
@@ -16,6 +13,10 @@ axiosInstance.interceptors.request.use(
     if (token) {
       // Nếu có token thì nhét vào header Authorization
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Tự động đặt Content-Type là JSON, trừ khi đang gửi FormData (file)
+    if (!(config.data instanceof FormData)) {
+      config.headers['Content-Type'] = 'application/json';
     }
     return config;
   },

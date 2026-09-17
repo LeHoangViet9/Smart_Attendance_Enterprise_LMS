@@ -1,7 +1,6 @@
 package edufit_com_lms.module.lms.service.impl;
 
 import edufit_com_lms.common.exception.ResourceNotFound;
-import edufit_com_lms.module.auth.entity.User;
 import edufit_com_lms.module.auth.repository.UserRepository;
 import edufit_com_lms.module.lms.dto.request.CreateCourseRequest;
 import edufit_com_lms.module.lms.dto.request.CreateLessionRequest;
@@ -10,8 +9,9 @@ import edufit_com_lms.module.lms.dto.request.UpdateLessionRequest;
 import edufit_com_lms.module.lms.dto.response.CourseResponse;
 import edufit_com_lms.module.lms.dto.response.LessionResponse;
 import edufit_com_lms.module.lms.entity.Courses;
-import edufit_com_lms.module.lms.entity.Lession;
-import edufit_com_lms.module.lms.event.NotificationEvent;
+import edufit_com_lms.module.lms.entity.Lesson;
+import edufit_com_lms.module.lms.entity.Major;
+import edufit_com_lms.module.notification.event.NotificationEvent;
 import edufit_com_lms.module.lms.repository.CourseRepository;
 import edufit_com_lms.module.lms.repository.LessionRepository;
 import edufit_com_lms.module.lms.service.CourseService;
@@ -24,6 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageImpl;
 
 @Service
 @RequiredArgsConstructor
@@ -46,10 +49,35 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CourseResponse> getCoursesByLecturer(Long lecturerId) {
-        return courseRepository.findByLecturerId(lecturerId).stream()
+    public Page<CourseResponse> getPaginatedCourses(String keyword, Pageable pageable) {
+        Page<Courses> pageResult;
+        if (keyword != null && !keyword.isBlank()) {
+            pageResult = courseRepository.findByTitleContainingIgnoreCase(keyword, pageable);
+        } else {
+            pageResult = courseRepository.findAll(pageable);
+        }
+
+        List<CourseResponse> content = pageResult.getContent().stream()
                 .map(this::mapToCourseSummaryResponse)
                 .collect(Collectors.toList());
+        return new PageImpl<>(content, pageable, pageResult.getTotalElements());
+    }
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<CourseResponse> getPaginatedCoursesByMajorId(UUID majorId, String keyword, Pageable pageable) {
+        Page<Courses> pageResult;
+        if (keyword != null && !keyword.isBlank()) {
+            pageResult = courseRepository.findByMajorIdAndTitleContainingIgnoreCase(majorId, keyword, pageable);
+        } else {
+            pageResult = courseRepository.findByMajorId(majorId, pageable);
+        }
+
+        List<CourseResponse> content = pageResult.getContent().stream()
+                .map(this::mapToCourseSummaryResponse)
+                .collect(Collectors.toList());
+        return new PageImpl<>(content, pageable, pageResult.getTotalElements());
     }
 
     @Override
@@ -62,20 +90,11 @@ public class CourseServiceImpl implements CourseService {
                 .map(this::mapToLessionResponse)
                 .collect(Collectors.toList());
 
-        String lecturerName = null;
-        if (course.getLecturerId() != null) {
-            lecturerName = userRepository.findById(course.getLecturerId())
-                    .map(User::getFullName)
-                    .orElse("Lecturer");
-        }
-
         return CourseResponse.builder()
                 .id(course.getId())
                 .title(course.getTitle())
                 .description(course.getDescription())
                 .thumbnailUrl(course.getThumbnailUrl())
-                .lecturerId(course.getLecturerId())
-                .lecturerName(lecturerName)
                 .isPublished(course.getIsPublished())
                 .totalLessons(lessions.size())
                 .createdAt(course.getCreatedAt())
@@ -85,16 +104,27 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public CourseResponse createCourse(CreateCourseRequest request, Long lecturerId) {
+        Major assignedMajor = null;
+        if (lecturerId != null) {
+            edufit_com_lms.module.auth.entity.LecturerProfile profile = 
+                userRepository.findById(lecturerId)
+                    .map(edufit_com_lms.module.auth.entity.User::getLecturerProfile)
+                    .orElse(null);
+            if (profile != null) {
+                assignedMajor = profile.getMajor();
+            }
+        }
+
         Courses course = Courses.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .thumbnailUrl(request.getThumbnailUrl())
-                .lecturerId(lecturerId)
                 .isPublished(request.getIsPublished() != null ? request.getIsPublished() : true)
+                .major(assignedMajor)
                 .build();
 
         Courses saved = courseRepository.save(course);
-        log.info("Created course: {} by lecturer {}", saved.getTitle(), lecturerId);
+        log.info("Created course: {}", saved.getTitle());
 
         eventPublisher.publishEvent(NotificationEvent.builder()
                 .title("Khóa học mới: " + saved.getTitle())
@@ -134,7 +164,7 @@ public class CourseServiceImpl implements CourseService {
         if (!courseRepository.existsById(id)) {
             throw new ResourceNotFound("Course not found with ID: " + id);
         }
-        List<Lession> lessions = lessionRepository.findByCourseIdOrderByOrderIndexAsc(id);
+        List<Lesson> lessions = lessionRepository.findByCourseIdOrderByOrderIndexAsc(id);
         lessionRepository.deleteAll(lessions);
         courseRepository.deleteById(id);
         log.info("Deleted course ID: {}", id);
@@ -152,6 +182,19 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Page<LessionResponse> getPaginatedLessionsByCourseId(UUID courseId, Pageable pageable) {
+        if (!courseRepository.existsById(courseId)) {
+            throw new ResourceNotFound("Course not found with ID: " + courseId);
+        }
+        Page<Lesson> pageResult = lessionRepository.findByCourseIdOrderByOrderIndexAsc(courseId, pageable);
+        List<LessionResponse> content = pageResult.getContent().stream()
+                .map(this::mapToLessionResponse)
+                .collect(Collectors.toList());
+        return new PageImpl<>(content, pageable, pageResult.getTotalElements());
+    }
+
+    @Override
     public LessionResponse addLession(UUID courseId, CreateLessionRequest request) {
         if (!courseRepository.existsById(courseId)) {
             throw new ResourceNotFound("Course not found with ID: " + courseId);
@@ -159,11 +202,11 @@ public class CourseServiceImpl implements CourseService {
 
         int nextOrder = request.getOrderIndex() != null ? request.getOrderIndex() : 1;
         if (request.getOrderIndex() == null) {
-            List<Lession> existing = lessionRepository.findByCourseIdOrderByOrderIndexAsc(courseId);
+            List<Lesson> existing = lessionRepository.findByCourseIdOrderByOrderIndexAsc(courseId);
             nextOrder = existing.size() + 1;
         }
 
-        Lession lession = Lession.builder()
+        Lesson lession = Lesson.builder()
                 .courseId(courseId)
                 .title(request.getTitle())
                 .content(request.getContent())
@@ -173,7 +216,7 @@ public class CourseServiceImpl implements CourseService {
                 .isPublished(request.getIsPublished() != null ? request.getIsPublished() : true)
                 .build();
 
-        Lession saved = lessionRepository.save(lession);
+        Lesson saved = lessionRepository.save(lession);
         log.info("Added lession: {} to course {}", saved.getTitle(), courseId);
 
         eventPublisher.publishEvent(NotificationEvent.builder()
@@ -189,7 +232,7 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public LessionResponse updateLession(UUID lessionId, UpdateLessionRequest request) {
-        Lession lession = lessionRepository.findById(lessionId)
+        Lesson lession = lessionRepository.findById(lessionId)
                 .orElseThrow(() -> new ResourceNotFound("Lession not found with ID: " + lessionId));
 
         if (request.getTitle() != null && !request.getTitle().isBlank()) {
@@ -211,7 +254,7 @@ public class CourseServiceImpl implements CourseService {
             lession.setIsPublished(request.getIsPublished());
         }
 
-        Lession updated = lessionRepository.save(lession);
+        Lesson updated = lessionRepository.save(lession);
         log.info("Updated lession ID: {}", lessionId);
         return mapToLessionResponse(updated);
     }
@@ -226,29 +269,20 @@ public class CourseServiceImpl implements CourseService {
     }
 
     private CourseResponse mapToCourseSummaryResponse(Courses course) {
-        String lecturerName = null;
-        if (course.getLecturerId() != null) {
-            lecturerName = userRepository.findById(course.getLecturerId())
-                    .map(User::getFullName)
-                    .orElse("Lecturer");
-        }
-
-        List<Lession> lessions = lessionRepository.findByCourseIdOrderByOrderIndexAsc(course.getId());
+        List<Lesson> lessions = lessionRepository.findByCourseIdOrderByOrderIndexAsc(course.getId());
 
         return CourseResponse.builder()
                 .id(course.getId())
                 .title(course.getTitle())
                 .description(course.getDescription())
                 .thumbnailUrl(course.getThumbnailUrl())
-                .lecturerId(course.getLecturerId())
-                .lecturerName(lecturerName)
                 .isPublished(course.getIsPublished())
                 .totalLessons(lessions.size())
                 .createdAt(course.getCreatedAt())
                 .build();
     }
 
-    private LessionResponse mapToLessionResponse(Lession lession) {
+    private LessionResponse mapToLessionResponse(Lesson lession) {
         return LessionResponse.builder()
                 .id(lession.getId())
                 .courseId(lession.getCourseId())

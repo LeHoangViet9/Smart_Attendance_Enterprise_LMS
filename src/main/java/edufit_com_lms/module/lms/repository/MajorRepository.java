@@ -9,4 +9,6 @@ import java.util.Optional;
 @Repository
 public interface MajorRepository extends JpaRepository<Major, UUID> {
     Optional<Major> findByCode(String code);
+
+    Optional<Major> findByCodeIgnoreCaseOrNameIgnoreCase(String code, String name);
 }

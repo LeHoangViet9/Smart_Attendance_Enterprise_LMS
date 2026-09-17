@@ -80,9 +80,12 @@ const Layout = () => {
                         )}
                     </div>
                     <div className="nav-user">
-                        <div className="avatar">{userName.charAt(0).toUpperCase()}</div>
-                        <span className="user-name">{userName}</span>
-                        <button className="btn-logout" onClick={() => { setShowModal(true); setAlert(null); }}>Change Password</button>
+                        <div className="avatar" onClick={() => navigate('/student/profile')} style={{ cursor: 'pointer' }}>{userName.charAt(0).toUpperCase()}</div>
+                        <span className="user-name" onClick={() => navigate('/student/profile')} style={{ cursor: 'pointer' }}>{userName}</span>
+                        {userRole === 'STUDENT' && (
+                            <button className="btn-logout" onClick={() => navigate('/face-onboarding')} style={{ background: '#10b981', borderColor: '#10b981' }}>Face Setup</button>
+                        )}
+                        <button className="btn-logout" onClick={() => navigate('/student/profile')}>Profile</button>
                         <button className="btn-logout" onClick={handleLogout}>Logout</button>
                     </div>
                 </div>

@@ -1,5 +1,6 @@
 package edufit_com_lms.module.auth.entity;
 
+import edufit_com_lms.module.lms.entity.SchoolClass;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,8 +29,12 @@ public class StudentProfile {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "school_class_id")
-    private edufit_com_lms.module.lms.entity.SchoolClass schoolClass;
+    private SchoolClass schoolClass;
 
     @Column(name = "enrollment_year")
     private Integer enrollmentYear;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "major_id")
+    private edufit_com_lms.module.lms.entity.Major major;
 }

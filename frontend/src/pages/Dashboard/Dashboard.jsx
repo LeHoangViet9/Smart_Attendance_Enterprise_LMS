@@ -4,23 +4,34 @@ import axiosInstance from '../../api/axios';
 import './Dashboard.css';
 
 const Dashboard = () => {
-    const navigate = useNavigate();
     const [user, setUser] = useState(null);
-    const [adminStats, setAdminStats] = useState({
-        totalUsers: 0,
-        totalQuizzes: 0,
-        totalCourses: 0,
-        totalSubmissions: 0
-    });
-    const [adminNotifications, setAdminNotifications] = useState([]);
+    const navigate = useNavigate();
+    
+    const [currentTime, setCurrentTime] = useState(new Date());
 
     // Lecturer Stats State
     const [lecturerStats, setLecturerStats] = useState({
-        totalCourses: 0,
+        totalClasses: 0,
         pendingGradingSubmissions: 0,
         attendanceRate: '0%',
-        activeCourses: []
+        activeClasses: []
     });
+
+    const [studentStats, setStudentStats] = useState({
+        enrolledCourses: 0,
+        upcomingQuizzes: 0,
+        averageScore: 0
+    });
+    const [studentActivities, setStudentActivities] = useState([]);
+    const [studentNotifications, setStudentNotifications] = useState([]);
+
+    // Admin Stats State
+    const [adminStats, setAdminStats] = useState({
+        totalUsers: 0,
+        totalQuizzes: 0,
+        totalCourses: 0
+    });
+    const [adminNotifications, setAdminNotifications] = useState([]);
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
@@ -45,6 +56,48 @@ const Dashboard = () => {
                         setLecturerStats(res.data.data);
                     }
                 }).catch(err => console.error("Error fetching lecturer stats:", err));
+            } else if (parsed.role === 'STUDENT') {
+                // Fetch enrolled courses
+                axiosInstance.get('/v1/courses').then(res => {
+                    if (res.data && res.data.success && res.data.data) {
+                        const data = res.data.data;
+                        const total = data.totalElements !== undefined ? data.totalElements : 
+                                      (data.page && data.page.totalElements !== undefined ? data.page.totalElements : 
+                                      (data.content ? data.content.length : (Array.isArray(data) ? data.length : 0)));
+                        setStudentStats(prev => ({ ...prev, enrolledCourses: total }));
+                    }
+                }).catch(err => console.error("Error fetching student courses:", err));
+
+                // Fetch upcoming quizzes
+                axiosInstance.get('/v1/student/quizzes').then(res => {
+                    if (res.data && res.data.success && res.data.data) {
+                        const data = res.data.data;
+                        const total = data.totalElements !== undefined ? data.totalElements : 
+                                      (data.page && data.page.totalElements !== undefined ? data.page.totalElements : 
+                                      (data.content ? data.content.length : (Array.isArray(data) ? data.length : 0)));
+                        setStudentStats(prev => ({ ...prev, upcomingQuizzes: total }));
+                    }
+                }).catch(err => console.error("Error fetching student quizzes:", err));
+
+                // Fetch attempts history for recent activity and average score
+                axiosInstance.get('/v1/student/quizzes/attempts/history').then(res => {
+                    if (res.data && res.data.success && res.data.data && res.data.data.content) {
+                        const attempts = res.data.data.content;
+                        setStudentActivities(attempts.slice(0, 5));
+                        if (attempts.length > 0) {
+                            const totalScore = attempts.reduce((acc, curr) => acc + (curr.score || 0), 0);
+                            const avg = totalScore / attempts.length;
+                            setStudentStats(prev => ({ ...prev, averageScore: avg.toFixed(1) }));
+                        }
+                    }
+                }).catch(err => console.error("Error fetching student history:", err));
+
+                // Fetch notifications
+                axiosInstance.get('/v1/notifications').then(res => {
+                    if (res.data && res.data.success && res.data.data) {
+                        setStudentNotifications(res.data.data.slice(0, 3)); // Display top 3
+                    }
+                }).catch(err => console.error("Error fetching notifications:", err));
             }
         } else {
             navigate('/login');
@@ -60,21 +113,21 @@ const Dashboard = () => {
                     <div className="stat-icon purple">📚</div>
                     <div className="stat-info">
                         <h3>Enrolled Courses</h3>
-                        <p className="stat-value">4</p>
+                        <p className="stat-value">{studentStats.enrolledCourses}</p>
                     </div>
                 </div>
                 <div className="stat-card glass-panel">
                     <div className="stat-icon orange">📝</div>
                     <div className="stat-info">
                         <h3>Upcoming Quizzes</h3>
-                        <p className="stat-value">2</p>
+                        <p className="stat-value">{studentStats.upcomingQuizzes}</p>
                     </div>
                 </div>
                 <div className="stat-card glass-panel">
                     <div className="stat-icon green">🏆</div>
                     <div className="stat-info">
                         <h3>Average Score</h3>
-                        <p className="stat-value">8.5</p>
+                        <p className="stat-value">{studentStats.averageScore}</p>
                     </div>
                 </div>
             </div>
@@ -83,42 +136,41 @@ const Dashboard = () => {
                 <div className="main-panel glass-panel">
                     <div className="panel-header">
                         <h2>Recent Activity</h2>
-                        <button className="btn-text">View All</button>
+                        <button className="btn-text" onClick={() => navigate('/student/quizzes/history')}>View All</button>
                     </div>
-                    <ul className="activity-list">
-                        <li className="activity-item">
-                            <span className="activity-dot green"></span>
-                            <div className="activity-details">
-                                <p><strong>Completed Quiz:</strong> React JS Basics</p>
-                                <span className="activity-time">2 hours ago</span>
-                            </div>
-                            <span className="activity-score text-green">9.0/10</span>
-                        </li>
-                        <li className="activity-item">
-                            <span className="activity-dot blue"></span>
-                            <div className="activity-details">
-                                <p><strong>Attended Session:</strong> Database Management</p>
-                                <span className="activity-time">Yesterday</span>
-                            </div>
-                            <span className="activity-status">Success</span>
-                        </li>
-                    </ul>
+                    {studentActivities.length === 0 ? (
+                        <p style={{ color: '#64748b' }}>No recent activities.</p>
+                    ) : (
+                        <ul className="activity-list">
+                            {studentActivities.map(activity => (
+                                <li className="activity-item" key={activity.id}>
+                                    <span className="activity-dot green"></span>
+                                    <div className="activity-details">
+                                        <p><strong>Completed Quiz:</strong> {activity.quizTitle || 'Quiz ' + activity.quizId}</p>
+                                        <span className="activity-time">{new Date(activity.endTime || activity.startTime).toLocaleString('en-US')}</span>
+                                    </div>
+                                    <span className={`activity-score text-${activity.score >= 5 ? 'green' : 'red'}`}>{activity.score}/10</span>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
 
                 <div className="side-panel glass-panel">
                     <div className="panel-header">
                         <h2>Notifications</h2>
                     </div>
-                    <div className="notification-card">
-                        <div className="notif-icon">🔔</div>
-                        <p>Software Engineering Midterm will open at 10:00 AM tomorrow.</p>
-                    </div>
-                    <div className="notification-card">
-                        <div className="notif-icon">🎉</div>
-                        <p>Final Exam grades for Java Programming have been updated.</p>
-                    </div>
-                </div>
-            </div>
+                    {studentNotifications.length === 0 ? (
+                        <p style={{ color: '#64748b' }}>No new notifications.</p>
+                    ) : (
+                        studentNotifications.map(notif => (
+                            <div className="notification-card" key={notif.id}>
+                                <div className="notif-icon">{notif.type === 'REPORT' ? '⚠️' : '🔔'}</div>
+                                <p>{notif.message}</p>
+                            </div>
+                        ))
+                    )}
+                </div>         </div>
             <div style={{ marginTop: '20px' }}>
                 <button className="action-btn primary-gradient" onClick={() => navigate('/student/quizzes')}>Go to Quizzes</button>
             </div>
@@ -198,12 +250,12 @@ const Dashboard = () => {
 
     const renderLecturerDashboard = () => (
         <div className="dashboard-content lecturer-dashboard">
-            <div className="stat-cards">
+            <div className="stat-cards" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
                 <div className="stat-card glass-panel">
                     <div className="stat-icon blue">👨‍🏫</div>
                     <div className="stat-info">
-                        <h3>Assigned Courses</h3>
-                        <p className="stat-value">{lecturerStats.totalCourses}</p>
+                        <h3>Assigned Classes</h3>
+                        <p className="stat-value">{lecturerStats.totalClasses}</p>
                     </div>
                 </div>
                 <div className="stat-card glass-panel">
@@ -225,21 +277,21 @@ const Dashboard = () => {
             <div className="dashboard-grid">
                 <div className="main-panel glass-panel">
                     <div className="panel-header">
-                        <h2>My Classes</h2>
+                        <h2>My Teaching Classes</h2>
                     </div>
                     <div className="class-list">
-                        {lecturerStats.activeCourses && lecturerStats.activeCourses.length > 0 ? (
-                            lecturerStats.activeCourses.map(course => (
-                                <div className="class-card" key={course.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/student/courses/${course.id}`)}>
+                        {lecturerStats.activeClasses && lecturerStats.activeClasses.length > 0 ? (
+                            lecturerStats.activeClasses.map(cls => (
+                                <div className="class-card" key={cls.id} style={{ cursor: 'pointer' }} onClick={() => navigate('/admin/classes')}>
                                     <div className="class-info">
-                                        <h3>{course.title}</h3>
-                                        <p>{course.description ? course.description.substring(0, 50) + '...' : 'No description'}</p>
+                                        <h3>{cls.className}</h3>
+                                        <p>📚 {cls.courseName || 'Chưa gán môn học'} &nbsp;|&nbsp; 👥 {cls.studentCount || 0} sinh viên</p>
                                     </div>
-                                    <button className="btn-outline">Manage Class</button>
+                                    <button className="btn-outline">Quản lý</button>
                                 </div>
                             ))
                         ) : (
-                            <p style={{ color: '#64748b' }}>You have no assigned classes yet.</p>
+                            <p style={{ color: '#64748b' }}>Bạn chưa được phân công lớp học phần nào.</p>
                         )}
                     </div>
                 </div>

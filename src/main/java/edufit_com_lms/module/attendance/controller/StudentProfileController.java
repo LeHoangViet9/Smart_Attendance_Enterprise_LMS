@@ -7,7 +7,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.multipart.MultipartFile;
+import java.util.concurrent.CompletableFuture;
+import edufit_com_lms.module.attendance.dto.request.FaceOnboardingRequest;
 import edufit_com_lms.module.attendance.dto.response.FaceOnboardingResponse;
 import edufit_com_lms.module.attendance.service.StudentProfileService;
 import lombok.RequiredArgsConstructor;
@@ -21,11 +24,14 @@ public class StudentProfileController {
     private final StudentProfileService profileService;
 
     @PostMapping("/onboarding-face")
-    public ResponseEntity<FaceOnboardingResponse> onboardFace(@RequestParam("image") MultipartFile image) {
+    @PreAuthorize("hasRole('STUDENT')")
+    public CompletableFuture<ResponseEntity<FaceOnboardingResponse>> onboardFace(@RequestParam("file") MultipartFile file) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetail userDetails = (CustomUserDetail) authentication.getPrincipal();
 
-        FaceOnboardingResponse response = profileService.onboardFace(userDetails.getUsername(), image);
-        return ResponseEntity.ok(response);
+        return CompletableFuture.supplyAsync(() -> {
+            FaceOnboardingResponse response = profileService.onboardFace(userDetails.getUsername(), file);
+            return ResponseEntity.ok(response);
+        });
     }
 }

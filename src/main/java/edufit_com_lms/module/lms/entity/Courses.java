@@ -5,6 +5,11 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Môn học (Course Catalog) - chỉ là danh mục môn học.
+ * BRD 8.3: Một Course có thể có nhiều Class.
+ * Giảng viên được gán vào từng Class, không gán trực tiếp vào Course.
+ */
 @Entity
 @Table(name = "courses")
 @Getter
@@ -25,9 +30,6 @@ public class Courses {
 
     @Column(name = "thumbnail_url")
     private String thumbnailUrl;
-
-    @Column(name = "lecturer_id")
-    private Long lecturerId;
 
     @Column(name = "is_published")
     @Builder.Default

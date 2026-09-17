@@ -19,7 +19,8 @@ const QuizList = () => {
         description: '',
         timeLimitMinutes: 30,
         startTime: '',
-        endTime: ''
+        endTime: '',
+        requiresProctoring: false
     });
 
     useEffect(() => {
@@ -74,7 +75,7 @@ const QuizList = () => {
 
             await axiosInstance.post('/v1/quizzes', payload);
             setShowCreateModal(false);
-            setNewQuiz({ title: '', description: '', timeLimitMinutes: 30, startTime: '', endTime: '' });
+            setNewQuiz({ title: '', description: '', timeLimitMinutes: 30, startTime: '', endTime: '', requiresProctoring: false });
             fetchQuizzes(searchQuery, userRole);
         } catch (err) {
             console.error('Error creating quiz:', err);
@@ -170,6 +171,12 @@ const QuizList = () => {
                                     📅 {calculateRemainingTime(quiz.endTime)}
                                 </div>
                             </div>
+                            
+                            {quiz.requiresProctoring && (
+                                <div style={{ marginBottom: '15px', color: '#ef4444', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                    <span>📸</span> Required Face Proctoring
+                                </div>
+                            )}
 
                             <button
                                 className="btn-primary"
@@ -258,6 +265,19 @@ const QuizList = () => {
                                         onChange={(e) => setNewQuiz({ ...newQuiz, endTime: e.target.value })}
                                     />
                                 </div>
+                            </div>
+
+                            <div className="modal-form-group" style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={newQuiz.requiresProctoring}
+                                        onChange={(e) => setNewQuiz({ ...newQuiz, requiresProctoring: e.target.checked })}
+                                        style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                                    />
+                                    <span style={{ fontWeight: 600, color: '#ef4444' }}>📸 Enable AI Face Proctoring (Anti-cheat)</span>
+                                </label>
+                                <p style={{ margin: '5px 0 0 30px', fontSize: '0.85rem', color: '#64748b' }}>Students must verify their identity via webcam before taking this exam.</p>
                             </div>
 
                             <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>

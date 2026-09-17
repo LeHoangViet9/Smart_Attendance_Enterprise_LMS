@@ -1,6 +1,6 @@
-package edufit_com_lms.module.lms.repository;
+package edufit_com_lms.module.notification.repository;
 
-import edufit_com_lms.module.lms.entity.AppNotification;
+import edufit_com_lms.module.notification.entity.AppNotification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

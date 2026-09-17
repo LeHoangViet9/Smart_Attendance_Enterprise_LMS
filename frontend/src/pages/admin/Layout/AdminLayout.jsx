@@ -15,25 +15,27 @@ const AdminLayout = () => {
         navigate('/');
     };
 
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'LECTURER')) {
-        return <div style={{ padding: '20px', color: 'red' }}>Access denied. Please log in with authorized credentials.</div>;
+    if (!user) {
+        return <div style={{ padding: '20px', color: 'red' }}>Access denied. Please log in.</div>;
     }
 
     const isLecturer = user.role === 'LECTURER';
+    const isStudent = user.role === 'STUDENT';
+    const basePath = isLecturer ? '/lecturer' : isStudent ? '/student' : '/admin';
 
     return (
         <div className="admin-layout">
             <aside className="admin-sidebar glass-sidebar">
                 <div className="sidebar-header">
-                    <span className="sidebar-icon">{isLecturer ? '👨‍🏫' : '👨‍💼'}</span>
-                    <h2>{isLecturer ? 'Lecturer Panel' : 'Admin Panel'}</h2>
+                    <span className="sidebar-icon">{isLecturer ? '👨‍🏫' : isStudent ? '👨‍🎓' : '👨‍💼'}</span>
+                    <h2>{isLecturer ? 'Lecturer Panel' : isStudent ? 'Student Panel' : 'Admin Panel'}</h2>
                 </div>
                 <nav className="sidebar-nav">
-                    <Link to="/admin/dashboard" className={`nav-item ${location.pathname.includes('dashboard') ? 'active' : ''}`}>
+                    <Link to={`${basePath}/${isStudent ? 'student-home' : 'dashboard'}`} className={`nav-item ${location.pathname.includes('dashboard') || location.pathname.includes('student-home') ? 'active' : ''}`}>
                         <span className="nav-icon">📊</span> Dashboard
                     </Link>
 
-                    {!isLecturer && (
+                    {!isLecturer && !isStudent && (
                         <>
                             <Link to="/admin/users" className={`nav-item ${location.pathname.includes('/admin/users') ? 'active' : ''}`}>
                                 <span className="nav-icon">👥</span> User Management
@@ -44,24 +46,50 @@ const AdminLayout = () => {
                             <Link to="/admin/courses" className={`nav-item ${location.pathname.includes('/admin/courses') ? 'active' : ''}`}>
                                 <span className="nav-icon">⚙️</span> Course Management
                             </Link>
+                            <Link to="/admin/quizzes" className={`nav-item ${location.pathname.includes('/admin/quizzes') ? 'active' : ''}`}>
+                                <span className="nav-icon">📝</span> Exam Bank
+                            </Link>
+                            <Link to="/admin/assignments" className={`nav-item ${location.pathname.includes('/admin/assignments') ? 'active' : ''}`}>
+                                <span className="nav-icon">📑</span> Assignments
+                            </Link>
                         </>
                     )}
 
                     {isLecturer && (
                         <>
-                            <Link to="/admin/classes" className={`nav-item ${location.pathname.includes('/admin/classes') ? 'active' : ''}`}>
+                            <Link to={`${basePath}/classes`} className={`nav-item ${location.pathname.includes(`${basePath}/classes`) ? 'active' : ''}`}>
                                 <span className="nav-icon">👨‍🎓</span> My Classes
                             </Link>
 
-                            <Link to="/student/courses" className={`nav-item ${location.pathname.includes('/student/courses') ? 'active' : ''}`}>
+                            <Link to={`${basePath}/courses`} className={`nav-item ${location.pathname.includes(`${basePath}/courses`) ? 'active' : ''}`}>
                                 <span className="nav-icon">📚</span> Lessons & Content
                             </Link>
 
-                            <Link to="/student/quizzes" className={`nav-item ${location.pathname.includes('/student/quizzes') ? 'active' : ''}`}>
-                                <span className="nav-icon">📝</span> Question Bank
+                            <Link to={`${basePath}/quizzes`} className={`nav-item ${location.pathname.includes(`${basePath}/quizzes`) ? 'active' : ''}`}>
+                                <span className="nav-icon">📝</span> Exam Bank
                             </Link>
-                            <Link to="/student/assignments" className={`nav-item ${location.pathname.includes('/student/assignments') ? 'active' : ''}`}>
+                            <Link to={`${basePath}/assignments`} className={`nav-item ${location.pathname.includes(`${basePath}/assignments`) ? 'active' : ''}`}>
                                 <span className="nav-icon">📑</span> Assignments
+                            </Link>
+                        </>
+                    )}
+
+                    {isStudent && (
+                        <>
+                            <Link to={`${basePath}/courses`} className={`nav-item ${location.pathname.includes(`${basePath}/courses`) ? 'active' : ''}`}>
+                                <span className="nav-icon">📚</span> My Courses
+                            </Link>
+                            <Link to={`${basePath}/quizzes`} className={`nav-item ${location.pathname.includes(`${basePath}/quizzes`) ? 'active' : ''}`}>
+                                <span className="nav-icon">📝</span> Quizzes
+                            </Link>
+                            <Link to={`${basePath}/assignments`} className={`nav-item ${location.pathname.includes(`${basePath}/assignments`) ? 'active' : ''}`}>
+                                <span className="nav-icon">📑</span> Assignments
+                            </Link>
+                            <Link to={`${basePath}/gradebook`} className={`nav-item ${location.pathname.includes(`${basePath}/gradebook`) ? 'active' : ''}`}>
+                                <span className="nav-icon">📊</span> My Grades
+                            </Link>
+                            <Link to="/face-onboarding" className={`nav-item ${location.pathname.includes('face-onboarding') ? 'active' : ''}`}>
+                                <span className="nav-icon">👤</span> Face Setup
                             </Link>
                         </>
                     )}
@@ -74,11 +102,12 @@ const AdminLayout = () => {
                         <input type="text" placeholder="Quick search users, courses..." />
                     </div>
                     <div className="header-profile">
-                        <div className="header-info">
+                        <div className="header-info" onClick={() => navigate(`${basePath}/profile`)} style={{ cursor: 'pointer' }}>
                             <span className="header-name">{user.fullName || user.email}</span>
-                            <span className="header-role">{isLecturer ? 'Lecturer' : 'System Admin'}</span>
+                            <span className="header-role">{isLecturer ? 'Lecturer' : isStudent ? 'Student' : 'System Admin'}</span>
                         </div>
-                        <div className="header-avatar">{user.fullName ? user.fullName.charAt(0).toUpperCase() : 'A'}</div>
+                        <div className="header-avatar" onClick={() => navigate(`${basePath}/profile`)} style={{ cursor: 'pointer' }}>{user.fullName ? user.fullName.charAt(0).toUpperCase() : 'A'}</div>
+                        <button className="btn-logout-small" onClick={() => navigate(`${basePath}/profile`)}>Profile</button>
                         <button className="btn-logout-small" onClick={handleLogout}>Logout</button>
                     </div>
                 </header>

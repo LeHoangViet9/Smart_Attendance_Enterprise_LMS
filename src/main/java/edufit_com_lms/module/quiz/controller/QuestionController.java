@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/quizzes/{quizId}/questions")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN', 'LECTURER', 'ROLE_LECTURER')")
+@PreAuthorize("hasAnyRole('ADMIN', 'LECTURER')")
 public class QuestionController {
         private final QuestionService questionService;
 
@@ -80,6 +80,19 @@ public class QuestionController {
                                 "Get question by id successfully",
                                 null,
                                 questionService.findById(questionId),
+                                HttpStatus.OK), HttpStatus.OK);
+        }
+
+        @PostMapping("/import")
+        public ResponseEntity<ApiResponse<Void>> importQuestionsFromExcel(
+                        @PathVariable Long quizId,
+                        @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+                questionService.importQuestionsFromExcel(quizId, file);
+                return new ResponseEntity<>(new ApiResponse<>(
+                                true,
+                                "Import questions successfully",
+                                null,
+                                null,
                                 HttpStatus.OK), HttpStatus.OK);
         }
 }

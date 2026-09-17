@@ -44,6 +44,9 @@ public class QuizAttempt {
     @Column(nullable = false)
     private QuizStatus status;
 
+    @Column(name = "proctoring_image_url")
+    private String proctoringImageUrl;
+
     // Chi tiết từng câu hỏi sinh viên đã check
     @OneToMany(mappedBy = "attempt", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<StudentAnswer> studentAnswers;

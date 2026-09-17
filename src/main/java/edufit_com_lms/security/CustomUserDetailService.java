@@ -22,15 +22,7 @@ public class CustomUserDetailService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User users = userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException(email));
-        return CustomUserDetail.builder()
-                .id(users.getUserId())
-                .email(users.getEmail())
-
-                .passwordHash(users.getPassword())
-                .fullName(users.getFullName())
-                .isActive(users.getIsActive())
-                .authorities(mapToGrandAuthority(users.getRole()))
-                .build();
+        return CustomUserDetail.create(users);
     }
 
     private Collection<? extends GrantedAuthority> mapToGrandAuthority(Role role) {

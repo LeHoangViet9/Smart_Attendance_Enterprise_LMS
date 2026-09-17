@@ -7,6 +7,7 @@ import edufit_com_lms.module.lms.service.SubmissionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -19,6 +20,7 @@ public class SubmissionController {
     private final SubmissionService submissionService;
 
     @PostMapping("/{id}/grade")
+    @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
     public ResponseEntity<ApiResponse<SubmissionResponse>> gradeSubmission(
             @PathVariable("id") UUID submissionId,
             @Valid @RequestBody GradeSubmissionRequest request) {
@@ -27,6 +29,7 @@ public class SubmissionController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN', 'STUDENT')")
     public ResponseEntity<ApiResponse<SubmissionResponse>> getSubmissionById(@PathVariable("id") UUID submissionId) {
         SubmissionResponse response = submissionService.getSubmissionById(submissionId);
         return ResponseEntity.ok(ApiResponse.success(response));

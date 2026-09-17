@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import edufit_com_lms.module.quiz.service.QuizAttemptService;
 import edufit_com_lms.module.quiz.dto.response.QuizAttemptResponse;
 import edufit_com_lms.module.quiz.dto.response.QuizReviewResponse;
+import edufit_com_lms.module.auth.repository.StudentProfileRepository;
+import edufit_com_lms.module.auth.entity.StudentProfile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -17,16 +19,16 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 import edufit_com_lms.security.CustomUserDetail;
 
 @RestController
 @RequestMapping("/api/v1/student/quizzes")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyAuthority('STUDENT', 'ROLE_STUDENT')")
+@PreAuthorize("hasRole('STUDENT')")
 public class StudentQuizController {
         private final QuizAttemptService quizAttemptService;
         private final QuizService quizService;
+        private final StudentProfileRepository studentProfileRepository;
 
         // Method xóa cờ isCorrect để sinh viên không thể dùng F12 soi đáp án
         private void scrubCorrectAnswers(QuizResponse res) {
@@ -41,11 +43,21 @@ public class StudentQuizController {
 
         // API: Xem danh sách đề thi hiện có
         @GetMapping
+        @org.springframework.transaction.annotation.Transactional(readOnly = true)
         public ResponseEntity<ApiResponse<Page<QuizResponse>>> getAvailableQuizzes(
                         @RequestParam(required = false) String keyword,
                         @PageableDefault(page = 0, size = 10) Pageable pageable) {
                 try {
-                        Page<QuizResponse> page = quizService.getQuizzes(keyword, null, pageable);
+                        java.util.UUID majorId = null;
+                        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                        if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetail userDetails) {
+                                StudentProfile profile = studentProfileRepository.findById(userDetails.getId()).orElse(null);
+                                if (profile != null && profile.getSchoolClass() != null && profile.getSchoolClass().getMajor() != null) {
+                                        majorId = profile.getSchoolClass().getMajor().getId();
+                                }
+                        }
+
+                        Page<QuizResponse> page = quizService.getQuizzes(keyword, null, majorId, null, pageable);
                         page.forEach(this::scrubCorrectAnswers);
                         return new ResponseEntity<>(new ApiResponse<>(
                                         true,

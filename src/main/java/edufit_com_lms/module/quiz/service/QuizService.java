@@ -7,9 +7,9 @@ import org.springframework.data.domain.Pageable;
 
 
 public interface QuizService {
-    QuizResponse createQuiz(QuizRequest quizRequest);
-    QuizResponse updateQuiz(Long quizId,QuizRequest quizRequest);
-    void  deleteQuiz(Long quizId);
-    Page<QuizResponse> getQuizzes(String keyword,String searchBy,Pageable pageable);
+    QuizResponse createQuiz(QuizRequest quizRequest, Long creatorId);
+    QuizResponse updateQuiz(Long quizId, QuizRequest quizRequest, Long lecturerId);
+    void deleteQuiz(Long quizId, Long lecturerId);
+    Page<QuizResponse> getQuizzes(String keyword, String searchBy, java.util.UUID majorId, Long lecturerId, Pageable pageable);
     QuizResponse findQuizById(Long quizId);
 }

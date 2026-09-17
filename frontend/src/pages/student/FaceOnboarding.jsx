@@ -1,29 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axiosInstance from '../../api/axios';
 import './FaceOnboarding.css';
 
 const FaceOnboarding = () => {
     const navigate = useNavigate();
     const videoRef = useRef(null);
+    const canvasRef = useRef(null);
     const [stream, setStream] = useState(null);
 
-    // State quản lý tiến trình chụp ảnh
+    // 0: Init, 2: Scanning Face, 3: Processing, 4: Done
     const [step, setStep] = useState(0);
-    // 0: Init, 1: Front Face, 2: Left Face, 3: Right Face, 4: Training, 5: Done
-
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState('');
 
     const startCamera = async () => {
         try {
+            setStep(2);
+            setError('');
             const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
             setStream(mediaStream);
             if (videoRef.current) {
                 videoRef.current.srcObject = mediaStream;
             }
-            setStep(1); // Bắt đầu chụp mặt chính diện
         } catch (err) {
             setError('Cannot access camera. Please grant permission to continue.');
+            setStep(0);
         }
     };
 
@@ -34,101 +36,125 @@ const FaceOnboarding = () => {
         }
     };
 
-    // Dừng camera khi component unmount
     useEffect(() => {
         return () => stopCamera();
     }, [stream]);
 
-    const handleCapture = () => {
-        if (step < 3) {
-            // Hiệu ứng flash giả lập
-            const flash = document.createElement('div');
-            flash.className = 'camera-flash';
-            document.body.appendChild(flash);
-            setTimeout(() => flash.remove(), 300);
-
-            setStep(prev => prev + 1);
-        }
-
-        if (step === 3) {
-            setStep(4);
-            simulateTraining();
-        }
+    const captureAndUpload = () => {
+        if (!videoRef.current || !canvasRef.current) return;
+        
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        
+        // Set canvas to video dimensions
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Draw current video frame to canvas
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Convert to blob and upload
+        canvas.toBlob((blob) => {
+            if (blob) {
+                uploadFaceImage(blob);
+            } else {
+                setError("Failed to capture image");
+                setStep(0);
+            }
+        }, 'image/jpeg', 0.9);
     };
 
-    const simulateTraining = () => {
+    const uploadFaceImage = async (imageBlob) => {
+        setStep(3);
         stopCamera();
-        let currentProgress = 0;
-        const interval = setInterval(() => {
-            currentProgress += Math.floor(Math.random() * 15) + 5;
-            if (currentProgress >= 100) {
-                currentProgress = 100;
-                clearInterval(interval);
-                setTimeout(() => setStep(5), 500);
-            }
-            setProgress(currentProgress);
-        }, 300);
+        
+        try {
+            const formData = new FormData();
+            formData.append('file', imageBlob, 'face.jpg');
+            
+            // Progress simulation
+            let currentProgress = 0;
+            const progressInterval = setInterval(() => {
+                currentProgress += Math.floor(Math.random() * 10) + 2;
+                if (currentProgress > 95) currentProgress = 95;
+                setProgress(currentProgress);
+            }, 200);
+
+            await axiosInstance.post('/student/onboarding-face', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            
+            clearInterval(progressInterval);
+            setProgress(100);
+            setTimeout(() => setStep(4), 500);
+
+        } catch (err) {
+            console.error('Error saving biometric data:', err);
+            setError(err.response?.data?.message || 'Failed to securely save biometric data to server. Please try again.');
+            setStep(0);
+        }
     };
 
     const getInstruction = () => {
         switch (step) {
-            case 0: return 'The anti-cheating system requires facial recognition.\nPlease start the camera.';
-            case 1: return 'Look straight into the camera and keep your head still.';
-            case 2: return 'Slowly turn your face to the LEFT by 45 degrees.';
-            case 3: return 'Slowly turn your face to the RIGHT by 45 degrees.';
-            case 4: return 'Configuring your Face ID data...';
-            case 5: return 'Facial verification completed!';
+            case 0: return 'The anti-cheating system requires real facial recognition.\nPlease click Start Camera.';
+            case 2: return 'Look straight into the camera and click Capture Face.';
+            case 3: return 'Uploading and processing on AI Server...';
+            case 4: return 'Facial verification completed successfully!';
             default: return '';
         }
     };
 
     return (
         <div className="onboarding-container">
-            {/* Background elements */}
             <div className="cyber-circle circle-1"></div>
             <div className="cyber-circle circle-2"></div>
 
             <div className="onboarding-glass">
                 <div className="onboarding-header">
                     <h2>KYC Face Onboarding</h2>
-                    <p className="subtitle">AI Biometric Security System</p>
+                    <p className="subtitle">Backend AI Biometric System</p>
                 </div>
 
-                {error && <div className="error-alert">{error}</div>}
+                {error && <div className="error-alert" style={{color: '#ef4444', marginBottom: '10px'}}>{error}</div>}
 
                 <div className="scanner-arena">
-                    {step >= 1 && step <= 3 && (
-                        <div className="video-container">
-                            <video ref={videoRef} autoPlay playsInline muted></video>
-
-                            {/* Khung ngắm Sci-fi */}
+                    {step === 2 && (
+                        <div className="video-container" style={{ position: 'relative' }}>
+                            <video 
+                                ref={videoRef} 
+                                autoPlay 
+                                playsInline 
+                                muted
+                            ></video>
+                            <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
                             <div className="target-frame">
                                 <div className="corner top-left"></div>
                                 <div className="corner top-right"></div>
                                 <div className="corner bottom-left"></div>
                                 <div className="corner bottom-right"></div>
                             </div>
-
-                            {/* Tia quét Laser */}
-                            <div className="laser-scanner"></div>
                         </div>
                     )}
 
-                    {step === 4 && (
+                    {step === 3 && (
                         <div className="training-container">
                             <div className="ai-brain-icon">🧠</div>
                             <div className="progress-bar-container">
                                 <div className="progress-bar" style={{ width: `${progress}%` }}></div>
                             </div>
-                            <div className="progress-text">Training Model... {progress}%</div>
+                            <div className="progress-text">Processing Model... {progress}%</div>
                         </div>
                     )}
 
-                    {step === 5 && (
+                    {step === 4 && (
                         <div className="success-container">
                             <div className="success-checkmark">✅</div>
                             <h3>Biometric profile saved!</h3>
-                            <p>You can now participate in exams.</p>
+                            <p>You can now participate in exams or get automatically marked as Present.</p>
                         </div>
                     )}
 
@@ -145,20 +171,27 @@ const FaceOnboarding = () => {
 
                 <div className="onboarding-actions">
                     {step === 0 && (
-                        <button className="cyber-btn btn-start" onClick={startCamera}>
+                        <button 
+                            className="cyber-btn btn-start" 
+                            onClick={startCamera}
+                        >
                             Start Camera
                         </button>
                     )}
 
-                    {step >= 1 && step <= 3 && (
-                        <button className="cyber-btn btn-capture" onClick={handleCapture}>
-                            📸 Capture ({step}/3)
-                        </button>
+                    {step === 2 && (
+                         <button 
+                         className="cyber-btn btn-start" 
+                         onClick={captureAndUpload}
+                         style={{ backgroundColor: '#10b981', borderColor: '#059669' }}
+                     >
+                         📸 Capture Face
+                     </button>
                     )}
 
-                    {step === 5 && (
-                        <button className="cyber-btn btn-finish" onClick={() => navigate('/student/quizzes')}>
-                            Enter Exam System 🚀
+                    {step === 4 && (
+                        <button className="cyber-btn btn-finish" onClick={() => navigate('/student/student-home')}>
+                            Return to Dashboard 🚀
                         </button>
                     )}
                 </div>

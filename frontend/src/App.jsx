@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Home from './pages/Home';
-import Layout from './pages/student/Layout/Layout';
 import QuizList from './pages/student/Quiz/QuizList';
 import QuizDetails from './pages/student/Quiz/QuizDetails';
 import QuizAttempt from './pages/student/Quiz/QuizAttempt';
@@ -19,17 +18,25 @@ import Dashboard from './pages/Dashboard/Dashboard';
 import AdminLayout from './pages/admin/Layout/AdminLayout';
 import UserManagement from './pages/admin/UserManagement/UserManagement';
 import CourseManagement from './pages/admin/CourseManagement/CourseManagement';
-import LecturerClassManagement from './pages/admin/ClassManagement/LecturerClassManagement';
+import LecturerClassManagement from './pages/lecturer/ClassManagement/LecturerClassManagement';
 import AdminClassManagement from './pages/admin/ClassManagement/AdminClassManagement';
+import LecturerSmartAttendance from './pages/lecturer/SmartAttendance/LecturerSmartAttendance';
+import LecturerCourseManagement from './pages/lecturer/CourseManagement/LecturerCourseManagement';
+import LecturerCourseDetails from './pages/lecturer/CourseManagement/LecturerCourseDetails';
+import Profile from './pages/Profile/Profile';
+import Gradebook from './pages/shared/Gradebook/Gradebook';
 
 const RoleBasedLayout = () => {
   const userString = localStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : null;
 
-  if (user && (user.role === 'ADMIN' || user.role === 'LECTURER')) {
-    return <AdminLayout />;
+  if (user && user.role === 'ADMIN') {
+    return <Navigate to="/admin/dashboard" replace />;
   }
-  return <Layout />;
+  if (user && user.role === 'LECTURER') {
+    return <Navigate to="/lecturer/dashboard" replace />;
+  }
+  return <AdminLayout />;
 };
 
 const App = () => {
@@ -42,6 +49,8 @@ const App = () => {
         {/* Shared Routes (Student/Lecturer defaults to Top Nav, Admin defaults to Side Nav) */}
         <Route path="/student" element={<RoleBasedLayout />}>
           <Route path="student-home" element={<Dashboard />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="gradebook" element={<Gradebook />} />
           <Route path="courses" element={<CourseList />} />
           <Route path="courses/:id" element={<CourseDetails />} />
           <Route path="quizzes" element={<QuizList />} />
@@ -59,13 +68,30 @@ const App = () => {
 
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="dashboard" element={<Dashboard />} />
+          <Route path="profile" element={<Profile />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="classes" element={<LecturerClassManagement />} />
+          <Route path="classes/:id/smart-attendance" element={<LecturerSmartAttendance />} />
+          <Route path="classes/:classId/gradebook" element={<Gradebook />} />
           <Route path="classes-admin" element={<AdminClassManagement />} />
           <Route path="courses" element={<CourseManagement />} />
+          <Route path="courses/:id" element={<CourseDetails />} />
           <Route path="quizzes" element={<QuizList />} />
           <Route path="assignments" element={<AssignmentList />} />
           {/* Default fallback */}
+          <Route index element={<Navigate to="dashboard" replace />} />
+        </Route>
+
+        <Route path="/lecturer" element={<AdminLayout />}>
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="classes" element={<LecturerClassManagement />} />
+          <Route path="classes/:id/smart-attendance" element={<LecturerSmartAttendance />} />
+          <Route path="classes/:classId/gradebook" element={<Gradebook />} />
+          <Route path="courses" element={<LecturerCourseManagement />} />
+          <Route path="courses/:id" element={<LecturerCourseDetails />} />
+          <Route path="quizzes" element={<QuizList />} />
+          <Route path="assignments" element={<AssignmentList />} />
           <Route index element={<Navigate to="dashboard" replace />} />
         </Route>
 

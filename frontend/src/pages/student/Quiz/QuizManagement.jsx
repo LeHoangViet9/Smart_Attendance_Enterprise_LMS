@@ -14,6 +14,14 @@ const QuizManagement = () => {
 
     const [showModal, setShowModal] = useState(false);
     const [saving, setSaving] = useState(false);
+    
+    const [deleteConfirmModal, setDeleteConfirmModal] = useState({ show: false, questionId: null });
+
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+    const showToast = (message, type = 'success') => {
+        setToast({ show: true, message, type });
+        setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+    };
 
     const defaultMultipleChoiceOptions = () => [
         { content: '', isCorrect: false }, { content: '', isCorrect: false },
@@ -91,13 +99,13 @@ const QuizManagement = () => {
         // Validation
         if (newQuestion.questionType === 'MULTIPLE_CHOICE' || newQuestion.questionType === 'TRUE_FALSE') {
             if (!newQuestion.options.some(o => o.isCorrect)) {
-                alert("Please select 1 correct answer!");
+                showToast("Please select 1 correct answer!", 'error');
                 return;
             }
         }
         if (newQuestion.questionType === 'SHORT_ANSWER') {
             if (!newQuestion.options[0].content.trim()) {
-                alert("Please provide the correct answer key!");
+                showToast("Please provide the correct answer key!", 'error');
                 return;
             }
         }
@@ -108,22 +116,31 @@ const QuizManagement = () => {
             setShowModal(false);
             setNewQuestion(generateInitialState('MULTIPLE_CHOICE'));
             fetchData();
+            showToast('Question added successfully!', 'success');
         } catch (err) {
             console.error(err);
-            alert('Error adding question');
+            showToast('Error adding question', 'error');
         } finally {
             setSaving(false);
         }
     };
 
-    const handleDeleteQuestion = async (questionId) => {
-        if (!window.confirm("Are you sure you want to delete this question?")) return;
+    const handleDeleteClick = (questionId) => {
+        setDeleteConfirmModal({ show: true, questionId });
+    };
+
+    const confirmDelete = async () => {
+        const questionId = deleteConfirmModal.questionId;
+        if (!questionId) return;
+        
+        setDeleteConfirmModal({ show: false, questionId: null });
         try {
             await axiosInstance.delete(`/v1/quizzes/${quizId}/questions/${questionId}`);
             fetchData();
+            showToast('Question deleted successfully!', 'success');
         } catch (err) {
             console.error(err);
-            alert('Error deleting question');
+            showToast('Error deleting question', 'error');
         }
     };
 
@@ -137,12 +154,62 @@ const QuizManagement = () => {
         }
     };
 
+    const fileInputRef = React.useRef(null);
+    const [importing, setImporting] = useState(false);
+
+    const handleImportExcel = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        setImporting(true);
+        try {
+            await axiosInstance.post(`/v1/quizzes/${quizId}/questions/import`, formData);
+            showToast('Nhập câu hỏi từ Excel thành công!', 'success');
+            fetchData();
+        } catch (err) {
+            console.error(err);
+            const backendMsg = err.response?.data?.message || err.message;
+            showToast('Lỗi khi nhập câu hỏi từ Excel: ' + backendMsg, 'error');
+        } finally {
+            setImporting(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
+
     if (loading) {
         return <div className="loader-container"><div className="spinner"></div><p>Loading data...</p></div>;
     }
 
     return (
         <div className="quiz-container">
+            {/* Custom Toast Notification */}
+            {toast.show && (
+                <div style={{
+                    position: 'fixed',
+                    top: '24px',
+                    right: '24px',
+                    padding: '16px 24px',
+                    borderRadius: '8px',
+                    backgroundColor: toast.type === 'success' ? '#10b981' : '#ef4444',
+                    color: 'white',
+                    fontWeight: 500,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    zIndex: 10000,
+                    transition: 'all 0.3s ease-in-out',
+                    animation: 'slideInRight 0.3s ease-out'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>{toast.type === 'success' ? '✅' : '⚠️'}</span>
+                        {toast.message}
+                    </div>
+                </div>
+            )}
+
             <div style={{ marginBottom: '25px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
                 <div>
                     <button
@@ -161,13 +228,30 @@ const QuizManagement = () => {
                             {quiz?.title} (Time limit: {quiz?.timeLimitMinutes} mins)
                         </h3>
                     </div>
-                    <button
-                        className="btn-primary"
-                        style={{ width: 'auto', padding: '0.75rem 1.5rem' }}
-                        onClick={() => setShowModal(true)}
-                    >
-                        ➕ Add New Question
-                    </button>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <input 
+                            type="file" 
+                            accept=".xlsx, .xls" 
+                            ref={fileInputRef} 
+                            style={{ display: 'none' }} 
+                            onChange={handleImportExcel} 
+                        />
+                        <button
+                            className="btn-card-action primary"
+                            style={{ width: 'auto', padding: '0.75rem 1.5rem', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={importing}
+                        >
+                            {importing ? '⏳ Đang nhập...' : '📄 Nhập từ Excel'}
+                        </button>
+                        <button
+                            className="btn-primary"
+                            style={{ width: 'auto', padding: '0.75rem 1.5rem' }}
+                            onClick={() => setShowModal(true)}
+                        >
+                            ➕ Add New Question
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -190,7 +274,7 @@ const QuizManagement = () => {
                                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                                     <button
                                         style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.2rem', padding: '4px' }}
-                                        onClick={() => handleDeleteQuestion(q.id)}
+                                        onClick={() => handleDeleteClick(q.id)}
                                         title="Delete question"
                                     >
                                         🗑️
@@ -347,6 +431,32 @@ const QuizManagement = () => {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Custom Delete Confirmation Modal */}
+            {deleteConfirmModal.show && (
+                <div className="modal-overlay" onClick={() => setDeleteConfirmModal({ show: false, questionId: null })} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 10000 }}>
+                    <div className="modal-glass" style={{ maxWidth: '400px', width: '100%', backgroundColor: 'white', padding: '1.5rem', borderRadius: '12px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🗑️</div>
+                        <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: '#1e293b' }}>Confirm Deletion</h3>
+                        <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>Are you sure you want to delete this question? This action cannot be undone.</p>
+                        
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+                            <button 
+                                onClick={() => setDeleteConfirmModal({ show: false, questionId: null })} 
+                                style={{ padding: '0.6rem 1.2rem', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: 'white', cursor: 'pointer', fontWeight: 500 }}
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={confirmDelete} 
+                                style={{ padding: '0.6rem 1.2rem', borderRadius: '6px', border: 'none', backgroundColor: '#ef4444', color: 'white', cursor: 'pointer', fontWeight: 500 }}
+                            >
+                                Delete
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

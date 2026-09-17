@@ -20,8 +20,9 @@ public class AssignmentResponse {
     private LocalDateTime dueDate;
     private Double maxScore;
     private String attachmentUrl;
-    private LocalDateTime createdAt;
-    private Boolean isExpired;
     private Boolean isExam;
     private Boolean isPublished;
+    private LocalDateTime createdAt;
+    private Boolean isExpired;
+    private String className;
 }

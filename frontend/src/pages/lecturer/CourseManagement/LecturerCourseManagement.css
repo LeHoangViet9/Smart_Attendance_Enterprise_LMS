@@ -1,0 +1,478 @@
+/* Course Management Admin Premium Styles */
+.course-management-container {
+    padding: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.course-management-container .cm-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.course-management-container .cm-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #4f46e5, #9333ea);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.course-management-container .cm-subtitle {
+    font-size: 15px;
+    color: #64748b;
+}
+
+.course-management-container .cm-btn-primary {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.course-management-container .cm-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+}
+
+.course-management-container .cm-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    margin-bottom: 30px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 8px 32px rgba(148, 163, 184, 0.1);
+}
+
+.course-management-container .cm-searchbox {
+    position: relative;
+    width: 400px;
+}
+
+.course-management-container .search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+.course-management-container .cm-searchbox input {
+    width: 100%;
+    padding: 12px 16px 12px 42px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background-color: #f8fafc;
+    font-size: 15px;
+    transition: all 0.3s ease;
+}
+
+.course-management-container .cm-searchbox input:focus {
+    outline: none;
+    border-color: #4f46e5;
+    background-color: white;
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+}
+
+.course-management-container .cm-stats {
+    display: flex;
+    gap: 16px;
+}
+
+.course-management-container .stat-badge {
+    padding: 8px 16px;
+    background-color: #f1f5f9;
+    border-radius: 20px;
+    font-size: 14px;
+    color: #475569;
+}
+
+.course-management-container .stat-badge.active {
+    background-color: #ecfdf5;
+    color: #059669;
+}
+
+.course-management-container .cm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+}
+
+.course-management-container .cm-card {
+    border-radius: 16px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 10px 25px rgba(148, 163, 184, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.course-management-container .cm-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(148, 163, 184, 0.15);
+}
+
+.course-management-container .cm-card-image {
+    height: 160px;
+    background-size: cover;
+    background-position: center;
+    background-color: #e2e8f0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.course-management-container .cm-card-initials {
+    font-size: 48px;
+    font-weight: 800;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.course-management-container .cm-status {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    backdrop-filter: blur(4px);
+    color: white;
+}
+
+.course-management-container .cm-status.published {
+    background-color: rgba(16, 185, 129, 0.9);
+}
+
+.course-management-container .cm-status.draft {
+    background-color: rgba(245, 158, 11, 0.9);
+}
+
+.course-management-container .cm-card-content {
+    padding: 20px;
+    flex-grow: 1;
+}
+
+.course-management-container .cm-card-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.course-management-container .cm-card-desc {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.5;
+    margin-bottom: 16px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.course-management-container .cm-card-meta {
+    font-size: 13px;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.course-management-container .cm-card-actions {
+    display: flex;
+    border-top: 1px solid #f1f5f9;
+    padding: 12px 20px;
+    justify-content: space-between;
+}
+
+.course-management-container .btn-icon {
+    background: none;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.course-management-container .btn-icon.edit {
+    color: #4f46e5;
+}
+
+.course-management-container .btn-icon.edit:hover {
+    background-color: #e0e7ff;
+}
+
+.course-management-container .btn-icon.delete {
+    color: #ef4444;
+}
+
+.course-management-container .btn-icon.delete:hover {
+    background-color: #fee2e2;
+}
+
+/* Modal Styles */
+.course-management-container .cm-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.course-management-container .cm-modal {
+    background: white;
+    width: 100%;
+    max-width: 600px;
+    border-radius: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+}
+
+.course-management-container .cm-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 30px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.course-management-container .cm-modal-header h2 {
+    margin: 0;
+    font-size: 22px;
+    color: #1e293b;
+}
+
+.course-management-container .cm-btn-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.2s;
+}
+
+.course-management-container .cm-btn-close:hover {
+    color: #64748b;
+}
+
+.course-management-container .cm-modal-form {
+    padding: 30px;
+}
+
+.course-management-container .cm-modal-form .form-group {
+    margin-bottom: 20px;
+}
+
+.course-management-container .cm-modal-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #334155;
+    font-size: 14px;
+}
+
+.course-management-container .cm-modal-form .required {
+    color: #ef4444;
+}
+
+.course-management-container .cm-modal-form input[type="text"],
+.course-management-container .cm-modal-form input[type="url"],
+.course-management-container .cm-modal-form textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    font-size: 15px;
+    font-family: inherit;
+    transition: all 0.3s;
+}
+
+.course-management-container .cm-modal-form input[type="text"]:focus,
+.course-management-container .cm-modal-form input[type="url"]:focus,
+.course-management-container .cm-modal-form textarea:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+}
+
+.course-management-container .checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.course-management-container .checkbox-label {
+    font-size: 15px;
+    color: #475569;
+    font-weight: 500;
+}
+
+/* Toggle Switch Style */
+.course-management-container .switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+}
+
+.course-management-container .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.course-management-container .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.course-management-container .slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked+.slider {
+    background-color: #10b981;
+}
+
+input:checked+.slider:before {
+    transform: translateX(22px);
+}
+
+.course-management-container .cm-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.course-management-container .cm-btn-secondary {
+    padding: 12px 20px;
+    background: #f1f5f9;
+    color: #475569;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.course-management-container .cm-btn-secondary:hover {
+    background: #e2e8f0;
+}
+
+/* Reuse the UserManagement Custom Modal logic for deletes */
+/* (We have .custom-modal-overlay etc loaded globally from UserManagement.css but declaring here to be safe) */
+
+/* Loading State */
+.course-management-container .cm-loading,
+.course-management-container .cm-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #64748b;
+}
+
+.course-management-container .spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border-left-color: #4f46e5;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px auto;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.course-management-container .empty-icon {
+    font-size: 60px;
+    margin-bottom: 20px;
+    color: #cbd5e1;
+}
+
+/* Animations */
+.course-management-container .fade-in {
+    animation: fadeIn 0.4s ease-out;
+}
+
+.course-management-container .slide-up {
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}

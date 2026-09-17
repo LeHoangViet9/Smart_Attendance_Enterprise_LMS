@@ -68,7 +68,7 @@ const Login = () => {
             <div className="login-glass-panel">
                 <div className="login-header">
                     <div className="login-icon">🏫</div>
-                    <h2>Educo LMS</h2>
+                    <h2>LMS</h2>
                     <p>AI Facial Recognition System</p>
                 </div>
 

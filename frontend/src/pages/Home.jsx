@@ -33,7 +33,7 @@ const Home = () => {
             {/* Navbar Mẫu */}
             <nav className="home-navbar">
                 <div className="nav-logo">
-                    <span className="logo-icon">🏫</span> Educo LMS
+                    <span className="logo-icon">🏫</span> LMS
                 </div>
                 <div className="nav-links">
                     <a href="#features">Features</a>

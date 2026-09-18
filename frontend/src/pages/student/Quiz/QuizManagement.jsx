@@ -14,6 +14,14 @@ const QuizManagement = () => {
 
     const [showModal, setShowModal] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [editingQuestionId, setEditingQuestionId] = useState(null);
+    
+    const [showEditQuizModal, setShowEditQuizModal] = useState(false);
+    const [savingQuiz, setSavingQuiz] = useState(false);
+    const [editQuizData, setEditQuizData] = useState({});
+    
+    const [userRole, setUserRole] = useState('STUDENT');
+    const [majors, setMajors] = useState([]);
     
     const [deleteConfirmModal, setDeleteConfirmModal] = useState({ show: false, questionId: null });
 
@@ -54,8 +62,29 @@ const QuizManagement = () => {
     const [newQuestion, setNewQuestion] = useState(generateInitialState());
 
     useEffect(() => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            try {
+                const parsed = JSON.parse(storedUser);
+                if (parsed.role) setUserRole(parsed.role);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        fetchMajors();
         fetchData();
     }, [quizId]);
+
+    const fetchMajors = async () => {
+        try {
+            const response = await axiosInstance.get('/v1/majors');
+            if (response.data && response.data.data) {
+                setMajors(response.data.data);
+            }
+        } catch (err) {
+            console.error('Error fetching majors:', err);
+        }
+    };
 
     const fetchData = async () => {
         setLoading(true);
@@ -112,16 +141,72 @@ const QuizManagement = () => {
 
         setSaving(true);
         try {
-            await axiosInstance.post(`/v1/quizzes/${quizId}/questions`, newQuestion);
+            if (editingQuestionId) {
+                await axiosInstance.put(`/v1/quizzes/${quizId}/questions/${editingQuestionId}`, newQuestion);
+                showToast('Question updated successfully!', 'success');
+            } else {
+                await axiosInstance.post(`/v1/quizzes/${quizId}/questions`, newQuestion);
+                showToast('Question added successfully!', 'success');
+            }
             setShowModal(false);
+            setEditingQuestionId(null);
             setNewQuestion(generateInitialState('MULTIPLE_CHOICE'));
             fetchData();
-            showToast('Question added successfully!', 'success');
         } catch (err) {
             console.error(err);
             showToast('Error adding question', 'error');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleEditQuestionClick = (q) => {
+        setEditingQuestionId(q.id);
+        setNewQuestion({
+            content: q.content,
+            points: q.points || 1.0,
+            questionType: q.questionType,
+            options: q.options ? q.options.map(o => ({ content: o.content, isCorrect: o.isCorrect })) : []
+        });
+        setShowModal(true);
+    };
+
+    const openEditQuizModal = () => {
+        setEditQuizData({
+            title: quiz?.title || '',
+            description: quiz?.description || '',
+            timeLimitMinutes: quiz?.timeLimitMinutes || 30,
+            startTime: quiz?.startTime ? quiz.startTime.substring(0, 16) : '',
+            endTime: quiz?.endTime ? quiz.endTime.substring(0, 16) : '',
+            requiresProctoring: quiz?.requiresProctoring || false,
+            majorId: quiz?.majorId || ''
+        });
+        setShowEditQuizModal(true);
+    };
+
+    const handleUpdateQuiz = async (e) => {
+        e.preventDefault();
+        setSavingQuiz(true);
+        try {
+            const payload = {
+                ...editQuizData,
+                timeLimitMinutes: Number(editQuizData.timeLimitMinutes) || 30
+            };
+            if (editQuizData.startTime) payload.startTime = new Date(editQuizData.startTime).toISOString();
+            else delete payload.startTime;
+            
+            if (editQuizData.endTime) payload.endTime = new Date(editQuizData.endTime).toISOString();
+            else delete payload.endTime;
+            
+            await axiosInstance.put(`/v1/quizzes/${quizId}`, payload);
+            setShowEditQuizModal(false);
+            showToast('Exam settings updated successfully!', 'success');
+            fetchData();
+        } catch (err) {
+            console.error(err);
+            showToast('Error updating exam settings', 'error');
+        } finally {
+            setSavingQuiz(false);
         }
     };
 
@@ -223,7 +308,16 @@ const QuizManagement = () => {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
                     <div>
-                        <h1 className="page-title" style={{ margin: 0, fontSize: '1.75rem' }}>Question Bank Management</h1>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <h1 className="page-title" style={{ margin: 0, fontSize: '1.75rem' }}>Question Bank Management</h1>
+                            <button 
+                                onClick={openEditQuizModal}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.25rem', color: '#64748b', transition: 'color 0.2s' }}
+                                title="Edit Exam Settings"
+                            >
+                                ⚙️
+                            </button>
+                        </div>
                         <h3 style={{ color: '#4b5563', marginTop: '0.5rem', margin: 0, fontWeight: 500 }}>
                             {quiz?.title} (Time limit: {quiz?.timeLimitMinutes} mins)
                         </h3>
@@ -247,7 +341,11 @@ const QuizManagement = () => {
                         <button
                             className="btn-primary"
                             style={{ width: 'auto', padding: '0.75rem 1.5rem' }}
-                            onClick={() => setShowModal(true)}
+                            onClick={() => {
+                                setEditingQuestionId(null);
+                                setNewQuestion(generateInitialState('MULTIPLE_CHOICE'));
+                                setShowModal(true);
+                            }}
                         >
                             ➕ Add New Question
                         </button>
@@ -272,6 +370,13 @@ const QuizManagement = () => {
                                     {renderQuestionTypeBadge(q.questionType)}
                                 </div>
                                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                    <button
+                                        style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '1.2rem', padding: '4px' }}
+                                        onClick={() => handleEditQuestionClick(q)}
+                                        title="Edit question"
+                                    >
+                                        ✏️
+                                    </button>
                                     <button
                                         style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.2rem', padding: '4px' }}
                                         onClick={() => handleDeleteClick(q.id)}
@@ -327,7 +432,9 @@ const QuizManagement = () => {
             {showModal && (
                 <div className="modal-overlay" onClick={() => setShowModal(false)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999 }}>
                     <div className="modal-glass" style={{ maxWidth: '600px', width: '100%', backgroundColor: 'white', padding: '2rem', borderRadius: '12px', maxHeight: '90vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
-                        <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>➕ Add New Question</h3>
+                        <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>
+                            {editingQuestionId ? '✏️ Edit Question' : '➕ Add New Question'}
+                        </h3>
 
                         <form onSubmit={handleSaveQuestion}>
 
@@ -427,7 +534,121 @@ const QuizManagement = () => {
                                     Cancel
                                 </button>
                                 <button type="submit" disabled={saving} style={{ padding: '0.75rem 1.5rem', borderRadius: '6px', backgroundColor: '#3b82f6', color: 'white', border: 'none', cursor: 'pointer' }}>
-                                    {saving ? 'Saving...' : 'Save Question'}
+                                    {saving ? 'Saving...' : (editingQuestionId ? 'Update Question' : 'Save Question')}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Quiz Details Modal */}
+            {showEditQuizModal && (
+                <div className="modal-overlay" onClick={() => setShowEditQuizModal(false)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999 }}>
+                    <div className="modal-glass" style={{ maxWidth: '540px', width: '100%', backgroundColor: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', maxHeight: '90vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
+                        <h3 style={{ fontSize: '1.5rem', color: '#1e293b', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>⚙️ Edit Exam Settings</h3>
+                        <p style={{ color: '#64748b', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Update information for the online test</p>
+
+                        <form onSubmit={handleUpdateQuiz}>
+                            <div className="modal-form-group" style={{ marginBottom: '1rem' }}>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>Quiz Title *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                                    value={editQuizData.title}
+                                    onChange={(e) => setEditQuizData({ ...editQuizData, title: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="modal-form-group" style={{ marginBottom: '1rem' }}>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>Description</label>
+                                <textarea
+                                    rows="3"
+                                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                                    value={editQuizData.description}
+                                    onChange={(e) => setEditQuizData({ ...editQuizData, description: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="modal-form-row" style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                                <div className="modal-form-group" style={{ flex: 1 }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>Time limit (Minutes) *</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        required
+                                        style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                                        value={editQuizData.timeLimitMinutes}
+                                        onChange={(e) => setEditQuizData({ ...editQuizData, timeLimitMinutes: e.target.value })}
+                                    />
+                                </div>
+                                {userRole === 'ADMIN' && (
+                                    <div className="modal-form-group" style={{ flex: 1 }}>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>Major</label>
+                                        <select
+                                            style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', backgroundColor: '#fff' }}
+                                            value={editQuizData.majorId || ''}
+                                            onChange={(e) => setEditQuizData({ ...editQuizData, majorId: e.target.value })}
+                                        >
+                                            <option value="">-- Select Major --</option>
+                                            {majors.map(m => (
+                                                <option key={m.id} value={m.id}>{m.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="modal-form-row" style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+                                <div className="modal-form-group" style={{ flex: 1 }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>Start time (Optional)</label>
+                                    <input
+                                        type="datetime-local"
+                                        style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                                        value={editQuizData.startTime}
+                                        onChange={(e) => setEditQuizData({ ...editQuizData, startTime: e.target.value })}
+                                    />
+                                </div>
+                                <div className="modal-form-group" style={{ flex: 1 }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>End time (Optional)</label>
+                                    <input
+                                        type="datetime-local"
+                                        style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                                        value={editQuizData.endTime}
+                                        onChange={(e) => setEditQuizData({ ...editQuizData, endTime: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="modal-form-group" style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={editQuizData.requiresProctoring}
+                                        onChange={(e) => setEditQuizData({ ...editQuizData, requiresProctoring: e.target.checked })}
+                                        style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                                    />
+                                    <span style={{ fontWeight: 600, color: '#ef4444' }}>📸 Enable AI Face Proctoring (Anti-cheat)</span>
+                                </label>
+                                <p style={{ margin: '5px 0 0 30px', fontSize: '0.85rem', color: '#64748b' }}>Students must verify their identity via webcam before taking this exam.</p>
+                            </div>
+
+                            <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
+                                <button
+                                    type="button"
+                                    style={{ padding: '0.75rem 1.5rem', borderRadius: '6px', backgroundColor: '#f1f5f9', color: '#475569', fontWeight: 600, border: 'none', cursor: 'pointer' }}
+                                    onClick={() => setShowEditQuizModal(false)}
+                                    disabled={savingQuiz}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    style={{ padding: '0.75rem 1.5rem', borderRadius: '6px', backgroundColor: '#3b82f6', color: '#ffffff', fontWeight: 600, border: 'none', cursor: 'pointer' }}
+                                    disabled={savingQuiz}
+                                >
+                                    {savingQuiz ? 'Saving...' : 'Save Settings'}
                                 </button>
                             </div>
                         </form>

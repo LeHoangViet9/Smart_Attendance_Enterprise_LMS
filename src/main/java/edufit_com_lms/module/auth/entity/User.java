@@ -3,17 +3,20 @@ package edufit_com_lms.module.auth.entity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 @Table(name = "users")
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Data
+@Getter
+@Setter
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,4 +55,25 @@ public class User {
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private LecturerProfile lecturerProfile;
+
+    /**
+     * Chỉ so sánh theo userId để tránh vòng lặp vô tận khi Hibernate
+     * duyệt qua các quan hệ Lazy (studentProfile, lecturerProfile).
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof User other)) return false;
+        return userId != null && userId.equals(other.userId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(userId);
+    }
+
+    @Override
+    public String toString() {
+        return "User{userId=" + userId + ", email='" + email + "', role=" + role + "}";
+    }
 }

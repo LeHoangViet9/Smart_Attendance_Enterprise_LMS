@@ -1,6 +1,5 @@
 package edufit_com_lms.module.quiz.mapper;
 
-import edufit_com_lms.module.quiz.dto.request.QuizRequest;
 import edufit_com_lms.module.quiz.dto.response.OptionResponse;
 import edufit_com_lms.module.quiz.dto.response.QuestionResponse;
 import edufit_com_lms.module.quiz.dto.response.QuizResponse;
@@ -14,6 +13,7 @@ import org.mapstruct.ReportingPolicy;
 public interface QuizMapper {
 
     @org.mapstruct.Mapping(source = "major.id", target = "majorId")
+    @org.mapstruct.Mapping(source = "major.name", target = "majorName")
     @org.mapstruct.Mapping(source = "createdBy.userId", target = "createdBy")
     QuizResponse toResponse(Quiz quiz);
 
@@ -21,5 +21,4 @@ public interface QuizMapper {
 
     OptionResponse toOptionResponse(QuestionOption option);
 
-    Quiz toEntity(QuizRequest request);
 }

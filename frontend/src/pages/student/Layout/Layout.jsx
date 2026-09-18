@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, Link, NavLink, useNavigate } from 'react-router-dom';
 import axiosInstance from '../../../api/axios';
+import NotificationBell from '../../../components/NotificationBell/NotificationBell';
 import './Layout.css';
 
 const Layout = () => {
@@ -80,6 +81,7 @@ const Layout = () => {
                         )}
                     </div>
                     <div className="nav-user">
+                        <NotificationBell />
                         <div className="avatar" onClick={() => navigate('/student/profile')} style={{ cursor: 'pointer' }}>{userName.charAt(0).toUpperCase()}</div>
                         <span className="user-name" onClick={() => navigate('/student/profile')} style={{ cursor: 'pointer' }}>{userName}</span>
                         {userRole === 'STUDENT' && (

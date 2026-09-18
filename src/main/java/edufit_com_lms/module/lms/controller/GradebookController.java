@@ -1,14 +1,11 @@
 package edufit_com_lms.module.lms.controller;
 
 import edufit_com_lms.common.response.ApiResponse;
-import edufit_com_lms.module.lms.dto.request.UpdateGradeRequest;
-import edufit_com_lms.module.lms.dto.response.GradebookResponse;
+import edufit_com_lms.module.lms.dto.request.UpdateGradebookRequest;
+import edufit_com_lms.module.lms.dto.response.GradebookItemResponse;
 import edufit_com_lms.module.lms.service.GradebookService;
 import edufit_com_lms.security.CustomUserDetail;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -26,43 +23,44 @@ public class GradebookController {
     private final GradebookService gradebookService;
 
     @GetMapping("/classes/{classId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'LECTURER')")
-    public ResponseEntity<ApiResponse<List<GradebookResponse>>> getGradesByClass(@PathVariable UUID classId) {
-        // In a real app, you would add an @PreAuthorize check here to ensure the lecturer owns the class.
-        List<GradebookResponse> responses = gradebookService.getGradebooksByClass(classId);
-        return ResponseEntity.ok(ApiResponse.success(responses));
+    @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<List<GradebookItemResponse>>> getGradebook(@PathVariable UUID classId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long lecturerId = ((CustomUserDetail) authentication.getPrincipal()).getId();
+        
+        List<GradebookItemResponse> response = gradebookService.getGradebookForClass(classId, lecturerId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/classes/{classId}/sync")
+    @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<List<GradebookItemResponse>>> syncGradebook(@PathVariable UUID classId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long lecturerId = ((CustomUserDetail) authentication.getPrincipal()).getId();
+        
+        List<GradebookItemResponse> response = gradebookService.syncGradebookForClass(classId, lecturerId);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PutMapping("/{gradebookId}")
-    @PreAuthorize("hasRole('LECTURER')")
-    public ResponseEntity<ApiResponse<GradebookResponse>> updateGrade(
+    @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<String>> updateGradebook(
             @PathVariable UUID gradebookId,
-            @Valid @RequestBody UpdateGradeRequest request) {
-        // Custom security checks (e.g. @securityService.isTeacherOfGradebook) can be added here
-        GradebookResponse response = gradebookService.updateGrade(gradebookId, request);
-        return ResponseEntity.ok(ApiResponse.success("Grade updated successfully", response));
+            @RequestBody UpdateGradebookRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long lecturerId = ((CustomUserDetail) authentication.getPrincipal()).getId();
+        
+        gradebookService.updateGradebook(gradebookId, request, lecturerId);
+        return ResponseEntity.ok(ApiResponse.success("Lưu điểm thành công"));
     }
 
     @GetMapping("/my-grades")
     @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<ApiResponse<List<GradebookResponse>>> getMyGrades() {
+    public ResponseEntity<ApiResponse<List<GradebookItemResponse>>> getMyGrades() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetail) {
-            CustomUserDetail user = (CustomUserDetail) authentication.getPrincipal();
-            List<GradebookResponse> responses = gradebookService.getGradebooksByStudent(user.getId());
-            return ResponseEntity.ok(ApiResponse.success(responses));
-        }
-        return ResponseEntity.badRequest().body(ApiResponse.error("User not found", org.springframework.http.HttpStatus.BAD_REQUEST));
-    }
-
-    @GetMapping("/classes/{classId}/export")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<byte[]> exportExcel(@PathVariable UUID classId) {
-        byte[] excelBytes = gradebookService.exportGradebookToExcel(classId);
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=BangDiem_" + classId + ".xlsx")
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .body(excelBytes);
+        Long studentId = ((CustomUserDetail) authentication.getPrincipal()).getId();
+        
+        List<GradebookItemResponse> response = gradebookService.getMyGrades(studentId);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

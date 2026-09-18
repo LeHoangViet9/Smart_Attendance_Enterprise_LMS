@@ -1,5 +1,6 @@
 package edufit_com_lms.module.quiz.service.impl;
 
+import edufit_com_lms.common.exception.AppException;
 import edufit_com_lms.module.quiz.dto.request.QuizRequest;
 import edufit_com_lms.module.quiz.dto.response.QuizResponse;
 import edufit_com_lms.module.quiz.entity.Quiz;
@@ -8,6 +9,7 @@ import edufit_com_lms.module.quiz.service.QuizService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import edufit_com_lms.module.auth.repository.UserRepository;
@@ -30,12 +32,16 @@ public class QuizServiceImpl implements QuizService {
     @Override
     public QuizResponse createQuiz(QuizRequest request, Long creatorId) {
         User creator = userRepository.findById(creatorId)
-                .orElseThrow(() -> new RuntimeException("User không tồn tại với id: " + creatorId));
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Người dùng không tồn tại với id: " + creatorId));
                 
         Major major = null;
         if (request.getMajorId() != null) {
             major = majorRepository.findById(request.getMajorId())
-                    .orElseThrow(() -> new RuntimeException("Major không tồn tại với id: " + request.getMajorId()));
+                    .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Ngành học không tồn tại với id: " + request.getMajorId()));
+        } else {
+            if (creator.getRole() == edufit_com_lms.module.auth.entity.Role.LECTURER && creator.getLecturerProfile() != null) {
+                major = creator.getLecturerProfile().getMajor();
+            }
         }
 
         Quiz quiz = Quiz.builder()
@@ -55,10 +61,10 @@ public class QuizServiceImpl implements QuizService {
     @Override
     public QuizResponse updateQuiz(Long quizId, QuizRequest request, Long lecturerId) {
         Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new RuntimeException("Quiz không tồn tại với id: " + quizId));
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Quiz không tồn tại với id: " + quizId));
 
         if (lecturerId != null && (quiz.getCreatedBy() == null || !quiz.getCreatedBy().getUserId().equals(lecturerId))) {
-            throw new RuntimeException("Bạn không có quyền sửa Quiz này vì không phải là người tạo.");
+            throw new AppException(HttpStatus.FORBIDDEN, "Bạn không có quyền sửa Quiz này vì không phải là người tạo.");
         }
 
         quiz.setTitle(request.getTitle());
@@ -69,7 +75,7 @@ public class QuizServiceImpl implements QuizService {
         
         if (request.getMajorId() != null) {
             Major major = majorRepository.findById(request.getMajorId())
-                    .orElseThrow(() -> new RuntimeException("Major không tồn tại với id: " + request.getMajorId()));
+                    .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Ngành học không tồn tại với id: " + request.getMajorId()));
             quiz.setMajor(major);
         }
 
@@ -80,10 +86,10 @@ public class QuizServiceImpl implements QuizService {
     @Override
     public void deleteQuiz(Long quizId, Long lecturerId) {
         Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new RuntimeException("Quiz không tồn tại với id: " + quizId));
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Quiz không tồn tại với id: " + quizId));
                 
         if (lecturerId != null && (quiz.getCreatedBy() == null || !quiz.getCreatedBy().getUserId().equals(lecturerId))) {
-            throw new RuntimeException("Bạn không có quyền xóa Quiz này vì không phải là người tạo.");
+            throw new AppException(HttpStatus.FORBIDDEN, "Bạn không có quyền xóa Quiz này vì không phải là người tạo.");
         }
         
         quizRepository.deleteById(quizId);
@@ -118,7 +124,7 @@ public class QuizServiceImpl implements QuizService {
     @Override
     public QuizResponse findQuizById(Long quizId) {
         Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new RuntimeException("Quiz không tồn tại với id: " + quizId));
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Quiz không tồn tại với id: " + quizId));
         return quizMapper.toResponse(quiz);
     }
 }

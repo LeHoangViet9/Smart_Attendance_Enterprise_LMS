@@ -43,14 +43,12 @@ const AssignmentDetails = () => {
             try {
                 const user = JSON.parse(stored);
                 if (user.studentId) return user.studentId;
-                if (user.userId && typeof user.userId === 'string' && user.userId.includes('-')) {
-                    return user.userId;
-                }
+                if (user.userId) return user.userId;
             } catch (e) {
                 console.error(e);
             }
         }
-        return '11111111-1111-1111-1111-111111111111';
+        return null;
     };
 
     const studentId = getStudentId();

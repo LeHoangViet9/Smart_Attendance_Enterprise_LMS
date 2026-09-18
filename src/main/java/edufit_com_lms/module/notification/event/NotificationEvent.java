@@ -14,4 +14,5 @@ public class NotificationEvent {
     private UUID relatedCourseId;
     private UUID relatedLessionId;
     private Long senderId;
+    private Long recipientId;
 }

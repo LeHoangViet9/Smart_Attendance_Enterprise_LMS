@@ -20,6 +20,7 @@ public class NotificationEventListener {
                 event.getType(),
                 event.getRelatedCourseId(),
                 event.getRelatedLessionId(),
-                event.getSenderId());
+                event.getSenderId(),
+                event.getRecipientId());
     }
 }

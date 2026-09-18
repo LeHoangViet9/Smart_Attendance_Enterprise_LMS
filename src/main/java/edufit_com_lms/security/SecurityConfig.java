@@ -44,6 +44,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                          .requestMatchers("/api/auth/**").permitAll()
+                         .requestMatchers("/ws/**").permitAll()
                          .requestMatchers("/api/admin/**").hasRole("ADMIN")
                          .requestMatchers("/api/lecturer/**").hasAnyRole("ADMIN", "LECTURER")
                          .requestMatchers("/api/student/**").hasAnyRole("ADMIN", "STUDENT")

@@ -125,11 +125,13 @@ const UserManagement = () => {
         try {
             const response = await axiosInstance.delete(`/v1/users/${userToDelete.userId || userToDelete.id}`);
             if (response.data.success) {
-                setAlertMsg({ type: 'success', text: `Account ${userToDelete.email} locked successfully!` });
+                const actionText = userToDelete.isActive === false ? 'unlocked' : 'locked';
+                setAlertMsg({ type: 'success', text: `Account ${userToDelete.email} ${actionText} successfully!` });
                 loadUsers(currentPage);
             }
         } catch (error) {
-            setAlertMsg({ type: 'error', text: error.response?.data?.message || 'Error locking user!' });
+            const actionText = userToDelete.isActive === false ? 'unlocking' : 'locking';
+            setAlertMsg({ type: 'error', text: error.response?.data?.message || `Error ${actionText} user!` });
         } finally {
             setShowDeleteModal(false);
             setUserToDelete(null);
@@ -259,7 +261,9 @@ const UserManagement = () => {
                                     {!isLecturer && (
                                         <td>
                                             <button className="btn-icon" onClick={() => openEditModal(u)}>✏️</button>
-                                            <button className="btn-icon delete" onClick={() => confirmDelete(u)}>🗑️</button>
+                                            <button className="btn-icon delete" onClick={() => confirmDelete(u)} title={u.isActive === false ? "Unlock" : "Lock"}>
+                                                {u.isActive === false ? '🔓' : '🔒'}
+                                            </button>
                                         </td>
                                     )}
                                 </tr>
@@ -305,18 +309,18 @@ const UserManagement = () => {
 
                         {alertMsg && <div className={`alert-box ${alertMsg.type}`}>{alertMsg.text}</div>}
 
-                        <form onSubmit={handleSubmit}>
+                        <form onSubmit={handleSubmit} autoComplete="off">
                             <div className="form-group">
                                 <label>ID Code</label>
-                                <input type="text" name="code" value={formData.code} onChange={handleInputChange} required placeholder="e.g. STU2024" />
+                                <input type="text" value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} required placeholder="e.g. STU2024" autoComplete="new-password" />
                             </div>
                             <div className="form-group">
                                 <label>Full Name</label>
-                                <input type="text" name="fullName" value={formData.fullName} onChange={handleInputChange} required placeholder="e.g. John Doe" />
+                                <input type="text" value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} required placeholder="e.g. John Doe" autoComplete="new-password" />
                             </div>
                             <div className="form-group">
                                 <label>Email Address</label>
-                                <input type="email" name="email" value={formData.email} onChange={handleInputChange} required placeholder="e.g. john@edu.vn" />
+                                <input type="email" name="email" value={formData.email} onChange={handleInputChange} required placeholder="e.g. john@edu.vn" autoComplete="off" />
                             </div>
                             <div className="form-group">
                                 <label>Role</label>
@@ -376,14 +380,18 @@ const UserManagement = () => {
                         <div className="modal-icon" style={{ fontSize: '3.5rem', margin: '15px 0', display: 'inline-block', filter: 'drop-shadow(0 4px 6px rgba(239, 68, 68, 0.3))' }}>
                             ⚠️
                         </div>
-                        <h3 style={{ fontSize: '1.4rem', color: '#1f2937', marginBottom: '10px' }}>Confirm Lock</h3>
+                        <h3 style={{ fontSize: '1.4rem', color: '#1f2937', marginBottom: '10px' }}>
+                            {userToDelete?.isActive === false ? 'Confirm Unlock' : 'Confirm Lock'}
+                        </h3>
                         <p style={{ color: '#4b5563', marginBottom: '25px', lineHeight: '1.5' }}>
-                            Are you sure you want to lock the account:<br />
+                            Are you sure you want to {userToDelete?.isActive === false ? 'unlock' : 'lock'} the account:<br />
                             <strong style={{ color: '#ef4444', fontSize: '1.1rem' }}>{userToDelete?.email}</strong>?
                         </p>
                         <div className="modal-actions" style={{ justifyContent: 'center', gap: '12px' }}>
                             <button className="btn-secondary" style={{ padding: '10px 20px', borderRadius: '8px' }} onClick={() => setShowDeleteModal(false)}>Cancel</button>
-                            <button className="btn-primary" style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', border: 'none', padding: '10px 20px', borderRadius: '8px' }} onClick={executeDelete}>Lock Account</button>
+                            <button className="btn-primary" style={{ background: userToDelete?.isActive === false ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', border: 'none', padding: '10px 20px', borderRadius: '8px' }} onClick={executeDelete}>
+                                {userToDelete?.isActive === false ? 'Unlock Account' : 'Lock Account'}
+                            </button>
                         </div>
                     </div>
                 </div>

@@ -10,9 +10,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.concurrent.CompletableFuture;
-import edufit_com_lms.module.attendance.dto.request.FaceOnboardingRequest;
+
 import edufit_com_lms.module.attendance.dto.response.FaceOnboardingResponse;
-import edufit_com_lms.module.attendance.service.StudentProfileService;
+import edufit_com_lms.module.attendance.service.impl.StudentProfileServiceImpl;
 import lombok.RequiredArgsConstructor;
 import edufit_com_lms.security.CustomUserDetail;
 
@@ -21,7 +21,7 @@ import edufit_com_lms.security.CustomUserDetail;
 @RequiredArgsConstructor
 public class StudentProfileController {
 
-    private final StudentProfileService profileService;
+    private final StudentProfileServiceImpl profileService;
 
     @PostMapping("/onboarding-face")
     @PreAuthorize("hasRole('STUDENT')")

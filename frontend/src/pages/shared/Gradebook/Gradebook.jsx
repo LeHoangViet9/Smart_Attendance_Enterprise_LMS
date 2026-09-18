@@ -9,6 +9,7 @@ const Gradebook = () => {
     const [grades, setGrades] = useState([]);
     const [loading, setLoading] = useState(true);
     const [editingRow, setEditingRow] = useState(null);
+    const [editValues, setEditValues] = useState({});
     const [statusMessage, setStatusMessage] = useState({ text: '', type: '' });
 
     const userString = localStorage.getItem('user');
@@ -24,8 +25,6 @@ const Gradebook = () => {
             let res;
             if (userRole === 'STUDENT') {
                 res = await axiosInstance.get(`/v1/gradebooks/my-grades`);
-                // For student, we get all grades, but if we are in a specific class context, 
-                // we should filter it. If classId is present, we can filter it.
                 if (classId) {
                      setGrades(res.data.data.filter(g => g.classId === classId));
                 } else {
@@ -63,19 +62,33 @@ const Gradebook = () => {
         setTimeout(() => setStatusMessage({ text: '', type: '' }), 3000);
     };
 
-    const handleSaveScore = async (gradebookId, grade) => {
+    const startEditing = (grade) => {
+        setEditingRow(grade.id);
+        setEditValues({
+            attendanceScore: grade.attendanceScore || '',
+            assignmentScore: grade.assignmentScore || '',
+            midtermScore: grade.midtermScore || '',
+            finalScore: grade.finalScore || '',
+            teacherComment: grade.teacherComment || ''
+        });
+    };
+
+    const handleSaveScore = async (gradebookId) => {
         try {
-            await axiosInstance.put(`/v1/gradebooks/${gradebookId}`, {
-                attendanceScore: grade.attendanceScore,
-                assignmentScore: grade.assignmentScore,
-                midtermScore: grade.midtermScore,
-                finalScore: grade.finalScore,
-                teacherComment: grade.teacherComment
-            });
+            const payload = {
+                attendanceScore: editValues.attendanceScore !== '' ? parseFloat(editValues.attendanceScore) : null,
+                assignmentScore: editValues.assignmentScore !== '' ? parseFloat(editValues.assignmentScore) : null,
+                midtermScore: editValues.midtermScore !== '' ? parseFloat(editValues.midtermScore) : null,
+                finalScore: editValues.finalScore !== '' ? parseFloat(editValues.finalScore) : null,
+                teacherComment: editValues.teacherComment
+            };
+            console.log("Sending payload:", payload);
+            await axiosInstance.put(`/v1/gradebooks/${gradebookId}`, payload);
             showStatus("Lưu điểm thành công!", "success");
             setEditingRow(null);
             fetchGrades();
         } catch (error) {
+            console.error(error);
             showStatus("Lỗi khi lưu điểm!", "error");
         }
     };
@@ -119,6 +132,24 @@ const Gradebook = () => {
                             ⬇ Xuất Excel
                         </button>
                     )}
+                    {userRole === 'LECTURER' && classId && (
+                        <button 
+                            onClick={async () => {
+                                try {
+                                    setLoading(true);
+                                    const res = await axiosInstance.post(`/v1/gradebooks/classes/${classId}/sync`);
+                                    setGrades(res.data.data);
+                                    showStatus("Đồng bộ điểm thành công!", "success");
+                                } catch(e) {
+                                    showStatus("Lỗi đồng bộ điểm!", "error");
+                                } finally { setLoading(false); }
+                            }}
+                            className="gradebook-btn-save"
+                            style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.375rem', cursor: 'pointer' }}
+                        >
+                            🔄 Đồng bộ điểm
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -126,12 +157,21 @@ const Gradebook = () => {
                 <table className="gradebook-table">
                     <thead>
                         <tr>
-                            <th>Tên Học Sinh</th>
-                            <th>Email</th>
+                            {userRole === 'STUDENT' ? (
+                                <>
+                                    <th>Môn Học</th>
+                                    <th>Lớp Học</th>
+                                </>
+                            ) : (
+                                <>
+                                    <th>Tên Học Sinh</th>
+                                    <th>Email</th>
+                                </>
+                            )}
                             <th>Chuyên Cần (x1)</th>
                             <th>Bài Tập (x1)</th>
-                            <th>Giữa Kỳ (x2)</th>
-                            <th>Cuối Kỳ (x3)</th>
+                            <th>Giữa Kỳ (x3)</th>
+                            <th>Cuối Kỳ (x5)</th>
                             <th style={{ color: '#2563eb' }}>GPA</th>
                             <th>Nhận Xét</th>
                             {userRole === 'LECTURER' && <th>Thao tác</th>}
@@ -149,49 +189,58 @@ const Gradebook = () => {
 
                             return (
                                 <tr key={grade.id}>
-                                    <td>{grade.studentName}</td>
-                                    <td>{grade.studentEmail}</td>
+                                    {userRole === 'STUDENT' ? (
+                                        <>
+                                            <td>{grade.courseName || '-'}</td>
+                                            <td>{grade.className || '-'}</td>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <td>{grade.studentName}</td>
+                                            <td>{grade.studentEmail}</td>
+                                        </>
+                                    )}
 
                                     <td>
                                         {isEditing && userRole === 'LECTURER' ? (
-                                            <input type="number" defaultValue={grade.attendanceScore} 
-                                                onChange={(e) => grade.attendanceScore = e.target.value} 
+                                            <input type="number" value={editValues.attendanceScore} 
+                                                onChange={(e) => setEditValues({...editValues, attendanceScore: e.target.value})} 
                                                 className="gradebook-input" min="0" max="10" />
-                                        ) : (grade.attendanceScore || '-')}
+                                        ) : (grade.attendanceScore ?? '-')}
                                     </td>
                                     
                                     <td>
                                         {isEditing && userRole === 'LECTURER' ? (
-                                            <input type="number" defaultValue={grade.assignmentScore} 
-                                                onChange={(e) => grade.assignmentScore = e.target.value} 
+                                            <input type="number" value={editValues.assignmentScore} 
+                                                onChange={(e) => setEditValues({...editValues, assignmentScore: e.target.value})} 
                                                 className="gradebook-input" min="0" max="10" />
-                                        ) : (grade.assignmentScore || '-')}
+                                        ) : (grade.assignmentScore ?? '-')}
                                     </td>
 
                                     <td>
                                         {isEditing && userRole === 'LECTURER' ? (
-                                            <input type="number" defaultValue={grade.midtermScore} 
-                                                onChange={(e) => grade.midtermScore = e.target.value} 
+                                            <input type="number" value={editValues.midtermScore} 
+                                                onChange={(e) => setEditValues({...editValues, midtermScore: e.target.value})} 
                                                 className="gradebook-input" min="0" max="10" />
-                                        ) : (grade.midtermScore || '-')}
+                                        ) : (grade.midtermScore ?? '-')}
                                     </td>
 
                                     <td>
                                         {isEditing && userRole === 'LECTURER' ? (
-                                            <input type="number" defaultValue={grade.finalScore} 
-                                                onChange={(e) => grade.finalScore = e.target.value} 
+                                            <input type="number" value={editValues.finalScore} 
+                                                onChange={(e) => setEditValues({...editValues, finalScore: e.target.value})} 
                                                 className="gradebook-input" min="0" max="10" />
-                                        ) : (grade.finalScore || '-')}
+                                        ) : (grade.finalScore ?? '-')}
                                     </td>
 
-                                    <td className="gradebook-gpa">{grade.averageScore || '-'}</td>
+                                    <td className="gradebook-gpa">{grade.averageScore ?? '-'}</td>
 
                                     <td>
                                         {isEditing && userRole === 'LECTURER' ? (
-                                            <input type="text" defaultValue={grade.teacherComment} 
-                                                onChange={(e) => grade.teacherComment = e.target.value} 
+                                            <input type="text" value={editValues.teacherComment} 
+                                                onChange={(e) => setEditValues({...editValues, teacherComment: e.target.value})} 
                                                 className="gradebook-input-text"/>
-                                        ) : (grade.teacherComment || '-')}
+                                        ) : (grade.teacherComment ?? '-')}
                                     </td>
 
                                     {userRole === 'LECTURER' && (
@@ -199,7 +248,7 @@ const Gradebook = () => {
                                             {isEditing ? (
                                                 <>
                                                     <button 
-                                                        onClick={() => handleSaveScore(grade.id, grade)}
+                                                        onClick={() => handleSaveScore(grade.id)}
                                                         className="gradebook-btn-save"
                                                     >
                                                         Lưu
@@ -213,7 +262,7 @@ const Gradebook = () => {
                                                 </>
                                             ) : (
                                                 <button 
-                                                    onClick={() => setEditingRow(grade.id)}
+                                                    onClick={() => startEditing(grade)}
                                                     className="gradebook-btn-edit"
                                                 >
                                                     Sửa

@@ -13,10 +13,10 @@ import java.util.UUID;
 @Repository
 public interface GradebookRepository extends JpaRepository<Gradebook, UUID> {
 
-    @Query("SELECT g FROM Gradebook g WHERE g.enrollment.schoolClass.id = :classId")
+    @Query("SELECT g FROM Gradebook g WHERE g.enrollment.schoolClass.id = :classId ORDER BY g.enrollment.student.fullName ASC")
     List<Gradebook> findByClassId(@Param("classId") UUID classId);
 
-    @Query("SELECT g FROM Gradebook g WHERE g.enrollment.student.id = :studentId")
+    @Query("SELECT g FROM Gradebook g WHERE g.enrollment.student.userId = :studentId")
     List<Gradebook> findByStudentId(@Param("studentId") Long studentId);
 
     @Query("SELECT g FROM Gradebook g WHERE g.enrollment.id = :enrollmentId")

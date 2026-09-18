@@ -50,6 +50,11 @@ public class AuthServiceImpl implements AuthService {
         if (userRepository.existsByCode(registerRequest.getCode())) {
             throw new ConflictException("Code already exists");
         }
+        if (registerRequest.getRole() == Role.STUDENT && registerRequest.getParentPhone() != null && !registerRequest.getParentPhone().isBlank()) {
+            if (studentProfileRepository.existsByParentPhone(registerRequest.getParentPhone())) {
+                throw new ConflictException("Parent phone already exists");
+            }
+        }
         String password = registerRequest.getEmail(); // Đặt mật khẩu mặc định là email
         User user = new User();
         user.setEmail(registerRequest.getEmail());

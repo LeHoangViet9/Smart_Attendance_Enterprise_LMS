@@ -140,7 +140,6 @@ const AssignmentList = () => {
     const filteredAssignments = assignments.filter((item) => {
         // Quyền hiển thị
         if (userRole === 'STUDENT' && item.isPublished === false) return false;
-        if (userRole === 'ADMIN' && item.isExam === false) return false;
 
         const matchesSearch = item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.description?.toLowerCase().includes(searchTerm.toLowerCase());

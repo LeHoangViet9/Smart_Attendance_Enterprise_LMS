@@ -20,8 +20,21 @@ const QuizList = () => {
         timeLimitMinutes: 30,
         startTime: '',
         endTime: '',
-        requiresProctoring: false
+        requiresProctoring: false,
+        majorId: ''
     });
+    const [majors, setMajors] = useState([]);
+
+    const fetchMajors = async () => {
+        try {
+            const response = await axiosInstance.get('/v1/majors');
+            if (response.data && response.data.data) {
+                setMajors(response.data.data);
+            }
+        } catch (err) {
+            console.error('Error fetching majors:', err);
+        }
+    };
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
@@ -37,6 +50,7 @@ const QuizList = () => {
                 console.error(e);
             }
         }
+        fetchMajors();
         const delayDebounceFn = setTimeout(() => {
             fetchQuizzes(searchQuery, currentRole);
         }, 500);
@@ -164,6 +178,11 @@ const QuizList = () => {
                             <p className="quiz-description">{quiz.description || 'No description provided.'}</p>
 
                             <div className="quiz-meta">
+                                {quiz.majorName && (
+                                    <div className="meta-item" style={{ backgroundColor: '#eef2ff', color: '#4f46e5', padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                        🎓 {quiz.majorName}
+                                    </div>
+                                )}
                                 <div className="meta-item">
                                     ⏱️ {quiz.timeLimitMinutes} mins
                                 </div>
@@ -181,8 +200,10 @@ const QuizList = () => {
                             <button
                                 className="btn-primary"
                                 onClick={() => {
-                                    if (userRole === 'LECTURER' || userRole === 'ADMIN') {
-                                        navigate(`/student/quizzes/manage/${quiz.id}`);
+                                    if (userRole === 'ADMIN') {
+                                        navigate(`/admin/quizzes/manage/${quiz.id}`);
+                                    } else if (userRole === 'LECTURER') {
+                                        navigate(`/lecturer/quizzes/manage/${quiz.id}`);
                                     } else {
                                         navigate(`/student/quizzes/${quiz.id}`);
                                     }
@@ -244,6 +265,21 @@ const QuizList = () => {
                                         onChange={(e) => setNewQuiz({ ...newQuiz, timeLimitMinutes: e.target.value })}
                                     />
                                 </div>
+                                {userRole === 'ADMIN' && (
+                                    <div className="modal-form-group" style={{ flex: 1 }}>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>Major</label>
+                                        <select
+                                            style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', backgroundColor: '#fff' }}
+                                            value={newQuiz.majorId}
+                                            onChange={(e) => setNewQuiz({ ...newQuiz, majorId: e.target.value })}
+                                        >
+                                            <option value="">-- Select Major --</option>
+                                            {majors.map(m => (
+                                                <option key={m.id} value={m.id}>{m.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="modal-form-row" style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>

@@ -64,9 +64,10 @@ public class UserServiceImpl implements UserService {
     // Removed generatePassword
 
     @Override
+    @Transactional
     public void deleteUser(Long id) {
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFound("Can not found user"));
-        user.setIsActive(false);
+        user.setIsActive(user.getIsActive() != null ? !user.getIsActive() : false);
         userRepository.save(user);
     }
 

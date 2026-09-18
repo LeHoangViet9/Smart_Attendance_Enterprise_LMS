@@ -77,6 +77,7 @@ const App = () => {
           <Route path="courses" element={<CourseManagement />} />
           <Route path="courses/:id" element={<CourseDetails />} />
           <Route path="quizzes" element={<QuizList />} />
+          <Route path="quizzes/manage/:quizId" element={<QuizManagement />} />
           <Route path="assignments" element={<AssignmentList />} />
           {/* Default fallback */}
           <Route index element={<Navigate to="dashboard" replace />} />
@@ -91,6 +92,7 @@ const App = () => {
           <Route path="courses" element={<LecturerCourseManagement />} />
           <Route path="courses/:id" element={<LecturerCourseDetails />} />
           <Route path="quizzes" element={<QuizList />} />
+          <Route path="quizzes/manage/:quizId" element={<QuizManagement />} />
           <Route path="assignments" element={<AssignmentList />} />
           <Route index element={<Navigate to="dashboard" replace />} />
         </Route>

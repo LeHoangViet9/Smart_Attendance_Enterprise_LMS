@@ -63,6 +63,14 @@ const QuizReview = () => {
                 </div>
             </div>
 
+            {review?.proctoringImageUrl && (
+                <div className="proctoring-review" style={{marginBottom: '20px', padding: '15px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+                    <h4 style={{marginTop: 0, color: '#334155', marginBottom: '10px'}}>📷 Proctoring Capture</h4>
+                    <img src={review.proctoringImageUrl} alt="Student Proctoring Capture" style={{width: '100%', maxWidth: '320px', borderRadius: '8px', border: '2px solid #cbd5e1', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}} />
+                    <p style={{fontSize: '0.85rem', color: '#64748b', marginTop: '10px', marginBottom: 0}}>Image captured at submission time to verify student identity.</p>
+                </div>
+            )}
+
             <div className="attempt-content">
                 <div className="review-legend">
                     <span className="legend-item"><span className="legend-box correct"></span> Correctly Selected</span>

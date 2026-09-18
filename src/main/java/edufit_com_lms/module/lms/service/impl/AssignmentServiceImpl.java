@@ -30,6 +30,8 @@ public class AssignmentServiceImpl implements AssignmentService {
     private final AssignmentRepository assignmentRepository;
     private final SubmissionRepository submissionRepository;
     private final SchoolClassRepository schoolClassRepository;
+    private final edufit_com_lms.module.lms.repository.ClassEnrollmentRepository classEnrollmentRepository;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     private void validateLecturerOwnership(UUID classId, Long lecturerId) {
         if (lecturerId == null) return; // Admin skips validation
@@ -55,6 +57,18 @@ public class AssignmentServiceImpl implements AssignmentService {
                 .build();
 
         Assignment saved = assignmentRepository.save(assignment);
+        
+        // Notify all enrolled students
+        List<edufit_com_lms.module.lms.entity.ClassEnrollment> enrollments = classEnrollmentRepository.findBySchoolClassId(request.getClassId());
+        for (edufit_com_lms.module.lms.entity.ClassEnrollment enrollment : enrollments) {
+            eventPublisher.publishEvent(edufit_com_lms.module.notification.event.NotificationEvent.builder()
+                    .title("Bài tập mới: " + saved.getTitle())
+                    .message("Giảng viên vừa giao bài tập mới. Hạn nộp: " + (saved.getDueDate() != null ? saved.getDueDate() : "Không có hạn"))
+                    .type("SYSTEM_LOG")
+                    .recipientId(enrollment.getStudent().getUserId())
+                    .build());
+        }
+
         return mapToResponse(saved);
     }
 

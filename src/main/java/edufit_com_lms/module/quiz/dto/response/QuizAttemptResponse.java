@@ -26,6 +26,8 @@ public class QuizAttemptResponse {
     // Trạng thái: IN_PROGRESS, COMPLETED, ABANDONED
     private QuizStatus status;
 
+    private String proctoringImageUrl;
+
     // Bộ cache tạm phục vụ trường hợp rớt mạng
     private java.util.List<edufit_com_lms.module.quiz.dto.request.StudentAnswerRequest> cachedAnswers;
 }

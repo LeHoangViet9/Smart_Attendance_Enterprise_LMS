@@ -82,7 +82,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         }
         LocalDateTime now = LocalDateTime.now();
         if (quiz.getStartTime() != null && now.isBefore(quiz.getStartTime())) {
-            throw new ConflictException("the test is not yet start!");
+            throw new ConflictException("The test has not yet started!");
         }
         if (quiz.getEndTime() != null && now.isAfter(quiz.getEndTime())) {
             throw new ConflictException("This test has expired!");
@@ -296,6 +296,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                 .endTime(quizAttempt.getEndTime())
                 .score((quiz.getShowScore() != null && !quiz.getShowScore()) ? null : quizAttempt.getScore())
                 .status(quizAttempt.getStatus())
+                .proctoringImageUrl(quizAttempt.getProctoringImageUrl())
                 .questions(questionDtos)
                 .build();
     }

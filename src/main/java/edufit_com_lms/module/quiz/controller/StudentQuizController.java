@@ -20,6 +20,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import edufit_com_lms.security.CustomUserDetail;
+import edufit_com_lms.module.lms.service.MinioStorageService;
+import edufit_com_lms.module.lms.dto.request.PresignedUrlRequest;
+import edufit_com_lms.module.lms.dto.response.PresignedUrlResponse;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1/student/quizzes")
@@ -29,6 +33,7 @@ public class StudentQuizController {
         private final QuizAttemptService quizAttemptService;
         private final QuizService quizService;
         private final StudentProfileRepository studentProfileRepository;
+        private final MinioStorageService minioStorageService;
 
         // Method xóa cờ isCorrect để sinh viên không thể dùng F12 soi đáp án
         private void scrubCorrectAnswers(QuizResponse res) {
@@ -170,5 +175,13 @@ public class StudentQuizController {
                                 null,
                                 "Data synchronized to Redis cache",
                                 HttpStatus.OK), HttpStatus.OK);
+        }
+
+        // API: Get Presigned URL for Proctoring Image Upload
+        @PostMapping("/upload-url")
+        public ResponseEntity<ApiResponse<PresignedUrlResponse>> getPresignedUploadUrl(
+                        @Valid @RequestBody PresignedUrlRequest request) {
+                PresignedUrlResponse response = minioStorageService.generatePresignedUploadUrl(request);
+                return ResponseEntity.ok(ApiResponse.success("Pre-signed URL generated successfully", response));
         }
 }

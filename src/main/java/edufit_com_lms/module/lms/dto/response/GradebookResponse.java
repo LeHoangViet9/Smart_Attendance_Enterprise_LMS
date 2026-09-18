@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -12,19 +13,19 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GradebookResponse {
-    private UUID id;
-    private UUID enrollmentId;
     private UUID classId;
-    private Long studentId;
-    private String studentName;
-    private String studentEmail;
-    
-    private Float attendanceScore;
-    private Float assignmentScore;
-    private Float midtermScore;
-    private Float finalScore;
-    private Float averageScore;
-    private String teacherComment;
-    
-    private String updatedAt;
+    private String className;
+    private List<AssignmentSummary> assignmentHeaders;
+    private List<StudentGradeReport> studentReports;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class AssignmentSummary {
+        private UUID assignmentId;
+        private String title;
+        private Boolean isExam;
+        private Double maxScore;
+    }
 }

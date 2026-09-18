@@ -44,9 +44,10 @@
 }
 
 .um-action-btn {
-    width: fit-content;
+    width: max-content !important;
     white-space: nowrap;
     flex-shrink: 0;
+    flex: 0 0 auto !important;
 }
 
 .btn-primary:disabled {

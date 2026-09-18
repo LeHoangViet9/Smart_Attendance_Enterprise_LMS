@@ -18,4 +18,6 @@ public interface StudentProfileRepository extends JpaRepository<StudentProfile, 
 
     @Query("SELECT sp FROM StudentProfile sp JOIN FETCH sp.user JOIN FETCH sp.schoolClass WHERE sp.schoolClass.id = :classId")
     List<StudentProfile> findBySchoolClassId(@Param("classId") java.util.UUID classId);
+
+    boolean existsByParentPhone(String parentPhone);
 }

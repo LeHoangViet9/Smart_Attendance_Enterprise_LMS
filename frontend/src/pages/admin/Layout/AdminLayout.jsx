@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import './AdminLayout.css';
+import NotificationBell from '../../../components/NotificationBell/NotificationBell';
 
 const AdminLayout = () => {
     const navigate = useNavigate();
@@ -102,6 +103,7 @@ const AdminLayout = () => {
                         <input type="text" placeholder="Quick search users, courses..." />
                     </div>
                     <div className="header-profile">
+                        <NotificationBell />
                         <div className="header-info" onClick={() => navigate(`${basePath}/profile`)} style={{ cursor: 'pointer' }}>
                             <span className="header-name">{user.fullName || user.email}</span>
                             <span className="header-role">{isLecturer ? 'Lecturer' : isStudent ? 'Student' : 'System Admin'}</span>

@@ -19,7 +19,10 @@ public class QuizResponse {
     private String description;
     private Integer timeLimitMinutes;
     private LocalDateTime endTime;
+    private LocalDateTime startTime;
+    private Boolean requiresProctoring;
     private List<QuestionResponse> questions; // Toàn bộ đề thi được nhồi vào cục này để ném về React
     private UUID majorId;
+    private String majorName;
     private Long createdBy;
 }

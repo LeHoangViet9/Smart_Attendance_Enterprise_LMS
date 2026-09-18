@@ -22,6 +22,7 @@ public class QuizReviewResponse {
     private LocalDateTime endTime;
     private Double score;
     private QuizStatus status;
+    private String proctoringImageUrl;
     private List<ReviewQuestionDto> questions;
 
     @Data

@@ -22,8 +22,6 @@ public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
     Page<Submission> findByAssignmentId(UUID assignmentId,
                                         Pageable pageable);
 
-    List<Submission> findByStudentId(Long studentId);
-
     void deleteByAssignmentId(UUID assignmentId);
 
     @Query(value = "SELECT COUNT(s.id) FROM submissions s " +
@@ -33,4 +31,6 @@ public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
     long countPendingGradingByLecturer(@Param("lecturerId") Long lecturerId);
 
     List<Submission> findByStudentIdAndAssignmentIdIn(@Param("studentId") Long studentId, List<UUID> assignmentIds);
+
+    List<Submission> findByAssignmentIdIn(List<UUID> assignmentIds);
 }

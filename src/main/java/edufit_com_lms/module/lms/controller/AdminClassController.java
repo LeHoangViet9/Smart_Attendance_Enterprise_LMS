@@ -3,7 +3,7 @@ package edufit_com_lms.module.lms.controller;
 import edufit_com_lms.common.response.ApiResponse;
 import edufit_com_lms.module.attendance.dto.response.EnrolledStudentResponse;
 import edufit_com_lms.module.lms.dto.response.SchoolClassResponse;
-import edufit_com_lms.module.lms.service.AdminClassService;
+import edufit_com_lms.module.lms.service.impl.AdminClassServiceImpl;
 import edufit_com_lms.module.auth.repository.StudentProfileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/v1/admin/classes")
 @RequiredArgsConstructor
 public class AdminClassController {
-    private final AdminClassService adminClassService;
+    private final AdminClassServiceImpl adminClassService;
     private final StudentProfileRepository studentProfileRepository;
 
     @PreAuthorize("hasRole('ADMIN')")

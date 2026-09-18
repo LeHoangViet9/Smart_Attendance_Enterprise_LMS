@@ -32,6 +32,8 @@ public class SubmissionServiceImpl implements SubmissionService {
 
         private final SubmissionRepository submissionRepository;
         private final AssignmentRepository assignmentRepository;
+        private final edufit_com_lms.module.lms.repository.SchoolClassRepository schoolClassRepository;
+        private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
         @Override
         public SubmissionResponse submitAssignment(UUID assignmentId, SubmitAssignmentRequest request) {
@@ -62,6 +64,19 @@ public class SubmissionServiceImpl implements SubmissionService {
                 }
 
                 Submission saved = submissionRepository.save(submission);
+
+                // Notify Lecturer
+                schoolClassRepository.findById(assignment.getClassId()).ifPresent(schoolClass -> {
+                        if (schoolClass.getLecturer() != null) {
+                                eventPublisher.publishEvent(edufit_com_lms.module.notification.event.NotificationEvent.builder()
+                                                .title("Có sinh viên nộp bài")
+                                                .message("Sinh viên vừa nộp bài cho bài tập: " + assignment.getTitle())
+                                                .type("SYSTEM_LOG")
+                                                .recipientId(schoolClass.getLecturer().getUserId())
+                                                .build());
+                        }
+                });
+
                 return mapToResponse(saved, assignment);
         }
 

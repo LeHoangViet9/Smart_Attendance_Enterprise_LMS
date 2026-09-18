@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosInstance from '../../../api/axios';
 import './QuizStyles.css';
@@ -16,6 +16,12 @@ const QuizAttempt = () => {
     const [showSubmitModal, setShowSubmitModal] = useState(false);
     const [showTimeUpModal, setShowTimeUpModal] = useState(false);
     const [submitError, setSubmitError] = useState(null);
+
+    // Webcam states
+    const videoRef = useRef(null);
+    const canvasRef = useRef(null);
+    const [stream, setStream] = useState(null);
+    const [cameraStep, setCameraStep] = useState(0); // 0: off, 1: on, 2: processing
 
     // Ref for timer
     const [timeLeft, setTimeLeft] = useState(null);
@@ -117,21 +123,96 @@ const QuizAttempt = () => {
         }, 1500);
     };
 
-    const executeSubmit = async () => {
+    const executeSubmit = async (imageUrl = null) => {
         setSubmitting(true);
         setSubmitError(null);
         try {
             await axiosInstance.post(`/v1/student/quizzes/attempts/${attemptId}/submit`, {
                 quizAttemptId: parseInt(attemptId),
-                answers: answers
+                answers: answers,
+                proctoringImageUrl: imageUrl
             });
             navigate('/student/quizzes/history');
         } catch (err) {
             console.error('Submit failed', err);
-            setSubmitError('Server error during submission. Please retry.');
+            setSubmitError(err.response?.data?.message || 'Server error during submission. Please retry.');
             setSubmitting(false);
+            setCameraStep(0);
         }
     };
+
+    const startCamera = async () => {
+        try {
+            setCameraStep(1);
+            setSubmitError('');
+            const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            setStream(mediaStream);
+            if (videoRef.current) {
+                videoRef.current.srcObject = mediaStream;
+            }
+        } catch (err) {
+            setSubmitError('Cannot access camera. Please grant permission to continue.');
+            setCameraStep(0);
+        }
+    };
+
+    const stopCamera = () => {
+        if (stream) {
+            const tracks = stream.getTracks();
+            tracks.forEach(track => track.stop());
+            setStream(null);
+        }
+    };
+
+    const captureAndSubmit = () => {
+        if (!videoRef.current || !canvasRef.current) return;
+        
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        canvas.toBlob(async (blob) => {
+            if (blob) {
+                setCameraStep(2);
+                stopCamera();
+                try {
+                    const presignedRes = await axiosInstance.post('/v1/student/quizzes/upload-url', {
+                        fileName: 'proctoring-image.jpg'
+                    });
+                    const { uploadUrl, fileUrl } = presignedRes.data.data;
+                    
+                    await fetch(uploadUrl, {
+                        method: 'PUT',
+                        body: blob,
+                        headers: { 'Content-Type': 'image/jpeg' }
+                    });
+                    
+                    await executeSubmit(fileUrl);
+                } catch (err) {
+                    console.error("Upload failed", err);
+                    setSubmitError('Failed to upload proctoring image.');
+                    setSubmitting(false);
+                    setCameraStep(0);
+                }
+            } else {
+                setSubmitError("Failed to capture image");
+                setCameraStep(0);
+            }
+        }, 'image/jpeg', 0.8);
+    };
+
+    useEffect(() => {
+        if (!showSubmitModal) {
+            stopCamera();
+            setCameraStep(0);
+        }
+        return () => stopCamera();
+    }, [showSubmitModal]);
 
     const handleOptionSelect = (questionId, optionId) => {
         setAnswers(prev => {
@@ -166,8 +247,17 @@ const QuizAttempt = () => {
     };
 
     const handleConfirmSubmit = async () => {
-        setShowSubmitModal(false);
-        await executeSubmit();
+        if (quiz?.requiresProctoring) {
+            if (cameraStep === 0) {
+                startCamera();
+            } else if (cameraStep === 1) {
+                setSubmitting(true);
+                captureAndSubmit();
+            }
+        } else {
+            setShowSubmitModal(false);
+            await executeSubmit();
+        }
     };
 
     const handleSubmitClick = () => {
@@ -251,15 +341,42 @@ const QuizAttempt = () => {
 
             {/* Custom Submit Confirmation Modal */}
             {showSubmitModal && (
-                <div className="modal-overlay" onClick={() => setShowSubmitModal(false)}>
+                <div className="modal-overlay" onClick={() => { if (!submitting && cameraStep !== 2) setShowSubmitModal(false); }}>
                     <div className="modal-glass" onClick={(e) => e.stopPropagation()}>
                         <h3>Finish Quiz?</h3>
                         <p>You have answered {answers.filter(a => a.selectedOptionId || (a.answerText && a.answerText.trim() !== '')).length} out of {quiz?.questions?.length} questions. Are you sure you want to submit your quiz right now?</p>
-                        <div className="modal-actions">
-                            <button className="btn-cancel" onClick={() => setShowSubmitModal(false)} disabled={submitting}>Continue taking quiz</button>
-                            <button className="btn-confirm" onClick={handleConfirmSubmit} disabled={submitting}>
-                                {submitting ? 'Submitting...' : 'Submit Now'}
-                            </button>
+                        
+                        {quiz?.requiresProctoring && (
+                            <div className="proctoring-section" style={{marginTop: '15px', padding: '10px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.3)'}}>
+                                <h4 style={{color: '#dc2626', margin: '0 0 10px 0'}}>⚠️ Proctoring Required</h4>
+                                {cameraStep === 0 && <p style={{fontSize: '0.9rem'}}>This exam requires a live photo submission. Click below to turn on your camera.</p>}
+                                {cameraStep === 1 && (
+                                    <div style={{position: 'relative', width: '100%', maxWidth: '300px', margin: '0 auto 10px'}}>
+                                        <video ref={videoRef} autoPlay playsInline muted style={{width: '100%', borderRadius: '8px', transform: 'scaleX(-1)'}}></video>
+                                        <canvas ref={canvasRef} style={{display: 'none'}}></canvas>
+                                    </div>
+                                )}
+                                {cameraStep === 2 && (
+                                    <div style={{textAlign: 'center', padding: '20px 0'}}>
+                                        <div className="spinner" style={{width: '30px', height: '30px', margin: '0 auto 10px'}}></div>
+                                        <p style={{fontSize: '0.9rem', color: '#6b7280'}}>Uploading photo & Submitting...</p>
+                                    </div>
+                                )}
+                                {submitError && <div className="error-message" style={{marginBottom: '10px', fontSize: '0.85rem'}}>{submitError}</div>}
+                            </div>
+                        )}
+
+                        <div className="modal-actions" style={{marginTop: '20px'}}>
+                            <button className="btn-cancel" onClick={() => setShowSubmitModal(false)} disabled={submitting || cameraStep === 2}>Cancel</button>
+                            {quiz?.requiresProctoring ? (
+                                <button className="btn-confirm" onClick={handleConfirmSubmit} disabled={submitting || cameraStep === 2}>
+                                    {cameraStep === 0 ? 'Turn On Camera' : (cameraStep === 1 ? 'Capture & Submit' : 'Submitting...')}
+                                </button>
+                            ) : (
+                                <button className="btn-confirm" onClick={handleConfirmSubmit} disabled={submitting}>
+                                    {submitting ? 'Submitting...' : 'Submit Now'}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

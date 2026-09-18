@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../../api/axios';
 import './AdminClassManagement.css';
 
 const AdminClassManagement = () => {
+    const navigate = useNavigate();
     const [classes, setClasses] = useState([]);
     const [lecturers, setLecturers] = useState([]);
     const [loading, setLoading] = useState(true);

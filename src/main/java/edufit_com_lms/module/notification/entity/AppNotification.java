@@ -35,6 +35,9 @@ public class AppNotification {
     @Column(name = "sender_id")
     private Long senderId; // For student reporting
 
+    @Column(name = "recipient_id")
+    private Long recipientId; // Null means broadcast to all/admins, otherwise specific user
+
     @Column(name = "is_read")
     @Builder.Default
     private Boolean isRead = false;

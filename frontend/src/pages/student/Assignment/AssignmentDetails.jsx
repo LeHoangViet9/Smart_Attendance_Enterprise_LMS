@@ -44,6 +44,7 @@ const AssignmentDetails = () => {
                 const user = JSON.parse(stored);
                 if (user.studentId) return user.studentId;
                 if (user.userId) return user.userId;
+                if (user.id) return user.id;
             } catch (e) {
                 console.error(e);
             }
@@ -69,7 +70,8 @@ const AssignmentDetails = () => {
 
             // 2. Fetch student submission if exists
             try {
-                const subRes = await axiosInstance.get(`/v1/assignments/${id}/submission?studentId=${studentId}`);
+                const query = studentId ? `?studentId=${studentId}` : '';
+                const subRes = await axiosInstance.get(`/v1/assignments/${id}/submission${query}`);
                 if (subRes.data && subRes.data.data) {
                     setSubmission(subRes.data.data);
                 }

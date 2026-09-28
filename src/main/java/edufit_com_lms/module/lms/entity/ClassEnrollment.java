@@ -3,6 +3,9 @@ package edufit_com_lms.module.lms.entity;
 import edufit_com_lms.module.auth.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -14,6 +17,8 @@ import java.util.UUID;
 @Table(name = "class_enrollments", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"class_id", "student_user_id"})
 })
+@SQLDelete(sql = "UPDATE class_enrollments SET is_active = false WHERE id = ?")
+@SQLRestriction("is_active = true")
 @Getter
 @Setter
 @NoArgsConstructor

@@ -15,4 +15,7 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Long> 
 
     // Lấy lịch sử thi của một học sinh
     Page<QuizAttempt> findAllByStudentUserIdOrderByStartTimeDesc(Long studentId, Pageable pageable);
+
+    // Lấy danh sách bài làm của một Quiz (cho giảng viên chấm bài)
+    Page<QuizAttempt> findAllByQuizIdOrderByStartTimeDesc(Long quizId, Pageable pageable);
 }

@@ -204,13 +204,7 @@ const AssignmentList = () => {
                         <div className="stat-label">Overdue</div>
                     </div>
                 </div>
-                <div className="stat-card">
-                    <div className="stat-icon blue">⭐</div>
-                    <div className="stat-content">
-                        <div className="stat-value">10.0</div>
-                        <div className="stat-label">Standard Max Score</div>
-                    </div>
-                </div>
+
             </div>
 
             {/* Filter & Search Toolbar */}
@@ -326,7 +320,8 @@ const AssignmentList = () => {
                                         if (userRole === 'STUDENT') {
                                             navigate(`/student/assignments/${item.id}`);
                                         } else {
-                                            navigate(`/student/assignments/manage?id=${item.id}`);
+                                            const basePath = userRole === 'ADMIN' ? '/admin' : '/lecturer';
+                                            navigate(`${basePath}/assignments/manage?id=${item.id}`);
                                         }
                                     }}
                                 >

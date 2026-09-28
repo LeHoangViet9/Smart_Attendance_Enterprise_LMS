@@ -11,5 +11,6 @@ public interface QuizAttemptMapper {
 
     @Mapping(source = "quiz.id", target = "quizId")
     @Mapping(source = "student.userId", target = "studentId")
+    @Mapping(source = "student.fullName", target = "studentName")
     QuizAttemptResponse toResponse(QuizAttempt attempt);
 }

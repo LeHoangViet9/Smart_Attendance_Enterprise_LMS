@@ -69,7 +69,19 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
                                 Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                                 SecurityContextHolder.getContext().setAuthentication(auth);
-                                accessor.setUser(auth);
+                                
+                                // Override STOMP Principal to use ID for routing convertAndSendToUser
+                                if (userDetails instanceof edufit_com_lms.security.CustomUserDetail) {
+                                    final String userIdStr = ((edufit_com_lms.security.CustomUserDetail) userDetails).getId().toString();
+                                    accessor.setUser(new java.security.Principal() {
+                                        @Override
+                                        public String getName() {
+                                            return userIdStr;
+                                        }
+                                    });
+                                } else {
+                                    accessor.setUser(auth);
+                                }
                             }
                         }
                     }

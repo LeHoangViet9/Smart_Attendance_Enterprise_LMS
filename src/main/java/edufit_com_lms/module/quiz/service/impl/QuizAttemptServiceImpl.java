@@ -33,11 +33,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.concurrent.TimeUnit;
 import edufit_com_lms.module.quiz.service.QuizAttemptService;
+import edufit_com_lms.module.quiz.service.AIGradingService;
+import edufit_com_lms.module.quiz.dto.response.AIGradeSuggestionResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import org.springframework.context.ApplicationEventPublisher;
 
 @Service
 @RequiredArgsConstructor
@@ -51,12 +54,23 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
     private final StudentAnswerRepository studentAnswerRepository;
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ApplicationEventPublisher eventPublisher;
+    private final AIGradingService aiGradingService;
 
     @Override
     public QuizAttemptResponse startAttempt(Long quizId, Long studentId) {
         Quiz quiz = quizRepository.findById(quizId).orElseThrow(() -> new ResourceNotFound("Can not found quiz"));
         User student = userRepository.findById(studentId).orElseThrow(() -> new ResourceNotFound("Can not found user"));
         List<QuizAttempt> existingAttempts = quizAttemptRepository.findByQuizIdAndStudentUserId(quizId, studentId);
+
+        // Chặn thi lại đối với những bài thi yêu cầu quét mặt (chỉ cho phép thi 1 lần)
+        if (Boolean.TRUE.equals(quiz.getRequiresProctoring())) {
+            boolean hasCompleted = existingAttempts.stream()
+                    .anyMatch(a -> a.getStatus() == edufit_com_lms.module.quiz.entity.QuizStatus.COMPLETED);
+            if (hasCompleted) {
+                throw new ConflictException("Bài thi này yêu cầu giám sát (quét mặt) nên bạn chỉ được phép thi 1 lần duy nhất!");
+            }
+        }
 
         Optional<QuizAttempt> inProgressAttempt = existingAttempts.stream()
                 .filter(a -> a.getStatus() == QuizStatus.IN_PROGRESS)
@@ -81,9 +95,10 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
             return res; // Trả về attempt cũ thay vì quăng lỗi
         }
         LocalDateTime now = LocalDateTime.now();
-        if (quiz.getStartTime() != null && now.isBefore(quiz.getStartTime())) {
-            throw new ConflictException("The test has not yet started!");
-        }
+        // TEMP BYPASS: Commented out for testing purposes
+        // if (quiz.getStartTime() != null && now.isBefore(quiz.getStartTime())) {
+        //     throw new ConflictException("The test has not yet started!");
+        // }
         if (quiz.getEndTime() != null && now.isAfter(quiz.getEndTime())) {
             throw new ConflictException("This test has expired!");
         }
@@ -171,6 +186,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                         .selectedOption(selectedOption)
                         .answerText(answerReq.getAnswerText())
                         .isAwarded(isAwarded)
+                        .earnedPoints(isAwarded ? question.getPoints() : 0.0)
                         .build();
                 studentAnswers.add(studentAnswer);
             }
@@ -193,7 +209,19 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         // Xóa hoàn toàn bản nháp trên Redis để dọn bề mặt RAM
         stringRedisTemplate.delete("quiz:attempt:" + attemptId);
 
-        return quizAttemptMapper.toResponse(quizAttemptRepository.save(quizAttempt));
+        QuizAttempt savedAttempt = quizAttemptRepository.save(quizAttempt);
+
+        // Bắn thông báo cho người tạo đề (Giảng viên / Admin)
+        if (savedAttempt.getQuiz() != null && savedAttempt.getQuiz().getCreatedBy() != null) {
+            eventPublisher.publishEvent(edufit_com_lms.module.notification.event.NotificationEvent.builder()
+                    .title("Có sinh viên nộp bài thi")
+                    .message("Sinh viên " + savedAttempt.getStudent().getFullName() + " vừa hoàn thành bài thi: " + savedAttempt.getQuiz().getTitle())
+                    .type("SYSTEM_LOG")
+                    .recipientId(savedAttempt.getQuiz().getCreatedBy().getUserId())
+                    .build());
+        }
+
+        return quizAttemptMapper.toResponse(savedAttempt);
     }
 
     @Override
@@ -229,7 +257,8 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         QuizAttempt quizAttempt = quizAttemptRepository.findById(attemptId)
                 .orElseThrow(() -> new ResourceNotFound("Can not found quiz attempt"));
 
-        if (!quizAttempt.getStudent().getUserId().equals(studentId)) {
+        // If studentId is null, it means it's accessed by Lecturer/Admin for grading
+        if (studentId != null && !quizAttempt.getStudent().getUserId().equals(studentId)) {
             throw new ConflictException("You are not the owner of this attempt");
         }
 
@@ -239,7 +268,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
 
         Quiz quiz = quizAttempt.getQuiz();
 
-        if (quiz.getReviewType() != null) {
+        if (studentId != null && quiz.getReviewType() != null) {
             if (quiz.getReviewType() == ReviewType.NEVER) {
                 throw new ConflictException("Giáo viên không cho phép xem lại bài thi này.");
             }
@@ -272,9 +301,12 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
             if (ansOpt.isPresent()) {
                 StudentAnswer ans = ansOpt.get();
                 answerDto = QuizReviewResponse.ReviewStudentAnswerDto.builder()
+                        .id(ans.getId())
                         .selectedOptionId(ans.getSelectedOption() != null ? ans.getSelectedOption().getId() : null)
                         .answerText(ans.getAnswerText())
                         .isAwarded(ans.getIsAwarded())
+                        .earnedPoints(ans.getEarnedPoints())
+                        .feedback(ans.getFeedback())
                         .build();
             }
 
@@ -299,5 +331,80 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                 .proctoringImageUrl(quizAttempt.getProctoringImageUrl())
                 .questions(questionDtos)
                 .build();
+    }
+
+    @Override
+    public Page<QuizAttemptResponse> getAttemptsByQuizId(Long quizId, Pageable pageable) {
+        Page<QuizAttempt> attempts = quizAttemptRepository.findAllByQuizIdOrderByStartTimeDesc(quizId, pageable);
+        return attempts.map(quizAttemptMapper::toResponse);
+    }
+
+    @Override
+    @Transactional
+    public QuizAttemptResponse gradeQuizAttempt(Long attemptId, edufit_com_lms.module.quiz.dto.request.GradeEssayRequest request, Long lecturerId) {
+        QuizAttempt quizAttempt = quizAttemptRepository.findById(attemptId)
+                .orElseThrow(() -> new ResourceNotFound("Can not found quiz attempt"));
+
+        // Verify ownership (Lecturer should own the quiz)
+        if (lecturerId != null && !quizAttempt.getQuiz().getCreatedBy().getUserId().equals(lecturerId)) {
+            throw new ConflictException("You are not the owner of this quiz");
+        }
+
+        List<StudentAnswer> studentAnswers = studentAnswerRepository.findAllByAttemptId(attemptId);
+
+        for (edufit_com_lms.module.quiz.dto.request.GradeEssayRequest.QuestionGrade qg : request.getGrades()) {
+            StudentAnswer answer = studentAnswers.stream()
+                    .filter(a -> a.getId().equals(qg.getStudentAnswerId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (answer != null) {
+                answer.setEarnedPoints(qg.getPoints());
+                answer.setFeedback(qg.getFeedback());
+                answer.setIsAwarded(qg.getPoints() > 0);
+            }
+        }
+        
+        studentAnswerRepository.saveAll(studentAnswers);
+
+        // Recalculate score
+        double totalEarned = studentAnswers.stream()
+                .mapToDouble(a -> a.getEarnedPoints() != null ? a.getEarnedPoints() : 0.0)
+                .sum();
+        
+        double totalMaxPoints = quizAttempt.getQuiz().getQuestions().stream()
+                .mapToDouble(Question::getPoints).sum();
+
+        double finalScore = 0.0;
+        if (totalMaxPoints > 0) {
+            finalScore = (totalEarned / totalMaxPoints) * 10.0;
+            finalScore = Math.round(finalScore * 100.0) / 100.0;
+        }
+
+        quizAttempt.setScore(finalScore);
+        return quizAttemptMapper.toResponse(quizAttemptRepository.save(quizAttempt));
+    }
+
+    @Override
+    public AIGradeSuggestionResponse suggestGradeWithAI(Long attemptId, Long answerId, Long lecturerId) {
+        QuizAttempt quizAttempt = quizAttemptRepository.findById(attemptId)
+                .orElseThrow(() -> new ResourceNotFound("Can not found quiz attempt"));
+
+        if (lecturerId != null && !quizAttempt.getQuiz().getCreatedBy().getUserId().equals(lecturerId)) {
+            throw new ConflictException("You are not the owner of this quiz");
+        }
+
+        StudentAnswer studentAnswer = studentAnswerRepository.findById(answerId)
+                .orElseThrow(() -> new ResourceNotFound("Can not found student answer"));
+
+        if (!studentAnswer.getAttempt().getId().equals(attemptId)) {
+            throw new ConflictException("Answer does not belong to this attempt");
+        }
+
+        String questionContent = studentAnswer.getQuestion().getContent();
+        String answerText = studentAnswer.getAnswerText();
+        double maxPoints = studentAnswer.getQuestion().getPoints() != null ? studentAnswer.getQuestion().getPoints() : 0.0;
+
+        return aiGradingService.suggestGrade(questionContent, answerText, maxPoints);
     }
 }

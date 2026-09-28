@@ -101,9 +101,9 @@ const LecturerSmartAttendance = () => {
                         console.error('Error verifying frame:', error);
                     }
                 }
-            }, 'image/jpeg', 0.8);
+            }, 'image/jpeg', 0.5);
 
-        }, 2000); // Poll every 2 seconds to reduce backend load
+        }, 5000); // Poll every 5 seconds to reduce backend load
 
         return () => {
             clearInterval(scanInterval);
@@ -139,6 +139,22 @@ const LecturerSmartAttendance = () => {
 
     const handleStartScan = () => {
         setIsScanning(!isScanning);
+    };
+
+    const handleSubmitAttendance = async () => {
+        try {
+            const presentStudentIds = students.filter(s => s.status === 'present').map(s => s.id);
+            const response = await axiosInstance.post('/v1/attendance/submit-attendance', {
+                classId: classId,
+                presentStudentIds: presentStudentIds
+            });
+            if (response.data && response.data.success) {
+                alert('Attendance saved successfully!');
+            }
+        } catch (error) {
+            console.error('Error submitting attendance:', error);
+            alert('Failed to save attendance. Please try again.');
+        }
     };
 
     const toggleStudentStatus = (studentId) => {
@@ -226,12 +242,22 @@ const LecturerSmartAttendance = () => {
                         {isScanning && <div className="sa-scan-line"></div>}
                     </div>
 
-                    <button 
-                        className="sa-start-btn" 
-                        onClick={handleStartScan}
-                    >
-                        {isScanning ? "Stop Scanning" : "Start Smart Attendance"}
-                    </button>
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '15px', width: '100%' }}>
+                        <button 
+                            className="sa-start-btn" 
+                            onClick={handleStartScan}
+                            style={{ flex: 1, margin: 0 }}
+                        >
+                            {isScanning ? "Stop Scanning" : "Start Smart Attendance"}
+                        </button>
+                        <button 
+                            className="sa-start-btn" 
+                            onClick={handleSubmitAttendance}
+                            style={{ flex: 1, margin: 0, backgroundColor: '#10b981' }}
+                        >
+                            Save Attendance
+                        </button>
+                    </div>
                     {students.length === 0 && (
                         <p style={{ color: '#f59e0b', fontSize: '0.8rem', marginTop: '10px', textAlign: 'center' }}>
                             ⚠️ Warning: No students found in this class.

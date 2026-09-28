@@ -18,5 +18,10 @@ public interface QuizAttemptService {
     QuizReviewResponse getAttemptReview(Long attemptId, Long studentId);
 
     void autosaveAttempt(Long attemptId, Long studentId, SubmitQuizRequest request);
+    
+    Page<QuizAttemptResponse> getAttemptsByQuizId(Long quizId, Pageable pageable);
 
+    QuizAttemptResponse gradeQuizAttempt(Long attemptId, edufit_com_lms.module.quiz.dto.request.GradeEssayRequest request, Long lecturerId);
+
+    edufit_com_lms.module.quiz.dto.response.AIGradeSuggestionResponse suggestGradeWithAI(Long attemptId, Long answerId, Long lecturerId);
 }

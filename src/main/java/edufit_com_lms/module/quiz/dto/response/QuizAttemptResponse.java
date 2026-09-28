@@ -16,6 +16,8 @@ public class QuizAttemptResponse {
     private Long id;
     private Long quizId; // ID của đề thi
     private Long studentId; // ID của học viên
+    private String studentName;
+    private String studentCode;
 
     private LocalDateTime startTime;
     private LocalDateTime endTime;

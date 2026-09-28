@@ -301,7 +301,7 @@ const AssignmentManagement = () => {
                                     <td><strong>{idx + 1}</strong></td>
                                     <td>
                                         <div style={{ fontWeight: 600, color: '#1e293b' }}>
-                                            {sub.studentId?.substring(0, 8)}...
+                                            {sub.studentId}
                                         </div>
                                     </td>
                                     <td>

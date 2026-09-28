@@ -197,20 +197,34 @@ const QuizList = () => {
                                 </div>
                             )}
 
-                            <button
-                                className="btn-primary"
-                                onClick={() => {
-                                    if (userRole === 'ADMIN') {
-                                        navigate(`/admin/quizzes/manage/${quiz.id}`);
-                                    } else if (userRole === 'LECTURER') {
-                                        navigate(`/lecturer/quizzes/manage/${quiz.id}`);
-                                    } else {
-                                        navigate(`/student/quizzes/${quiz.id}`);
-                                    }
-                                }}
-                            >
-                                {userRole === 'LECTURER' || userRole === 'ADMIN' ? 'Manage Exam' : 'View Details'}
-                            </button>
+                            <div style={{ display: 'flex', gap: '10px', marginTop: '1rem' }}>
+                                <button
+                                    className="btn-primary"
+                                    onClick={() => {
+                                        if (userRole === 'ADMIN') {
+                                            navigate(`/admin/quizzes/manage/${quiz.id}`);
+                                        } else if (userRole === 'LECTURER') {
+                                            navigate(`/lecturer/quizzes/manage/${quiz.id}`);
+                                        } else {
+                                            navigate(`/student/quizzes/${quiz.id}`);
+                                        }
+                                    }}
+                                >
+                                    {userRole === 'LECTURER' || userRole === 'ADMIN' ? 'Manage Exam' : 'View Details'}
+                                </button>
+                                
+                                {(userRole === 'LECTURER' || userRole === 'ADMIN') && (
+                                    <button
+                                        className="btn-secondary"
+                                        style={{ backgroundColor: '#10b981', color: 'white' }}
+                                        onClick={() => {
+                                            navigate(`/${userRole.toLowerCase()}/quizzes/${quiz.id}/grading`);
+                                        }}
+                                    >
+                                        Grade Submissions
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     ))}
                 </div>

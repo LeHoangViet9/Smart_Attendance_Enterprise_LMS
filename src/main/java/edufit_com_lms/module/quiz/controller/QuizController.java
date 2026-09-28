@@ -4,6 +4,11 @@ import edufit_com_lms.common.response.ApiResponse;
 import edufit_com_lms.module.quiz.dto.request.QuizRequest;
 import edufit_com_lms.module.quiz.dto.response.QuizResponse;
 import edufit_com_lms.module.quiz.service.QuizService;
+import edufit_com_lms.module.quiz.service.QuizAttemptService;
+import edufit_com_lms.module.quiz.dto.request.GradeEssayRequest;
+import edufit_com_lms.module.quiz.dto.response.QuizAttemptResponse;
+import edufit_com_lms.module.quiz.dto.response.QuizReviewResponse;
+import edufit_com_lms.module.quiz.dto.response.AIGradeSuggestionResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +31,7 @@ import java.util.UUID;
 @PreAuthorize("hasAnyRole('ADMIN', 'LECTURER')")
 public class QuizController {
     private final QuizService quizService;
+    private final QuizAttemptService quizAttemptService;
     private final LecturerProfileRepository lecturerProfileRepository;
 
     @GetMapping
@@ -118,5 +124,41 @@ public class QuizController {
                 null,
                 quizService.findQuizById(id),
                 HttpStatus.OK), HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}/attempts")
+    public ResponseEntity<ApiResponse<Page<QuizAttemptResponse>>> getQuizAttempts(
+            @PathVariable Long id,
+            @PageableDefault(page = 0, size = 10) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Fetched quiz attempts successfully",
+                quizAttemptService.getAttemptsByQuizId(id, pageable)));
+    }
+
+    @GetMapping("/attempts/{attemptId}/grading")
+    public ResponseEntity<ApiResponse<QuizReviewResponse>> getAttemptForGrading(@PathVariable Long attemptId) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Fetched attempt details for grading",
+                quizAttemptService.getAttemptReview(attemptId, null))); // null studentId bypasses ownership check
+    }
+
+    @PutMapping("/attempts/{attemptId}/grade")
+    public ResponseEntity<ApiResponse<QuizAttemptResponse>> gradeAttempt(
+            @PathVariable Long attemptId,
+            @RequestBody GradeEssayRequest request) {
+        Long lecturerId = getLecturerIdOrNull();
+        return ResponseEntity.ok(ApiResponse.success(
+                "Graded attempt successfully",
+                quizAttemptService.gradeQuizAttempt(attemptId, request, lecturerId)));
+    }
+
+    @PostMapping("/attempts/{attemptId}/answers/{answerId}/ai-suggest")
+    public ResponseEntity<ApiResponse<AIGradeSuggestionResponse>> suggestGradeWithAI(
+            @PathVariable Long attemptId,
+            @PathVariable Long answerId) {
+        Long lecturerId = getLecturerIdOrNull();
+        return ResponseEntity.ok(ApiResponse.success(
+                "AI generated suggestion successfully",
+                quizAttemptService.suggestGradeWithAI(attemptId, answerId, lecturerId)));
     }
 }

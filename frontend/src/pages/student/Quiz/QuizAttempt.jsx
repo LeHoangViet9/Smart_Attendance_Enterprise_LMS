@@ -17,6 +17,10 @@ const QuizAttempt = () => {
     const [showTimeUpModal, setShowTimeUpModal] = useState(false);
     const [submitError, setSubmitError] = useState(null);
 
+    // Anti-cheat states
+    const [cheatWarnings, setCheatWarnings] = useState(0);
+    const [showCheatModal, setShowCheatModal] = useState(false);
+
     // Webcam states
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
@@ -103,7 +107,7 @@ const QuizAttempt = () => {
 
         const autosaveTimer = setTimeout(() => {
             triggerAutosave();
-        }, 15000); // Autosave every 15 secs if changes occur
+        }, 3000); // Autosave 3 secs after the last answer change
 
         return () => clearTimeout(autosaveTimer);
     }, [answers, loading, attempt]);
@@ -114,6 +118,42 @@ const QuizAttempt = () => {
             answers: answers
         }).catch(err => console.error("Autosave failed", err));
     };
+
+    // Anti-cheat detection (Tab switching)
+    useEffect(() => {
+        if (loading || !attempt || submitting || showTimeUpModal || !quiz?.requiresProctoring) return;
+
+        const handleCheatDetection = () => {
+            setCheatWarnings(prev => {
+                const newWarnings = prev + 1;
+                if (newWarnings >= 3) {
+                    setShowCheatModal(true); // Show final warning
+                    setTimeout(() => {
+                        executeSubmit("VIOLATION_DETECTED");
+                    }, 3000); // Wait 3s then force submit
+                } else {
+                    setShowCheatModal(true);
+                }
+                return newWarnings;
+            });
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.hidden) handleCheatDetection();
+        };
+
+        const handleWindowBlur = () => {
+            handleCheatDetection();
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        window.addEventListener("blur", handleWindowBlur);
+
+        return () => {
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+            window.removeEventListener("blur", handleWindowBlur);
+        };
+    }, [loading, attempt, submitting, showTimeUpModal, quiz]);
 
     const handleTimeUp = () => {
         setShowTimeUpModal(true);
@@ -283,9 +323,14 @@ const QuizAttempt = () => {
             {/* Sticky Header with Timer */}
             <div className="attempt-header">
                 <h2 className="attempt-title">{quiz?.title}</h2>
-                <div className={`attempt-timer ${timeLeft < 60 ? 'timer-danger' : ''}`}>
-                    ⏰ {timeLeft !== null ? formatTime(timeLeft) : '--:--'}
+                <div className="progress-info">
+                    {answers.filter(a => a.selectedOptionId || (a.answerText && a.answerText.trim() !== '')).length} / {quiz?.questions?.length} answered
                 </div>
+            </div>
+
+            {/* Floating Timer */}
+            <div className={`floating-timer ${timeLeft < 60 ? 'danger' : ''}`}>
+                ⏰ {timeLeft !== null ? formatTime(timeLeft) : '--:--'}
             </div>
 
             <div className="attempt-content">
@@ -405,6 +450,35 @@ const QuizAttempt = () => {
                                 <div className="spinner"></div>
                                 <span style={{ fontSize: '0.9rem', color: '#6b7280', fontWeight: 600 }}>Submitting automatically...</span>
                             </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Custom Anti-cheat Modal */}
+            {showCheatModal && (
+                <div className="modal-overlay">
+                    <div className="modal-glass" style={{ maxWidth: '420px', textAlign: 'center', borderColor: '#ef4444' }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '0.75rem', animation: 'pulse 1s infinite alternate' }}>⚠️</div>
+                        <h3 style={{ color: '#dc2626', margin: '0 0 0.5rem 0' }}>Warning: Suspicious Activity</h3>
+                        {cheatWarnings >= 3 ? (
+                            <>
+                                <p style={{ color: '#4b5563', margin: '0 0 1.5rem 0', lineHeight: 1.5, fontWeight: 'bold' }}>
+                                    You have exceeded the maximum number of tab switches (3/3). Your quiz is being automatically submitted to prevent cheating.
+                                </p>
+                                <div className="spinner" style={{ margin: '0 auto' }}></div>
+                            </>
+                        ) : (
+                            <>
+                                <p style={{ color: '#4b5563', margin: '0 0 1.5rem 0', lineHeight: 1.5 }}>
+                                    We detected that you switched tabs or minimized the window. Leaving the exam screen is considered a violation of academic integrity.
+                                    <br/><br/>
+                                    <strong>Warning {cheatWarnings} of 3</strong>. If you reach 3 warnings, your quiz will be submitted automatically.
+                                </p>
+                                <button className="btn-confirm" onClick={() => setShowCheatModal(false)} style={{ backgroundColor: '#dc2626' }}>
+                                    I Understand
+                                </button>
+                            </>
                         )}
                     </div>
                 </div>

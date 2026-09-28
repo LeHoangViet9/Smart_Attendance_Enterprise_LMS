@@ -170,7 +170,7 @@ public class AssignmentServiceImpl implements AssignmentService {
     }
 
     private AssignmentResponse mapToResponse(Assignment assignment) {
-        boolean isExpired = LocalDateTime.now().isAfter(assignment.getDueDate());
+        boolean isExpired = assignment.getDueDate() != null && LocalDateTime.now().isAfter(assignment.getDueDate());
         String className = "Unknown Class";
         if (assignment.getClassId() != null) {
             className = schoolClassRepository.findById(assignment.getClassId())

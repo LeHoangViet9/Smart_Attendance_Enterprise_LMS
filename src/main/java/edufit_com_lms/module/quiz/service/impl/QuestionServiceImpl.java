@@ -31,15 +31,27 @@ public class QuestionServiceImpl implements QuestionService {
     private final QuizRepository quizRepository;
     private final QuizMapper quizMapper;
 
-    public QuestionResponse findById(Long id) {
+    private void checkQuizOwnership(Quiz quiz, Long lecturerId) {
+        if (lecturerId != null) {
+            if (quiz.getCreatedBy() == null || !quiz.getCreatedBy().getUserId().equals(lecturerId)) {
+                throw new org.springframework.security.access.AccessDeniedException("Bạn không có quyền chỉnh sửa bộ câu hỏi của bài Quiz này!");
+            }
+        }
+    }
+
+    public QuestionResponse findById(Long quizId, Long id) {
         Question question = questionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFound("Can not found question"));
+        if (!question.getQuiz().getId().equals(quizId)) {
+            throw new RuntimeException("Câu hỏi này không thuộc về bài Quiz này!");
+        }
         return quizMapper.toQuestionResponse(question);
     }
 
     @Override
-    public QuestionResponse createQuestion(Long quizId, QuestionRequest request) {
+    public QuestionResponse createQuestion(Long quizId, QuestionRequest request, Long lecturerId) {
         Quiz quiz = quizRepository.findById(quizId).orElseThrow(() -> new ResourceNotFound("Can not found quiz"));
+        checkQuizOwnership(quiz, lecturerId);
         Question question = new Question();
         question.setQuiz(quiz);
         question.setContent(request.getContent());
@@ -61,8 +73,9 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
-    public QuestionResponse updateQuestion(Long quizId, Long questionId, QuestionRequest request) {
+    public QuestionResponse updateQuestion(Long quizId, Long questionId, QuestionRequest request, Long lecturerId) {
         Quiz quiz = quizRepository.findById(quizId).orElseThrow(() -> new ResourceNotFound("Can not found quiz"));
+        checkQuizOwnership(quiz, lecturerId);
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new ResourceNotFound("Can not found question"));
         if (!question.getQuiz().getId().equals(quizId)) {
@@ -88,8 +101,9 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
-    public void deleteQuestion(Long quizId, Long questionId) {
+    public void deleteQuestion(Long quizId, Long questionId, Long lecturerId) {
         Quiz quiz = quizRepository.findById(quizId).orElseThrow(() -> new ResourceNotFound("Can not found quiz"));
+        checkQuizOwnership(quiz, lecturerId);
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new ResourceNotFound("Can not found question"));
         if (!question.getQuiz().getId().equals(quizId)) {
@@ -122,8 +136,9 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
-    public void importQuestionsFromExcel(Long quizId, org.springframework.web.multipart.MultipartFile file) {
+    public void importQuestionsFromExcel(Long quizId, org.springframework.web.multipart.MultipartFile file, Long lecturerId) {
         Quiz quiz = quizRepository.findById(quizId).orElseThrow(() -> new ResourceNotFound("Can not found quiz"));
+        checkQuizOwnership(quiz, lecturerId);
         try (InputStream is = file.getInputStream(); Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook(is)) {
             Sheet sheet = workbook.getSheetAt(0);
             Iterator<Row> rows = sheet.iterator();

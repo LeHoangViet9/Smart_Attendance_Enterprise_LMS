@@ -57,8 +57,11 @@ public class QuizReviewResponse {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class ReviewStudentAnswerDto {
+        private Long id;
         private Long selectedOptionId;
         private String answerText;
         private Boolean isAwarded;
+        private Double earnedPoints;
+        private String feedback;
     }
 }

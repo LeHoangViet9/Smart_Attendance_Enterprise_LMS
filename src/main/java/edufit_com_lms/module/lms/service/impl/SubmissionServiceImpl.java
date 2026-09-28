@@ -101,6 +101,14 @@ public class SubmissionServiceImpl implements SubmissionService {
                 Submission updated = submissionRepository.save(submission);
                 log.info("Graded submission ID {}: score={}", submissionId, request.getScore());
 
+                // Notify Student that their assignment was graded
+                eventPublisher.publishEvent(edufit_com_lms.module.notification.event.NotificationEvent.builder()
+                        .title("Đã có điểm bài tập!")
+                        .message("Bài tập '" + assignment.getTitle() + "' của bạn đã được chấm điểm: " + request.getScore() + " / " + maxScore)
+                        .type("SYSTEM_LOG")
+                        .recipientId(submission.getStudentId())
+                        .build());
+
                 return mapToResponse(updated, assignment);
         }
 

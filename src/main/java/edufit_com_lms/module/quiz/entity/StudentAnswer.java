@@ -39,4 +39,12 @@ public class StudentAnswer {
     // Câu này được hệ thống quy kết là Đúng hay Sai để tính điểm?
     @Column(name = "is_awarded")
     private Boolean isAwarded;
+
+    // Điểm thực tế đạt được (dùng cho câu Tự luận chấm từng phần)
+    @Column(name = "earned_points")
+    private Double earnedPoints;
+
+    // Nhận xét của giảng viên (dành riêng cho câu Tự luận)
+    @Column(columnDefinition = "TEXT")
+    private String feedback;
 }

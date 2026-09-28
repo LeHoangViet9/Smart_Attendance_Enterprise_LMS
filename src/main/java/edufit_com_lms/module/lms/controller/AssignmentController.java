@@ -163,6 +163,14 @@ public class AssignmentController {
     public ResponseEntity<ApiResponse<SubmissionResponse>> submitAssignment(
             @PathVariable("id") UUID assignmentId,
             @Valid @RequestBody SubmitAssignmentRequest request) {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetail userDetails = (CustomUserDetail) authentication.getPrincipal();
+        Long authenticatedStudentId = userDetails.getId();
+        
+        // Force the studentId to be the authenticated user
+        request.setStudentId(authenticatedStudentId);
+
         SubmissionResponse response = submissionService.submitAssignment(assignmentId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Assignment submitted successfully", response));
@@ -182,8 +190,21 @@ public class AssignmentController {
     @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN', 'STUDENT')")
     public ResponseEntity<ApiResponse<SubmissionResponse>> getStudentSubmission(
             @PathVariable("id") UUID assignmentId,
-            @RequestParam Long studentId) {
-        SubmissionResponse response = submissionService.getSubmissionByAssignmentAndStudent(assignmentId, studentId);
+            @RequestParam(required = false) Long studentId) {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetail userDetails = (CustomUserDetail) authentication.getPrincipal();
+
+        Long targetStudentId = studentId;
+        
+        // If student is requesting, force them to only see their own submission
+        if (userDetails.getRole() == Role.STUDENT) {
+            targetStudentId = userDetails.getId();
+        } else if (targetStudentId == null) {
+             throw new edufit_com_lms.common.exception.BadRequestException("studentId is required for Lecturer/Admin");
+        }
+
+        SubmissionResponse response = submissionService.getSubmissionByAssignmentAndStudent(assignmentId, targetStudentId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

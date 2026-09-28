@@ -13,7 +13,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SubmitAssignmentRequest {
-    @NotNull(message = "studentId must not be null")
     private Long studentId;
 
     @NotBlank(message = "fileUrl must not be blank")

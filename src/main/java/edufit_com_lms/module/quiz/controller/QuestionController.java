@@ -12,6 +12,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import edufit_com_lms.security.CustomUserDetail;
+import edufit_com_lms.module.auth.entity.Role;
 
 @RestController
 @RequestMapping("/api/v1/quizzes/{quizId}/questions")
@@ -37,11 +41,12 @@ public class QuestionController {
         public ResponseEntity<ApiResponse<QuestionResponse>> createQuestion(
                         @PathVariable Long quizId,
                         @RequestBody QuestionRequest request) {
+                Long lecturerId = getLecturerIdOrNull();
                 return new ResponseEntity<>(new ApiResponse<>(
                                 true,
                                 "Add question successfully",
                                 null,
-                                questionService.createQuestion(quizId, request),
+                                questionService.createQuestion(quizId, request, lecturerId),
                                 HttpStatus.CREATED), HttpStatus.CREATED);
         }
 
@@ -50,11 +55,12 @@ public class QuestionController {
                         @PathVariable Long quizId,
                         @PathVariable Long questionId,
                         @RequestBody QuestionRequest request) {
+                Long lecturerId = getLecturerIdOrNull();
                 return new ResponseEntity<>(new ApiResponse<>(
                                 true,
                                 "Update question successfully",
                                 null,
-                                questionService.updateQuestion(quizId, questionId, request),
+                                questionService.updateQuestion(quizId, questionId, request, lecturerId),
                                 HttpStatus.OK), HttpStatus.OK);
         }
 
@@ -62,7 +68,8 @@ public class QuestionController {
         public ResponseEntity<ApiResponse<Void>> deleteQuestion(
                         @PathVariable Long quizId,
                         @PathVariable Long questionId) {
-                questionService.deleteQuestion(quizId, questionId);
+                Long lecturerId = getLecturerIdOrNull();
+                questionService.deleteQuestion(quizId, questionId, lecturerId);
                 return new ResponseEntity<>(new ApiResponse<>(
                                 true,
                                 "Delete question successfully",
@@ -73,13 +80,13 @@ public class QuestionController {
 
         @GetMapping("/{questionId}")
         public ResponseEntity<ApiResponse<QuestionResponse>> getQuestion(
-                        @PathVariable Long quizId, // Not used but standard REST practice for URL
+                        @PathVariable Long quizId,
                         @PathVariable Long questionId) {
                 return new ResponseEntity<>(new ApiResponse<>(
                                 true,
                                 "Get question by id successfully",
                                 null,
-                                questionService.findById(questionId),
+                                questionService.findById(quizId, questionId),
                                 HttpStatus.OK), HttpStatus.OK);
         }
 
@@ -87,12 +94,23 @@ public class QuestionController {
         public ResponseEntity<ApiResponse<Void>> importQuestionsFromExcel(
                         @PathVariable Long quizId,
                         @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
-                questionService.importQuestionsFromExcel(quizId, file);
+                Long lecturerId = getLecturerIdOrNull();
+                questionService.importQuestionsFromExcel(quizId, file, lecturerId);
                 return new ResponseEntity<>(new ApiResponse<>(
                                 true,
                                 "Import questions successfully",
                                 null,
                                 null,
                                 HttpStatus.OK), HttpStatus.OK);
+        }
+
+        private Long getLecturerIdOrNull() {
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetail userDetails) {
+                        if (userDetails.getRole() == Role.LECTURER) {
+                                return userDetails.getId();
+                        }
+                }
+                return null;
         }
 }

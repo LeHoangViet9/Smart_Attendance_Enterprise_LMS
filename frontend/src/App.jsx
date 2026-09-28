@@ -8,6 +8,8 @@ import QuizAttempt from './pages/student/Quiz/QuizAttempt';
 import QuizHistory from './pages/student/Quiz/QuizHistory';
 import QuizReview from './pages/student/Quiz/QuizReview';
 import QuizManagement from './pages/student/Quiz/QuizManagement';
+import QuizGradingList from './pages/lecturer/QuizGrading/QuizGradingList';
+import QuizGradingDetail from './pages/lecturer/QuizGrading/QuizGradingDetail';
 import FaceOnboarding from './pages/student/FaceOnboarding';
 import AssignmentList from './pages/student/Assignment/AssignmentList';
 import AssignmentDetails from './pages/student/Assignment/AssignmentDetails';
@@ -79,6 +81,7 @@ const App = () => {
           <Route path="quizzes" element={<QuizList />} />
           <Route path="quizzes/manage/:quizId" element={<QuizManagement />} />
           <Route path="assignments" element={<AssignmentList />} />
+          <Route path="assignments/manage" element={<AssignmentManagement />} />
           {/* Default fallback */}
           <Route index element={<Navigate to="dashboard" replace />} />
         </Route>
@@ -93,7 +96,10 @@ const App = () => {
           <Route path="courses/:id" element={<LecturerCourseDetails />} />
           <Route path="quizzes" element={<QuizList />} />
           <Route path="quizzes/manage/:quizId" element={<QuizManagement />} />
+          <Route path="quizzes/:quizId/grading" element={<QuizGradingList />} />
+          <Route path="quizzes/attempts/:attemptId/grading" element={<QuizGradingDetail />} />
           <Route path="assignments" element={<AssignmentList />} />
+          <Route path="assignments/manage" element={<AssignmentManagement />} />
           <Route index element={<Navigate to="dashboard" replace />} />
         </Route>
 

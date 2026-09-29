@@ -33,6 +33,10 @@ import edufit_com_lms.module.auth.entity.LecturerProfile;
 import edufit_com_lms.module.auth.repository.StudentProfileRepository;
 import edufit_com_lms.module.auth.repository.LecturerProfileRepository;
 import edufit_com_lms.module.lms.repository.MajorRepository;
+import edufit_com_lms.module.lms.repository.ClassEnrollmentRepository;
+import edufit_com_lms.module.lms.entity.ClassEnrollment;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/courses")
@@ -44,6 +48,7 @@ public class CourseController {
     private final LecturerProfileRepository lecturerProfileRepository;
     private final MajorRepository majorRepository;
     private final MinioStorageService minioStorageService;
+    private final ClassEnrollmentRepository classEnrollmentRepository;
 
     // 1. Lấy danh sách tất cả các khóa học
     @GetMapping
@@ -57,12 +62,16 @@ public class CourseController {
         if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetail) {
             CustomUserDetail user = (CustomUserDetail) authentication.getPrincipal();
             if (user.getRole() == Role.STUDENT) {
-                StudentProfile profile = studentProfileRepository.findById(user.getId()).orElse(null);
-                if (profile != null && profile.getSchoolClass() != null
-                        && profile.getSchoolClass().getMajor() != null) {
-                    UUID majorId = profile.getSchoolClass().getMajor().getId();
+                List<ClassEnrollment> enrollments = classEnrollmentRepository.findByStudentUserId(user.getId());
+                List<UUID> courseIds = enrollments.stream()
+                        .filter(e -> e.getSchoolClass() != null && e.getSchoolClass().getCourse() != null)
+                        .map(e -> e.getSchoolClass().getCourse().getId())
+                        .distinct()
+                        .collect(Collectors.toList());
+                        
+                if (!courseIds.isEmpty()) {
                     return ResponseEntity.ok(ApiResponse
-                            .success(courseService.getPaginatedCoursesByMajorId(majorId, keyword, pageable)));
+                            .success(courseService.getPaginatedCoursesByIds(courseIds, keyword, pageable)));
                 } else {
                     return ResponseEntity.ok(ApiResponse.success(Page.empty(pageable)));
                 }
@@ -127,43 +136,7 @@ public class CourseController {
         return ResponseEntity.ok(ApiResponse.success("Course deleted successfully", null));
     }
 
-    // 6. Lấy danh sách bài giảng của một khóa học (có phân trang)
-    @GetMapping("/{id}/lessions")
-    public ResponseEntity<ApiResponse<Page<LessionResponse>>> getLessonsByCourseId(
-            @PathVariable("id") UUID courseId,
-            @PageableDefault(size = 10) Pageable pageable) {
-        Page<LessionResponse> responses = courseService.getPaginatedLessionsByCourseId(courseId, pageable);
-        return ResponseEntity.ok(ApiResponse.success(responses));
-    }
 
-    // 7. Giảng viên / Admin: Thêm bài giảng vào khóa học
-    @PostMapping("/{id}/lessions")
-    @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
-    public ResponseEntity<ApiResponse<LessionResponse>> addLesson(
-            @PathVariable("id") UUID courseId,
-            @Valid @RequestBody CreateLessionRequest request) {
-        LessionResponse response = courseService.addLession(courseId, request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Lession added successfully", response));
-    }
-
-    // 8. Giảng viên / Admin: Cập nhật bài giảng
-    @PutMapping("/lessions/{lessionId}")
-    @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
-    public ResponseEntity<ApiResponse<LessionResponse>> updateLesson(
-            @PathVariable UUID lessionId,
-            @Valid @RequestBody UpdateLessionRequest request) {
-        LessionResponse response = courseService.updateLession(lessionId, request);
-        return ResponseEntity.ok(ApiResponse.success("Lession updated successfully", response));
-    }
-
-    // 9. Giảng viên / Admin: Xóa bài giảng
-    @DeleteMapping("/lessions/{lessionId}")
-    @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> deleteLesson(@PathVariable UUID lessionId) {
-        courseService.deleteLession(lessionId);
-        return ResponseEntity.ok(ApiResponse.success("Lession deleted successfully", null));
-    }
 
     // 10. Lấy Presigned URL để upload file (video, document, thumbnail)
     @PostMapping("/upload-url")

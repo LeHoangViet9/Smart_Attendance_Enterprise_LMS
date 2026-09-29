@@ -20,4 +20,8 @@ public interface CourseRepository extends JpaRepository<Courses, UUID> {
     Page<Courses> findByMajorId(UUID majorId, Pageable pageable);
 
     Page<Courses> findByMajorIdAndTitleContainingIgnoreCase(UUID majorId, String title, Pageable pageable);
+    
+    Page<Courses> findByIdIn(java.util.List<UUID> ids, Pageable pageable);
+    
+    Page<Courses> findByIdInAndTitleContainingIgnoreCase(java.util.List<UUID> ids, String title, Pageable pageable);
 }

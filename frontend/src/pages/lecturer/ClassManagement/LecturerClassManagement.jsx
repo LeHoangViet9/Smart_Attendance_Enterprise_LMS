@@ -107,6 +107,11 @@ const LecturerClassManagement = () => {
                                 📊 Bảng điểm
                             </button>
                             <button 
+                                onClick={() => navigate(`/lecturer/classes/${selectedCourseId}/attendance-history`)}
+                                style={{ padding: '12px 24px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 6px rgba(245, 158, 11, 0.3)' }}>
+                                🕒 Lịch sử điểm danh
+                            </button>
+                            <button 
                                 onClick={() => navigate(`/lecturer/classes/${selectedCourseId}/smart-attendance`)}
                                 style={{ padding: '12px 24px', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 6px rgba(59, 130, 246, 0.3)' }}>
                                 📸 Start Smart Attendance

@@ -20,6 +20,8 @@ public interface CourseService {
 
 
     Page<CourseResponse> getPaginatedCoursesByMajorId(UUID majorId, String keyword, Pageable pageable);
+    
+    Page<CourseResponse> getPaginatedCoursesByIds(List<UUID> ids, String keyword, Pageable pageable);
 
     CourseResponse getCourseById(UUID id);
 

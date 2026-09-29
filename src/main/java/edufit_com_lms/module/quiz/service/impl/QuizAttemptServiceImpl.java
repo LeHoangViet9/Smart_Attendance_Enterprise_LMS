@@ -95,10 +95,9 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
             return res; // Trả về attempt cũ thay vì quăng lỗi
         }
         LocalDateTime now = LocalDateTime.now();
-        // TEMP BYPASS: Commented out for testing purposes
-        // if (quiz.getStartTime() != null && now.isBefore(quiz.getStartTime())) {
-        //     throw new ConflictException("The test has not yet started!");
-        // }
+        if (quiz.getStartTime() != null && now.isBefore(quiz.getStartTime())) {
+            throw new ConflictException("The test has not yet started!");
+        }
         if (quiz.getEndTime() != null && now.isAfter(quiz.getEndTime())) {
             throw new ConflictException("This test has expired!");
         }

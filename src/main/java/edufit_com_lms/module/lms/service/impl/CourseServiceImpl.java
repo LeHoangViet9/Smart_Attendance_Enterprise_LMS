@@ -79,6 +79,22 @@ public class CourseServiceImpl implements CourseService {
                 .collect(Collectors.toList());
         return new PageImpl<>(content, pageable, pageResult.getTotalElements());
     }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public Page<CourseResponse> getPaginatedCoursesByIds(List<UUID> ids, String keyword, Pageable pageable) {
+        Page<Courses> pageResult;
+        if (keyword != null && !keyword.isBlank()) {
+            pageResult = courseRepository.findByIdInAndTitleContainingIgnoreCase(ids, keyword, pageable);
+        } else {
+            pageResult = courseRepository.findByIdIn(ids, pageable);
+        }
+
+        List<CourseResponse> content = pageResult.getContent().stream()
+                .map(this::mapToCourseSummaryResponse)
+                .collect(Collectors.toList());
+        return new PageImpl<>(content, pageable, pageResult.getTotalElements());
+    }
 
     @Override
     @Transactional(readOnly = true)

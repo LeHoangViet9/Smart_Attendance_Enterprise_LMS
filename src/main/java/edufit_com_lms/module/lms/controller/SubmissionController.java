@@ -12,6 +12,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import edufit_com_lms.security.CustomUserDetail;
+import edufit_com_lms.module.auth.entity.Role;
+import edufit_com_lms.common.exception.BadRequestException;
+
 @RestController
 @RequestMapping("/api/v1/submissions")
 @RequiredArgsConstructor
@@ -32,6 +38,15 @@ public class SubmissionController {
     @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN', 'STUDENT')")
     public ResponseEntity<ApiResponse<SubmissionResponse>> getSubmissionById(@PathVariable("id") UUID submissionId) {
         SubmissionResponse response = submissionService.getSubmissionById(submissionId);
+        
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetail) {
+            CustomUserDetail userDetails = (CustomUserDetail) authentication.getPrincipal();
+            if (userDetails.getRole() == Role.STUDENT && !response.getStudentId().equals(userDetails.getId())) {
+                throw new BadRequestException("You are not allowed to view this submission");
+            }
+        }
+        
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

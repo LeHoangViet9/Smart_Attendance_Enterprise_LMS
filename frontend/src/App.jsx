@@ -21,8 +21,11 @@ import AdminLayout from './pages/admin/Layout/AdminLayout';
 import UserManagement from './pages/admin/UserManagement/UserManagement';
 import CourseManagement from './pages/admin/CourseManagement/CourseManagement';
 import LecturerClassManagement from './pages/lecturer/ClassManagement/LecturerClassManagement';
+import LecturerAttendanceHistory from './pages/lecturer/ClassManagement/LecturerAttendanceHistory';
 import AdminClassManagement from './pages/admin/ClassManagement/AdminClassManagement';
 import LecturerSmartAttendance from './pages/lecturer/SmartAttendance/LecturerSmartAttendance';
+import StudentClassList from './pages/student/Class/StudentClassList';
+import StudentAttendanceHistory from './pages/student/Class/StudentAttendanceHistory';
 import LecturerCourseManagement from './pages/lecturer/CourseManagement/LecturerCourseManagement';
 import LecturerCourseDetails from './pages/lecturer/CourseManagement/LecturerCourseDetails';
 import Profile from './pages/Profile/Profile';
@@ -54,6 +57,8 @@ const App = () => {
           <Route path="profile" element={<Profile />} />
           <Route path="gradebook" element={<Gradebook />} />
           <Route path="courses" element={<CourseList />} />
+          <Route path="my-classes" element={<StudentClassList />} />
+          <Route path="attendance-history" element={<StudentAttendanceHistory />} />
           <Route path="courses/:id" element={<CourseDetails />} />
           <Route path="quizzes" element={<QuizList />} />
           <Route path="quizzes/manage/:quizId" element={<QuizManagement />} />
@@ -91,6 +96,7 @@ const App = () => {
           <Route path="profile" element={<Profile />} />
           <Route path="classes" element={<LecturerClassManagement />} />
           <Route path="classes/:id/smart-attendance" element={<LecturerSmartAttendance />} />
+          <Route path="classes/:classId/attendance-history" element={<LecturerAttendanceHistory />} />
           <Route path="classes/:classId/gradebook" element={<Gradebook />} />
           <Route path="courses" element={<LecturerCourseManagement />} />
           <Route path="courses/:id" element={<LecturerCourseDetails />} />

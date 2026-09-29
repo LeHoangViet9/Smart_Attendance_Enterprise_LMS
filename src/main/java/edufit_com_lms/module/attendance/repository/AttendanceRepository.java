@@ -13,6 +13,12 @@ import java.util.UUID;
 public interface AttendanceRepository extends JpaRepository<AttendanceRecord, UUID> {
     List<AttendanceRecord> findBySchoolClassId(UUID classId);
 
+    List<AttendanceRecord> findBySchoolClassIdAndCheckInTimeBetween(UUID classId, java.time.LocalDateTime start, java.time.LocalDateTime end);
+
+    List<AttendanceRecord> findByStudentUserId(Long studentId);
+
+    List<AttendanceRecord> findByStudentUserIdAndCheckInTimeBetween(Long studentId, java.time.LocalDateTime start, java.time.LocalDateTime end);
+
     @Query("SELECT COUNT(a) FROM AttendanceRecord a WHERE a.schoolClass.lecturer.userId = :lecturerId")
     long countTotalAttendanceByLecturer(@Param("lecturerId") Long lecturerId);
 

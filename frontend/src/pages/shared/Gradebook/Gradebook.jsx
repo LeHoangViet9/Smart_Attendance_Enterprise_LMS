@@ -41,21 +41,7 @@ const Gradebook = () => {
         }
     };
 
-    const handleExportExcel = async () => {
-        try {
-            const res = await axiosInstance.get(`/v1/gradebooks/classes/${classId}/export`, {
-                responseType: 'blob' 
-            });
-            const url = window.URL.createObjectURL(new Blob([res.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `BangDiem_Lop_${classId}.xlsx`);
-            document.body.appendChild(link);
-            link.click();
-        } catch (error) {
-            showStatus("Lỗi xuất file Excel!", "error");
-        }
-    };
+
 
     const showStatus = (text, type) => {
         setStatusMessage({ text, type });
@@ -124,14 +110,15 @@ const Gradebook = () => {
                     >
                         ⬅ Quay lại
                     </button>
-                    {userRole === 'ADMIN' && classId && (
+                    {userRole === 'STUDENT' && (
                         <button 
-                            onClick={handleExportExcel}
-                            className="gradebook-btn-export"
+                            onClick={() => navigate('/student/attendance-history')}
+                            style={{ background: '#f59e0b', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.375rem', cursor: 'pointer', fontWeight: 'bold' }}
                         >
-                            ⬇ Xuất Excel
+                            🕒 Lịch sử điểm danh
                         </button>
                     )}
+
                     {userRole === 'LECTURER' && classId && (
                         <button 
                             onClick={async () => {

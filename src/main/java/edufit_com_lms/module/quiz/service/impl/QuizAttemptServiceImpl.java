@@ -27,6 +27,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -36,12 +38,15 @@ import edufit_com_lms.module.quiz.service.QuizAttemptService;
 import edufit_com_lms.module.quiz.service.AIGradingService;
 import edufit_com_lms.module.quiz.dto.response.AIGradeSuggestionResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 import org.springframework.context.ApplicationEventPublisher;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class QuizAttemptServiceImpl implements QuizAttemptService {
@@ -57,11 +62,31 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
     private final ApplicationEventPublisher eventPublisher;
     private final AIGradingService aiGradingService;
 
+    @Transactional
     @Override
     public QuizAttemptResponse startAttempt(Long quizId, Long studentId) {
         Quiz quiz = quizRepository.findById(quizId).orElseThrow(() -> new ResourceNotFound("Can not found quiz"));
         User student = userRepository.findById(studentId).orElseThrow(() -> new ResourceNotFound("Can not found user"));
         List<QuizAttempt> existingAttempts = quizAttemptRepository.findByQuizIdAndStudentUserId(quizId, studentId);
+
+        // Kiểm tra số lần làm tối đa (nếu có)
+        if (quiz.getMaxAttempts() != null) {
+            long attemptsCount = existingAttempts.stream()
+                    .filter(a -> a.getStatus() == QuizStatus.COMPLETED || a.getStatus() == QuizStatus.IN_PROGRESS)
+                    .count();
+            if (attemptsCount >= quiz.getMaxAttempts()) {
+                throw new ConflictException("Bạn đã vượt quá số lần làm tối đa cho bài thi này!");
+            }
+        }
+
+        // Kiểm tra thời gian của bài thi trước tiên
+        LocalDateTime now = LocalDateTime.now();
+        if (quiz.getStartTime() != null && now.isBefore(quiz.getStartTime())) {
+            throw new ConflictException("The test has not yet started!");
+        }
+        if (quiz.getEndTime() != null && now.isAfter(quiz.getEndTime())) {
+            throw new ConflictException("This test has expired!");
+        }
 
         // Chặn thi lại đối với những bài thi yêu cầu quét mặt (chỉ cho phép thi 1 lần)
         if (Boolean.TRUE.equals(quiz.getRequiresProctoring())) {
@@ -90,16 +115,9 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                     res.setCachedAnswers(cachedAnswers);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("Lỗi khi đọc dữ liệu nháp từ Redis cho bài thi: " + existingAttempt.getId(), e);
             }
             return res; // Trả về attempt cũ thay vì quăng lỗi
-        }
-        LocalDateTime now = LocalDateTime.now();
-        if (quiz.getStartTime() != null && now.isBefore(quiz.getStartTime())) {
-            throw new ConflictException("The test has not yet started!");
-        }
-        if (quiz.getEndTime() != null && now.isAfter(quiz.getEndTime())) {
-            throw new ConflictException("This test has expired!");
         }
 
         QuizAttempt quizAttempt = QuizAttempt.builder()
@@ -125,12 +143,18 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         Integer timeLimit = quizAttempt.getQuiz().getTimeLimitMinutes();
         LocalDateTime submitTime = LocalDateTime.now();
 
+        // Kiểm tra xem bài thi đã qua thời gian tuyệt đối của hệ thống chưa
+        if (quizAttempt.getQuiz().getEndTime() != null && submitTime.isAfter(quizAttempt.getQuiz().getEndTime())) {
+             throw new ConflictException("Đã vượt quá thời gian kết thúc của bài thi!");
+        }
+
         // Nếu quiz có giới hạn thời gian, check xem nộp muộn không (du di 1 phút do độ
         // trễ mạng)
         if (timeLimit != null) {
             LocalDateTime deadline = startTime.plusMinutes(timeLimit).plusMinutes(1);
             if (submitTime.isAfter(deadline)) {
-                quizAttempt.setStatus(QuizStatus.ABANDONED);
+                // Đã quá hạn làm bài, không thể nộp
+                throw new ConflictException("Đã quá thời gian làm bài, không thể nộp bài!");
             }
         }
 
@@ -144,21 +168,59 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
 
         double earnedPoints = 0.0;
         List<StudentAnswer> studentAnswers = new ArrayList<>();
+        Set<Long> processedQuestionIds = new HashSet<>();
 
         if (submitRequest.getAnswers() != null && !submitRequest.getAnswers().isEmpty()) {
             for (StudentAnswerRequest answerReq : submitRequest.getAnswers()) {
+                // Tránh tình trạng spam 1 câu trả lời nhiều lần để buff điểm ảo
+                if (processedQuestionIds.contains(answerReq.getQuestionId())) {
+                    continue;
+                }
+                processedQuestionIds.add(answerReq.getQuestionId());
+
                 Question question = questionRepository.findById(answerReq.getQuestionId())
                         .orElseThrow(() -> new ResourceNotFound("Can not found question"));
+
+                // Chặn đánh tráo câu hỏi từ bài thi khác
+                if (!question.getQuiz().getId().equals(quizAttempt.getQuiz().getId())) {
+                    throw new ConflictException("Câu hỏi này không thuộc về bài thi hiện tại!");
+                }
 
                 boolean isAwarded = false;
                 QuestionOption selectedOption = null;
 
+                // Validate selectedOption for single choice / true-false
                 if (answerReq.getSelectedOptionId() != null) {
-                    selectedOption = questionOptionRepository.findById(answerReq.getSelectedOptionId()).orElse(null);
+                    selectedOption = questionOptionRepository.findById(answerReq.getSelectedOptionId())
+                            .orElseThrow(() -> new ResourceNotFound("Can not found option"));
+                    // Ensure the option belongs to the current question
+                    if (!selectedOption.getQuestion().getId().equals(question.getId())) {
+                        throw new ConflictException("Option không thuộc câu hỏi này!");
+                    }
                 }
 
-                if (question.getQuestionType() == QuestionType.MULTIPLE_CHOICE
-                        || question.getQuestionType() == QuestionType.SINGLE_CHOICE
+                // MULTIPLE_CHOICE handling
+                if (question.getQuestionType() == QuestionType.MULTIPLE_CHOICE) {
+                    List<Long> providedIds = answerReq.getSelectedOptionIds();
+                    if (providedIds != null && !providedIds.isEmpty()) {
+                        // Verify all provided IDs belong to this question
+                        Set<Long> questionOptionIds = question.getOptions().stream()
+                                .map(QuestionOption::getId)
+                                .collect(java.util.stream.Collectors.toSet());
+                        if (!questionOptionIds.containsAll(providedIds)) {
+                            throw new ConflictException("Một hoặc nhiều option không thuộc câu hỏi hiện tại!");
+                        }
+                        // Determine correct option IDs
+                        Set<Long> correctOptionIds = question.getOptions().stream()
+                                .filter(opt -> Boolean.TRUE.equals(opt.getIsCorrect()))
+                                .map(QuestionOption::getId)
+                                .collect(java.util.stream.Collectors.toSet());
+                        if (new HashSet<>(providedIds).equals(correctOptionIds)) {
+                            isAwarded = true;
+                            earnedPoints += question.getPoints();
+                        }
+                    }
+                } else if (question.getQuestionType() == QuestionType.SINGLE_CHOICE
                         || question.getQuestionType() == QuestionType.TRUE_FALSE) {
                     if (selectedOption != null && Boolean.TRUE.equals(selectedOption.getIsCorrect())) {
                         isAwarded = true;
@@ -183,6 +245,8 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                         .attempt(quizAttempt)
                         .question(question)
                         .selectedOption(selectedOption)
+                        // For MULTIPLE_CHOICE store the list of selected option IDs
+                        .selectedOptionIds(answerReq.getSelectedOptionIds() != null ? new java.util.HashSet<>(answerReq.getSelectedOptionIds()) : null)
                         .answerText(answerReq.getAnswerText())
                         .isAwarded(isAwarded)
                         .earnedPoints(isAwarded ? question.getPoints() : 0.0)
@@ -243,10 +307,10 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         try {
             String key = "quiz:attempt:" + attemptId;
             String json = objectMapper.writeValueAsString(submitRequest.getAnswers());
-            // Lưu và set hạn tự sát sau 1 ngày nếu không xảo bớt bộ nhớ
+            // Lưu và set hạn tự sát sau 1 ngày nếu không xả bớt bộ nhớ
             stringRedisTemplate.opsForValue().set(key, json, 1, TimeUnit.DAYS);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            log.error("Lỗi khi serialize câu trả lời để lưu nháp Redis cho bài thi: " + attemptId, e);
         }
     }
 
@@ -345,8 +409,11 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                 .orElseThrow(() -> new ResourceNotFound("Can not found quiz attempt"));
 
         // Verify ownership (Lecturer should own the quiz)
-        if (lecturerId != null && !quizAttempt.getQuiz().getCreatedBy().getUserId().equals(lecturerId)) {
-            throw new ConflictException("You are not the owner of this quiz");
+        if (lecturerId != null) {
+            User creator = quizAttempt.getQuiz().getCreatedBy();
+            if (creator == null || !creator.getUserId().equals(lecturerId)) {
+                throw new ConflictException("You are not the owner of this quiz");
+            }
         }
 
         List<StudentAnswer> studentAnswers = studentAnswerRepository.findAllByAttemptId(attemptId);
@@ -358,6 +425,12 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                     .orElse(null);
 
             if (answer != null) {
+                // Validate points do not exceed max points for the question
+                double maxPoints = answer.getQuestion().getPoints() != null ? answer.getQuestion().getPoints() : 0.0;
+                if (qg.getPoints() > maxPoints) {
+                    throw new ConflictException("Điểm chấm (" + qg.getPoints() + ") không được vượt quá điểm tối đa của câu hỏi (" + maxPoints + ")");
+                }
+
                 answer.setEarnedPoints(qg.getPoints());
                 answer.setFeedback(qg.getFeedback());
                 answer.setIsAwarded(qg.getPoints() > 0);
@@ -384,13 +457,53 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         return quizAttemptMapper.toResponse(quizAttemptRepository.save(quizAttempt));
     }
 
+    // ----------
+        // Timeout handling for IN_PROGRESS attempts
+        // ----------
+        @Scheduled(cron = "0 * * * * *") // runs every minute
+        public void abandonStaleAttempts() {
+            List<QuizAttempt> inProgressAttempts = quizAttemptRepository.findByStatus(QuizStatus.IN_PROGRESS);
+            if (inProgressAttempts == null || inProgressAttempts.isEmpty()) {
+                return;
+            }
+            LocalDateTime now = LocalDateTime.now();
+
+            for (QuizAttempt attempt : inProgressAttempts) {
+                Integer timeLimit = attempt.getQuiz().getTimeLimitMinutes();
+                LocalDateTime deadline = null;
+                if (timeLimit != null) {
+                    deadline = attempt.getStartTime().plusMinutes(timeLimit);
+                } else if (attempt.getQuiz().getEndTime() != null) {
+                    deadline = attempt.getQuiz().getEndTime();
+                }
+                if (deadline != null && now.isAfter(deadline)) {
+                    attempt.setStatus(QuizStatus.ABANDONED);
+                    attempt.setEndTime(now);
+                    quizAttemptRepository.save(attempt);
+                    log.info("Attempt id {} marked as ABANDONED due to timeout.", attempt.getId());
+                    // Thông báo cho người tạo quiz về việc bỏ qua vì timeout
+                    if (attempt.getQuiz() != null && attempt.getQuiz().getCreatedBy() != null) {
+                        eventPublisher.publishEvent(edufit_com_lms.module.notification.event.NotificationEvent.builder()
+                                .title("Bài thi đã bị hủy do quá thời gian")
+                                .message("Attempt id " + attempt.getId() + " đã bị đánh dấu ABANDONED vì quá hạn.")
+                                .type("SYSTEM_LOG")
+                                .recipientId(attempt.getQuiz().getCreatedBy().getUserId())
+                                .build());
+                    }
+                }
+            }
+        }
+
     @Override
     public AIGradeSuggestionResponse suggestGradeWithAI(Long attemptId, Long answerId, Long lecturerId) {
         QuizAttempt quizAttempt = quizAttemptRepository.findById(attemptId)
                 .orElseThrow(() -> new ResourceNotFound("Can not found quiz attempt"));
 
-        if (lecturerId != null && !quizAttempt.getQuiz().getCreatedBy().getUserId().equals(lecturerId)) {
-            throw new ConflictException("You are not the owner of this quiz");
+        if (lecturerId != null) {
+            User creator = quizAttempt.getQuiz().getCreatedBy();
+            if (creator == null || !creator.getUserId().equals(lecturerId)) {
+                throw new ConflictException("You are not the owner of this quiz");
+            }
         }
 
         StudentAnswer studentAnswer = studentAnswerRepository.findById(answerId)

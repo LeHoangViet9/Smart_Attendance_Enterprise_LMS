@@ -5,5 +5,6 @@ public enum QuestionType {
     MULTIPLE_CHOICE, // Trắc nghiệm nhiều đáp án đúng
     TRUE_FALSE, // Đúng / Sai
     FILL_BLANK, // Điền vào chỗ trống
-    ESSAY// Tự luận (Cần chấm tay)
+    ESSAY, // Tự luận (Cần chấm tay)
+    SHORT_ANSWER // Câu trả lời ngắn
 }

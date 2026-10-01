@@ -28,13 +28,21 @@ public class StudentAnswer {
 
     // NẾU LÀ TRẮC NGHIỆM: Sinh viên chọn Option nào (Thằng này null nếu là fill in
     // the blank)
+    // For SINGLE_CHOICE / TRUE_FALSE: the selected option entity
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "selected_option_id")
     private QuestionOption selectedOption;
 
+    // For MULTIPLE_CHOICE: store selected option IDs as a collection of longs
+    @ElementCollection
+    @CollectionTable(name = "student_answer_selected_option_ids", joinColumns = @JoinColumn(name = "student_answer_id"))
+    @Column(name = "option_id")
+    private java.util.Set<Long> selectedOptionIds;
+
+
     // NẾU LÀ ĐIỀN VÀO CHỖ TRỐNG: Lưu thẳng câu chữ sinh viên tự gõ vào đây
     @Column(name = "answer_text", columnDefinition = "TEXT")
-    private String answerText;
+    private String answerText; // Used for FILL_BLANK or can store JSON of MULTIPLE_CHOICE ids if needed
 
     // Câu này được hệ thống quy kết là Đúng hay Sai để tính điểm?
     @Column(name = "is_awarded")

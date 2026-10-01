@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+import edufit_com_lms.module.quiz.entity.QuizStatus;
 @Repository
 public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Long> {
     // Check xem sinh viên có đang thi dở bài này không
@@ -18,4 +19,6 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Long> 
 
     // Lấy danh sách bài làm của một Quiz (cho giảng viên chấm bài)
     Page<QuizAttempt> findAllByQuizIdOrderByStartTimeDesc(Long quizId, Pageable pageable);
+    // Lấy các attempt đang IN_PROGRESS để kiểm tra timeout
+    List<QuizAttempt> findByStatus(QuizStatus status);
 }

@@ -87,7 +87,7 @@ const QuizAttempt = () => {
     };
 
     useEffect(() => {
-        if (timeLeft === null || timeLeft <= 0) return;
+        if (timeLeft === null) return;
         const interval = setInterval(() => {
             setTimeLeft(prev => {
                 if (prev <= 1) {
@@ -99,7 +99,7 @@ const QuizAttempt = () => {
             });
         }, 1000);
         return () => clearInterval(interval);
-    }, [timeLeft]);
+    }, []);
 
     // Handle autosave
     useEffect(() => {
@@ -254,13 +254,32 @@ const QuizAttempt = () => {
         return () => stopCamera();
     }, [showSubmitModal]);
 
+    // SINGLE / TRUE_FALSE selection (radio)
     const handleOptionSelect = (questionId, optionId) => {
         setAnswers(prev => {
             const existing = prev.find(a => a.questionId === questionId);
             if (existing) {
-                return prev.map(a => a.questionId === questionId ? { ...a, selectedOptionId: optionId } : a);
+                // overwrite single choice, clear any multiple‑choice IDs
+                return prev.map(a => a.questionId === questionId ? { ...a, selectedOptionId: optionId, selectedOptionIds: undefined } : a);
             }
-            return [...prev, { questionId, selectedOptionId: optionId, answerText: null }];
+            return [...prev, { questionId, selectedOptionId: optionId, selectedOptionIds: undefined, answerText: null }];
+        });
+    };
+    // MULTIPLE_CHOICE toggle (checkboxes)
+    const handleOptionToggle = (questionId, optionId) => {
+        setAnswers(prev => {
+            const existing = prev.find(a => a.questionId === questionId);
+            if (existing) {
+                const ids = new Set(existing.selectedOptionIds || []);
+                if (ids.has(optionId)) {
+                    ids.delete(optionId);
+                } else {
+                    ids.add(optionId);
+                }
+                return prev.map(a => a.questionId === questionId ? { ...a, selectedOptionIds: Array.from(ids), selectedOptionId: undefined } : a);
+            }
+            // first time selecting for this question
+            return [...prev, { questionId, selectedOptionIds: [optionId], selectedOptionId: undefined, answerText: null }];
         });
     };
 
@@ -279,6 +298,10 @@ const QuizAttempt = () => {
     const isChecked = (questionId, optionId) => {
         const ans = answers.find(a => a.questionId === questionId);
         return ans?.selectedOptionId === optionId;
+    };
+    const isCheckedMultiple = (questionId, optionId) => {
+        const ans = answers.find(a => a.questionId === questionId);
+        return ans?.selectedOptionIds?.includes(optionId);
     };
 
     const getTextAnswer = (questionId) => {
@@ -324,7 +347,7 @@ const QuizAttempt = () => {
             <div className="attempt-header">
                 <h2 className="attempt-title">{quiz?.title}</h2>
                 <div className="progress-info">
-                    {answers.filter(a => a.selectedOptionId || (a.answerText && a.answerText.trim() !== '')).length} / {quiz?.questions?.length} answered
+                    {answers.filter(a => a.selectedOptionId || (a.selectedOptionIds && a.selectedOptionIds.length > 0) || (a.answerText && a.answerText.trim() !== '')).length} / {quiz?.questions?.length} answered
                 </div>
             </div>
 
@@ -343,21 +366,35 @@ const QuizAttempt = () => {
                         <div className="question-text">{q.content}</div>
 
                         <div className="options-container">
-                            {['SINGLE_CHOICE', 'TRUE_FALSE', 'MULTIPLE_CHOICE'].includes(q.questionType) && q.options?.map(opt => (
-                                <label key={opt.id} className={`option-label ${isChecked(q.id, opt.id) ? 'selected' : ''}`}>
-                                    <input
-                                        type="radio"
-                                        name={`q-${q.id}`}
-                                        value={opt.id}
-                                        checked={isChecked(q.id, opt.id)}
-                                        onChange={() => handleOptionSelect(q.id, opt.id)}
-                                        className="radio-input"
-                                    />
-                                    <span className="option-text">{opt.content}</span>
-                                </label>
-                            ))}
+                            {['SINGLE_CHOICE', 'TRUE_FALSE'].includes(q.questionType) && q.options?.map(opt => (
+    <label key={opt.id} className={`option-label ${isChecked(q.id, opt.id) ? 'selected' : ''}`}>
+        <input
+            type="radio"
+            name={`q-${q.id}`}
+            value={opt.id}
+            checked={isChecked(q.id, opt.id)}
+            onChange={() => handleOptionSelect(q.id, opt.id)}
+            className="radio-input"
+        />
+        <span className="option-text">{opt.content}</span>
+    </label>
+))}
+{q.questionType === 'MULTIPLE_CHOICE' && q.options?.map(opt => (
+    <label key={opt.id} className={`option-label ${isCheckedMultiple(q.id, opt.id) ? 'selected' : ''}`}>
+        <input
+            type="checkbox"
+            name={`q-${q.id}`}
+            value={opt.id}
+            checked={isCheckedMultiple(q.id, opt.id)}
+            onChange={() => handleOptionToggle(q.id, opt.id)}
+            className="checkbox-input"
+        />
+        <span className="option-text">{opt.content}</span>
+    </label>
+))}
 
-                            {['FILL_BLANK', 'ESSAY'].includes(q.questionType) && (
+
+                            {['FILL_BLANK', 'ESSAY', 'SHORT_ANSWER'].includes(q.questionType) && (
                                 <textarea
                                     className="text-answer-input"
                                     placeholder="Type your answer here..."

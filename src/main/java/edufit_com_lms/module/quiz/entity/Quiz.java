@@ -27,11 +27,15 @@ public class Quiz {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    // Số lần làm tối đa (null = không giới hạn)
+    @Column(name = "max_attempts")
+    private Integer maxAttempts;
+
+    // Giờ mở và khóa bài thi
     // Thời gian làm bài tính bằng phút
     @Column(name = "time_limit_minutes")
     private Integer timeLimitMinutes;
 
-    // Giờ mở và khóa bài thi
     @Column(name = "start_time")
     private LocalDateTime startTime;
 

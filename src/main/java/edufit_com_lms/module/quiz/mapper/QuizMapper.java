@@ -21,4 +21,12 @@ public interface QuizMapper {
 
     OptionResponse toOptionResponse(QuestionOption option);
 
+    @org.mapstruct.AfterMapping
+    default void checkRequiresAccessCode(Quiz quiz, @org.mapstruct.MappingTarget QuizResponse response) {
+        if (quiz.getAccessCode() != null && !quiz.getAccessCode().trim().isEmpty()) {
+            response.setRequiresAccessCode(true);
+        } else {
+            response.setRequiresAccessCode(false);
+        }
+    }
 }

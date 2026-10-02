@@ -78,6 +78,39 @@ public class LecturerClassController {
     }
 
     /**
+     * GET /v1/lecturer/classes/{classId}
+     * Trả về thông tin cơ bản của một lớp học phần cụ thể.
+     */
+    @Transactional(readOnly = true)
+    @GetMapping("/{classId}")
+    public ResponseEntity<ApiResponse<SchoolClassResponse>> getClassDetails(@PathVariable UUID classId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetail userDetails = (CustomUserDetail) authentication.getPrincipal();
+        Long lecturerId = userDetails.getId();
+
+        SchoolClass cls = schoolClassRepository.findById(classId)
+                .orElseThrow(() -> new edufit_com_lms.common.exception.ResourceNotFound("Không tìm thấy lớp học phần"));
+
+        if (cls.getLecturer() == null || !cls.getLecturer().getUserId().equals(lecturerId)) {
+            throw new edufit_com_lms.common.exception.ConflictException("Bạn không phải giảng viên của lớp này");
+        }
+
+        SchoolClassResponse response = SchoolClassResponse.builder()
+                .id(cls.getId())
+                .className(cls.getClassName())
+                .majorName(cls.getMajor() != null ? cls.getMajor().getName() : "N/A")
+                .entryYear(cls.getEntryYear())
+                .lecturerId(cls.getLecturer().getUserId())
+                .lecturerName(cls.getLecturer().getFullName())
+                .courseId(cls.getCourse() != null ? cls.getCourse().getId() : null)
+                .courseName(cls.getCourse() != null ? cls.getCourse().getTitle() : null)
+                .studentCount(classEnrollmentRepository.findBySchoolClassId(cls.getId()).size())
+                .build();
+
+        return ResponseEntity.ok(new ApiResponse<>(true, "Fetched class details", null, response, HttpStatus.OK));
+    }
+
+    /**
      * GET /v1/lecturer/classes/{classId}/students
      * Trả về danh sách Sinh viên trong một Lớp học phần.
      * BRD 8.3: Student chỉ được truy cập Class mà mình được enrollment.

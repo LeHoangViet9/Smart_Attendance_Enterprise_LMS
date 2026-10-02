@@ -15,6 +15,22 @@ const LecturerSmartAttendance = () => {
     const itemsPerPage = 8;
 
     const [students, setStudents] = useState([]);
+    const [className, setClassName] = useState(classId); // Mặc định hiển thị ID trước khi load xong
+
+    // Fetch class details để lấy tên lớp học
+    useEffect(() => {
+        const fetchClassDetails = async () => {
+            try {
+                const response = await axiosInstance.get(`/v1/lecturer/classes/${classId}`);
+                if (response.data && response.data.data) {
+                    setClassName(response.data.data.className);
+                }
+            } catch (err) {
+                console.error("Error fetching class details", err);
+            }
+        };
+        fetchClassDetails();
+    }, [classId]);
 
     // Fetch initial student list
     useEffect(() => {
@@ -210,7 +226,7 @@ const LecturerSmartAttendance = () => {
                         ⬅️
                     </button>
                     <h1>Smart Attendance Dashboard</h1>
-                    <div className="sa-class-info">Class ({classId})</div>
+                    <div className="sa-class-info">Lớp: {className}</div>
                 </div>
             </header>
 

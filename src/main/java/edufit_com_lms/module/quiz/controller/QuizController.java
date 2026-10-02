@@ -161,4 +161,26 @@ public class QuizController {
                 "AI generated suggestion successfully",
                 quizAttemptService.suggestGradeWithAI(attemptId, answerId, lecturerId)));
     }
+
+    @GetMapping("/{id}/analytics")
+    public ResponseEntity<ApiResponse<edufit_com_lms.module.quiz.dto.response.QuizAnalyticsResponse>> getQuizAnalytics(
+            @PathVariable Long id) {
+        Long lecturerId = getLecturerIdOrNull();
+        return ResponseEntity.ok(ApiResponse.success(
+                "Fetch quiz analytics successfully",
+                quizAttemptService.getQuizAnalytics(id, lecturerId)));
+    }
+
+    @GetMapping("/{id}/export-scores")
+    public ResponseEntity<byte[]> exportQuizScoresToExcel(@PathVariable Long id) {
+        Long lecturerId = getLecturerIdOrNull();
+        byte[] data = quizAttemptService.exportQuizScoresToExcel(id, lecturerId);
+        
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.setContentType(org.springframework.http.MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentDispositionFormData("attachment", "BangDiem_Quiz_" + id + ".xlsx");
+        headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+
+        return new ResponseEntity<>(data, headers, HttpStatus.OK);
+    }
 }

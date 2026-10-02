@@ -25,4 +25,6 @@ public class QuizResponse {
     private UUID majorId;
     private String majorName;
     private Long createdBy;
+    private String accessCode;
+    private Boolean requiresAccessCode;
 }

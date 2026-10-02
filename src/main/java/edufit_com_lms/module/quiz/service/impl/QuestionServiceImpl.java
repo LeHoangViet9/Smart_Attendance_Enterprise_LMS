@@ -173,22 +173,32 @@ public class QuestionServiceImpl implements QuestionService {
                 Cell correctCell = currentRow.getCell(6);
                 String correctVal = correctCell != null ? formatter.formatCellValue(correctCell).trim().toUpperCase() : "";
 
-                if (typeId == 1 || typeId == 2) {
+                if (typeId == 1 || typeId == 2 || typeId == 5) {
                     if (typeId == 1) question.setQuestionType(edufit_com_lms.module.quiz.entity.QuestionType.SINGLE_CHOICE);
-                    else question.setQuestionType(edufit_com_lms.module.quiz.entity.QuestionType.TRUE_FALSE);
+                    else if (typeId == 2) question.setQuestionType(edufit_com_lms.module.quiz.entity.QuestionType.TRUE_FALSE);
+                    else question.setQuestionType(edufit_com_lms.module.quiz.entity.QuestionType.MULTIPLE_CHOICE);
 
                     String[] labels = {"A", "B", "C", "D"};
-                    int maxCols = typeId == 1 ? 4 : 2;
+                    int maxCols = typeId == 2 ? 2 : 4; // True/False chỉ có 2 cột đáp án
+                    
+                    // Hỗ trợ trường hợp nhiều đáp án đúng, ví dụ: "A, B" hoặc "A,B,C"
+                    java.util.List<String> correctAnswers = java.util.Arrays.stream(correctVal.split(","))
+                            .map(String::trim)
+                            .filter(s -> !s.isEmpty())
+                            .toList();
+
                     for (int i = 0; i < maxCols; i++) {
                         Cell optCell = currentRow.getCell(2 + i);
                         if (optCell != null) {
-                            String optContent = formatter.formatCellValue(optCell);
-                            boolean isCorrect = labels[i].equals(correctVal);
-                            options.add(QuestionOption.builder()
-                                    .content(optContent)
-                                    .isCorrect(isCorrect)
-                                    .question(question)
-                                    .build());
+                            String optContent = formatter.formatCellValue(optCell).trim();
+                            if (!optContent.isEmpty()) {
+                                boolean isCorrect = correctAnswers.contains(labels[i]);
+                                options.add(QuestionOption.builder()
+                                        .content(optContent)
+                                        .isCorrect(isCorrect)
+                                        .question(question)
+                                        .build());
+                            }
                         }
                     }
                 } else if (typeId == 3) {

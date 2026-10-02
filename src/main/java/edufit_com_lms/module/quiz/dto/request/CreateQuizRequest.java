@@ -23,4 +23,5 @@ public class CreateQuizRequest {
     private List<QuestionRequest> questions;
     
     private Boolean requiresProctoring;
+    private String accessCode;
 }

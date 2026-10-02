@@ -19,6 +19,8 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Long> 
 
     // Lấy danh sách bài làm của một Quiz (cho giảng viên chấm bài)
     Page<QuizAttempt> findAllByQuizIdOrderByStartTimeDesc(Long quizId, Pageable pageable);
+    List<QuizAttempt> findByQuizId(Long quizId);
+    
     // Lấy các attempt đang IN_PROGRESS để kiểm tra timeout
     List<QuizAttempt> findByStatus(QuizStatus status);
 }

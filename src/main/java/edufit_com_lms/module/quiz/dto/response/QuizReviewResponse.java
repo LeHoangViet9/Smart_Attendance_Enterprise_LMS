@@ -59,6 +59,7 @@ public class QuizReviewResponse {
     public static class ReviewStudentAnswerDto {
         private Long id;
         private Long selectedOptionId;
+        private List<Long> selectedOptionIds;
         private String answerText;
         private Boolean isAwarded;
         private Double earnedPoints;

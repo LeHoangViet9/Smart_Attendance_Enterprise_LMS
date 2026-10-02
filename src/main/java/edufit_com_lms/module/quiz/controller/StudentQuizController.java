@@ -37,12 +37,15 @@ public class StudentQuizController {
 
         // Method xóa cờ isCorrect để sinh viên không thể dùng F12 soi đáp án
         private void scrubCorrectAnswers(QuizResponse res) {
-                if (res != null && res.getQuestions() != null) {
-                        res.getQuestions().forEach(q -> {
-                                if (q.getOptions() != null) {
-                                        q.getOptions().forEach(opt -> opt.setIsCorrect(null));
-                                }
-                        });
+                if (res != null) {
+                        res.setAccessCode(null); // Bảo mật: Không bao giờ trả pass thô về máy sinh viên
+                        if (res.getQuestions() != null) {
+                                res.getQuestions().forEach(q -> {
+                                        if (q.getOptions() != null) {
+                                                q.getOptions().forEach(opt -> opt.setIsCorrect(null));
+                                        }
+                                });
+                        }
                 }
         }
 
@@ -86,6 +89,28 @@ public class StudentQuizController {
         public ResponseEntity<ApiResponse<QuizResponse>> getQuizForStudent(
                         @PathVariable Long quizId) {
                 QuizResponse quizResponse = quizService.findQuizById(quizId);
+                
+                // Lấy ID học viên để làm Seed xáo trộn
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetail userDetails) {
+                    Long studentId = userDetails.getId();
+                    if (quizResponse != null && quizResponse.getQuestions() != null) {
+                        // Khởi tạo Random với seed = studentId + quizId
+                        // Đảm bảo F5 không bị nhảy thứ tự, nhưng sinh viên A sẽ có đề khác sinh viên B
+                        java.util.Random rnd = new java.util.Random(studentId + quizId);
+                        
+                        // Xáo trộn vị trí câu hỏi
+                        java.util.Collections.shuffle(quizResponse.getQuestions(), rnd);
+                        
+                        // Xáo trộn vị trí đáp án (options) bên trong từng câu hỏi
+                        for (var q : quizResponse.getQuestions()) {
+                            if (q.getOptions() != null) {
+                                java.util.Collections.shuffle(q.getOptions(), rnd);
+                            }
+                        }
+                    }
+                }
+                
                 scrubCorrectAnswers(quizResponse);
                 return new ResponseEntity<>(new ApiResponse<>(
                                 true,
@@ -98,18 +123,21 @@ public class StudentQuizController {
         // API: Sinh viên bắt đầu làm bài
         @PostMapping("/{quizId}/attempts")
         public ResponseEntity<ApiResponse<QuizAttemptResponse>> startAttempt(
-                        @PathVariable Long quizId) {
+                        @PathVariable Long quizId,
+                        @RequestBody(required = false) edufit_com_lms.module.quiz.dto.request.StartQuizRequest request) {
 
                 // Trích xuất ID học viên từ Token (SecurityContext)
                 Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
                 CustomUserDetail userDetails = (CustomUserDetail) authentication.getPrincipal();
                 Long studentId = userDetails.getId();
 
+                String accessCode = request != null ? request.getAccessCode() : null;
+
                 return new ResponseEntity<>(new ApiResponse<>(
                                 true,
                                 "Start test",
                                 null,
-                                quizAttemptService.startAttempt(quizId, studentId),
+                                quizAttemptService.startAttempt(quizId, studentId, accessCode),
                                 HttpStatus.CREATED), HttpStatus.CREATED);
         }
 

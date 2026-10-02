@@ -50,6 +50,8 @@ public class QuizServiceImpl implements QuizService {
                 .timeLimitMinutes(request.getTimeLimitMinutes())
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
+                .accessCode(request.getAccessCode())
+                .requiresProctoring(request.getRequiresProctoring() != null ? request.getRequiresProctoring() : false)
                 .createdBy(creator)
                 .major(major)
                 .build();
@@ -72,6 +74,8 @@ public class QuizServiceImpl implements QuizService {
         quiz.setTimeLimitMinutes(request.getTimeLimitMinutes());
         quiz.setStartTime(request.getStartTime());
         quiz.setEndTime(request.getEndTime());
+        quiz.setAccessCode(request.getAccessCode());
+        quiz.setRequiresProctoring(request.getRequiresProctoring() != null ? request.getRequiresProctoring() : false);
         
         if (request.getMajorId() != null) {
             Major major = majorRepository.findById(request.getMajorId())

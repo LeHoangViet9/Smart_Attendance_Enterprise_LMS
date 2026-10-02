@@ -20,4 +20,5 @@ public class QuizRequest {
     private Integer timeLimitMinutes;
     private Boolean requiresProctoring;
     private UUID majorId;
+    private String accessCode;
 }

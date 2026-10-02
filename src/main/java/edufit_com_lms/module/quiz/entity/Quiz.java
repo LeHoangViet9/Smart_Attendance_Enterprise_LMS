@@ -67,6 +67,10 @@ public class Quiz {
     @Builder.Default
     private Boolean requiresProctoring = false;
 
+    // Mật khẩu đề thi (nếu giảng viên muốn cài đặt)
+    @Column(name = "access_code")
+    private String accessCode;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

@@ -1,12 +1,12 @@
 package edufit_com_lms.module.auth.dto.response;
 
-import java.time.LocalDateTime;
-
 import edufit_com_lms.module.auth.entity.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 @Data
 @Builder

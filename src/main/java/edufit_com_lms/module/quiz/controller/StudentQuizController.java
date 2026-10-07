@@ -1,15 +1,20 @@
 package edufit_com_lms.module.quiz.controller;
 
 import edufit_com_lms.common.response.ApiResponse;
-import edufit_com_lms.module.quiz.dto.request.SubmitQuizRequest;
-import edufit_com_lms.module.quiz.dto.response.QuizResponse;
-import edufit_com_lms.module.quiz.service.QuizService;
-import lombok.RequiredArgsConstructor;
-import edufit_com_lms.module.quiz.service.QuizAttemptService;
-import edufit_com_lms.module.quiz.dto.response.QuizAttemptResponse;
-import edufit_com_lms.module.quiz.dto.response.QuizReviewResponse;
-import edufit_com_lms.module.auth.repository.StudentProfileRepository;
 import edufit_com_lms.module.auth.entity.StudentProfile;
+import edufit_com_lms.module.auth.repository.StudentProfileRepository;
+import edufit_com_lms.module.lms.dto.request.PresignedUrlRequest;
+import edufit_com_lms.module.lms.dto.response.PresignedUrlResponse;
+import edufit_com_lms.module.lms.service.MinioStorageService;
+import edufit_com_lms.module.quiz.dto.request.SubmitQuizRequest;
+import edufit_com_lms.module.quiz.dto.response.QuizAttemptResponse;
+import edufit_com_lms.module.quiz.dto.response.QuizResponse;
+import edufit_com_lms.module.quiz.dto.response.QuizReviewResponse;
+import edufit_com_lms.module.quiz.service.QuizAttemptService;
+import edufit_com_lms.module.quiz.service.QuizService;
+import edufit_com_lms.security.CustomUserDetail;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -19,11 +24,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import edufit_com_lms.security.CustomUserDetail;
-import edufit_com_lms.module.lms.service.MinioStorageService;
-import edufit_com_lms.module.lms.dto.request.PresignedUrlRequest;
-import edufit_com_lms.module.lms.dto.response.PresignedUrlResponse;
-import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1/student/quizzes")
@@ -35,10 +35,10 @@ public class StudentQuizController {
         private final StudentProfileRepository studentProfileRepository;
         private final MinioStorageService minioStorageService;
 
-        // Method xóa cờ isCorrect để sinh viên không thể dùng F12 soi đáp án
+        // Method xÃ³a cá» isCorrect Ä‘á»ƒ sinh viÃªn khÃ´ng thá»ƒ dÃ¹ng F12 soi Ä‘Ã¡p Ã¡n
         private void scrubCorrectAnswers(QuizResponse res) {
                 if (res != null) {
-                        res.setAccessCode(null); // Bảo mật: Không bao giờ trả pass thô về máy sinh viên
+                        res.setAccessCode(null); // Báº£o máº­t: KhÃ´ng bao giá» tráº£ pass thÃ´ vá» mÃ¡y sinh viÃªn
                         if (res.getQuestions() != null) {
                                 res.getQuestions().forEach(q -> {
                                         if (q.getOptions() != null) {
@@ -49,7 +49,7 @@ public class StudentQuizController {
                 }
         }
 
-        // API: Xem danh sách đề thi hiện có
+        // API: Xem danh sÃ¡ch Ä‘á» thi hiá»‡n cÃ³
         @GetMapping
         @org.springframework.transaction.annotation.Transactional(readOnly = true)
         public ResponseEntity<ApiResponse<Page<QuizResponse>>> getAvailableQuizzes(
@@ -84,25 +84,25 @@ public class StudentQuizController {
                 }
         }
 
-        // API: Xem thông tin và hệ thống câu hỏi của đề
+        // API: Xem thÃ´ng tin vÃ  há»‡ thá»‘ng cÃ¢u há»i cá»§a Ä‘á»
         @GetMapping("/{quizId}/details")
         public ResponseEntity<ApiResponse<QuizResponse>> getQuizForStudent(
                         @PathVariable Long quizId) {
                 QuizResponse quizResponse = quizService.findQuizById(quizId);
                 
-                // Lấy ID học viên để làm Seed xáo trộn
+                // Láº¥y ID há»c viÃªn Ä‘á»ƒ lÃ m Seed xÃ¡o trá»™n
                 Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
                 if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetail userDetails) {
                     Long studentId = userDetails.getId();
                     if (quizResponse != null && quizResponse.getQuestions() != null) {
-                        // Khởi tạo Random với seed = studentId + quizId
-                        // Đảm bảo F5 không bị nhảy thứ tự, nhưng sinh viên A sẽ có đề khác sinh viên B
+                        // Khá»Ÿi táº¡o Random vá»›i seed = studentId + quizId
+                        // Äáº£m báº£o F5 khÃ´ng bá»‹ nháº£y thá»© tá»±, nhÆ°ng sinh viÃªn A sáº½ cÃ³ Ä‘á» khÃ¡c sinh viÃªn B
                         java.util.Random rnd = new java.util.Random(studentId + quizId);
                         
-                        // Xáo trộn vị trí câu hỏi
+                        // XÃ¡o trá»™n vá»‹ trÃ­ cÃ¢u há»i
                         java.util.Collections.shuffle(quizResponse.getQuestions(), rnd);
                         
-                        // Xáo trộn vị trí đáp án (options) bên trong từng câu hỏi
+                        // XÃ¡o trá»™n vá»‹ trÃ­ Ä‘Ã¡p Ã¡n (options) bÃªn trong tá»«ng cÃ¢u há»i
                         for (var q : quizResponse.getQuestions()) {
                             if (q.getOptions() != null) {
                                 java.util.Collections.shuffle(q.getOptions(), rnd);
@@ -120,13 +120,13 @@ public class StudentQuizController {
                                 HttpStatus.OK), HttpStatus.OK);
         }
 
-        // API: Sinh viên bắt đầu làm bài
+        // API: Sinh viÃªn báº¯t Ä‘áº§u lÃ m bÃ i
         @PostMapping("/{quizId}/attempts")
         public ResponseEntity<ApiResponse<QuizAttemptResponse>> startAttempt(
                         @PathVariable Long quizId,
                         @RequestBody(required = false) edufit_com_lms.module.quiz.dto.request.StartQuizRequest request) {
 
-                // Trích xuất ID học viên từ Token (SecurityContext)
+                // TrÃ­ch xuáº¥t ID há»c viÃªn tá»« Token (SecurityContext)
                 Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
                 CustomUserDetail userDetails = (CustomUserDetail) authentication.getPrincipal();
                 Long studentId = userDetails.getId();
@@ -141,7 +141,7 @@ public class StudentQuizController {
                                 HttpStatus.CREATED), HttpStatus.CREATED);
         }
 
-        // API: Sinh viên nộp bài thi
+        // API: Sinh viÃªn ná»™p bÃ i thi
         @PostMapping("/attempts/{attemptId}/submit")
         public ResponseEntity<ApiResponse<QuizAttemptResponse>> submitAttempt(
                         @PathVariable Long attemptId,
@@ -154,7 +154,7 @@ public class StudentQuizController {
                                 HttpStatus.OK), HttpStatus.OK);
         }
 
-        // API: Lịch sử điểm của bản thân
+        // API: Lá»‹ch sá»­ Ä‘iá»ƒm cá»§a báº£n thÃ¢n
         @GetMapping("/attempts/history")
         public ResponseEntity<ApiResponse<org.springframework.data.domain.Page<QuizAttemptResponse>>> getMyHistory(
                         @PageableDefault(page = 0, size = 10) Pageable pageable) {
@@ -170,7 +170,7 @@ public class StudentQuizController {
                                 HttpStatus.OK), HttpStatus.OK);
         }
 
-        // API: Xem lại bài thi chi tiết (Review Result)
+        // API: Xem láº¡i bÃ i thi chi tiáº¿t (Review Result)
         @GetMapping("/attempts/{attemptId}/review")
         public ResponseEntity<ApiResponse<QuizReviewResponse>> getAttemptReview(@PathVariable Long attemptId) {
                 Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -185,7 +185,7 @@ public class StudentQuizController {
                                 HttpStatus.OK), HttpStatus.OK);
         }
 
-        // API: Lưu nháp bài thi (Autosave thời gian thực vào Redis)
+        // API: LÆ°u nhÃ¡p bÃ i thi (Autosave thá»i gian thá»±c vÃ o Redis)
         @PostMapping("/attempts/{attemptId}/autosave")
         public ResponseEntity<ApiResponse<String>> autosaveAttempt(
                         @PathVariable Long attemptId,

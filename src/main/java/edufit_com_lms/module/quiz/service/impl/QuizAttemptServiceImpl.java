@@ -1,50 +1,37 @@
 package edufit_com_lms.module.quiz.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edufit_com_lms.common.exception.ConflictException;
 import edufit_com_lms.common.exception.ResourceNotFound;
 import edufit_com_lms.module.auth.entity.User;
 import edufit_com_lms.module.auth.repository.UserRepository;
+import edufit_com_lms.module.quiz.dto.request.StudentAnswerRequest;
 import edufit_com_lms.module.quiz.dto.request.SubmitQuizRequest;
+import edufit_com_lms.module.quiz.dto.response.AIGradeSuggestionResponse;
 import edufit_com_lms.module.quiz.dto.response.QuizAttemptResponse;
 import edufit_com_lms.module.quiz.dto.response.QuizReviewResponse;
-import edufit_com_lms.module.quiz.entity.Quiz;
-import edufit_com_lms.module.quiz.entity.QuizAttempt;
-import edufit_com_lms.module.quiz.entity.QuizStatus;
-import edufit_com_lms.module.quiz.entity.Question;
-import edufit_com_lms.module.quiz.entity.QuestionOption;
-import edufit_com_lms.module.quiz.entity.QuestionType;
-import edufit_com_lms.module.quiz.entity.StudentAnswer;
-import edufit_com_lms.module.quiz.entity.ReviewType;
-import edufit_com_lms.module.quiz.dto.request.StudentAnswerRequest;
-import edufit_com_lms.module.quiz.repository.QuestionRepository;
-import edufit_com_lms.module.quiz.repository.QuestionOptionRepository;
-import edufit_com_lms.module.quiz.repository.StudentAnswerRepository;
+import edufit_com_lms.module.quiz.entity.*;
 import edufit_com_lms.module.quiz.mapper.QuizAttemptMapper;
-import edufit_com_lms.module.quiz.repository.QuizAttemptRepository;
-import edufit_com_lms.module.quiz.repository.QuizRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.transaction.annotation.Transactional;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import java.util.concurrent.TimeUnit;
-import edufit_com_lms.module.quiz.service.QuizAttemptService;
+import edufit_com_lms.module.quiz.repository.*;
 import edufit_com_lms.module.quiz.service.AIGradingService;
-import edufit_com_lms.module.quiz.dto.response.AIGradeSuggestionResponse;
+import edufit_com_lms.module.quiz.service.QuizAttemptService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
-import org.springframework.context.ApplicationEventPublisher;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -58,15 +45,28 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
     private final QuestionOptionRepository questionOptionRepository;
     private final StudentAnswerRepository studentAnswerRepository;
     private final StringRedisTemplate stringRedisTemplate;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
     private final ApplicationEventPublisher eventPublisher;
     private final AIGradingService aiGradingService;
+    @Autowired
+    @Lazy
+    private QuizAttemptService quizAttemptService;
 
     @Transactional
     @Override
     public QuizAttemptResponse startAttempt(Long quizId, Long studentId, String accessCode) {
         Quiz quiz = quizRepository.findById(quizId).orElseThrow(() -> new ResourceNotFound("Can not found quiz"));
         User student = userRepository.findById(studentId).orElseThrow(() -> new ResourceNotFound("Can not found user"));
+
+        // Kiá»ƒm tra thá»i gian cá»§a bÃ i thi trÆ°á»›c tiÃªn
+        LocalDateTime now = LocalDateTime.now();
+        if (quiz.getStartTime() != null && now.isBefore(quiz.getStartTime())) {
+            throw new ConflictException("The test has not yet started!");
+        }
+        if (quiz.getEndTime() != null && now.isAfter(quiz.getEndTime())) {
+            throw new ConflictException("This test has expired!");
+        }
+
         List<QuizAttempt> existingAttempts = quizAttemptRepository.findByQuizIdAndStudentUserId(quizId, studentId);
 
         Optional<QuizAttempt> inProgressAttempt = existingAttempts.stream()
@@ -75,7 +75,8 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
 
         if (inProgressAttempt.isPresent()) {
             QuizAttempt existingAttempt = inProgressAttempt.get();
-            // Khôi phục dữ liệu nháp từ Redis và nhả về cho sinh viên thi tiếp tục
+            // KhÃ´i phá»¥c dá»¯ liá»‡u nhÃ¡p tá»« Redis vÃ  nháº£ vá» cho sinh viÃªn thi
+            // tiáº¿p tá»¥c
             QuizAttemptResponse res = quizAttemptMapper.toResponse(existingAttempt);
             try {
                 String cachedData = stringRedisTemplate.opsForValue()
@@ -87,43 +88,36 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                     res.setCachedAnswers(cachedAnswers);
                 }
             } catch (Exception e) {
-                log.error("Lỗi khi đọc dữ liệu nháp từ Redis cho bài thi: " + existingAttempt.getId(), e);
+                log.error("Lá»—i khi Ä‘á»c dá»¯ liá»‡u nhÃ¡p tá»« Redis cho bÃ i thi: " + existingAttempt.getId(), e);
             }
-            return res; // Trả về attempt cũ thay vì quăng lỗi
+            return res; // Tráº£ vá» attempt cÅ© thay vÃ¬ quÄƒng lá»—i
         }
 
-        // Kiểm tra mật khẩu (nếu đề thi yêu cầu)
+        // Kiá»ƒm tra máº­t kháº©u (náº¿u Ä‘á» thi yÃªu cáº§u)
         if (quiz.getAccessCode() != null && !quiz.getAccessCode().trim().isEmpty()) {
             if (accessCode == null || !accessCode.equals(quiz.getAccessCode())) {
-                throw new ConflictException("Mật khẩu bài thi không chính xác");
+                throw new ConflictException("Máº­t kháº©u bÃ i thi khÃ´ng chÃ­nh xÃ¡c");
             }
         }
 
-        // Kiểm tra số lần làm tối đa (nếu có)
+        // Kiá»ƒm tra sá»‘ láº§n lÃ m tá»‘i Ä‘a (náº¿u cÃ³)
         if (quiz.getMaxAttempts() != null) {
             long attemptsCount = existingAttempts.stream()
-                    .filter(a -> a.getStatus() == QuizStatus.COMPLETED || a.getStatus() == QuizStatus.IN_PROGRESS)
+                    .filter(a -> a.getStatus() == QuizStatus.COMPLETED)
                     .count();
             if (attemptsCount >= quiz.getMaxAttempts()) {
-                throw new ConflictException("Bạn đã vượt quá số lần làm tối đa cho bài thi này!");
+                throw new ConflictException("Báº¡n Ä‘Ã£ vÆ°á»£t quÃ¡ sá»‘ láº§n lÃ m tá»‘i Ä‘a cho bÃ i thi nÃ y!");
             }
         }
 
-        // Kiểm tra thời gian của bài thi trước tiên
-        LocalDateTime now = LocalDateTime.now();
-        if (quiz.getStartTime() != null && now.isBefore(quiz.getStartTime())) {
-            throw new ConflictException("The test has not yet started!");
-        }
-        if (quiz.getEndTime() != null && now.isAfter(quiz.getEndTime())) {
-            throw new ConflictException("This test has expired!");
-        }
-
-        // Chặn thi lại đối với những bài thi yêu cầu quét mặt (chỉ cho phép thi 1 lần)
+        // Cháº·n thi láº¡i Ä‘á»‘i vá»›i nhá»¯ng bÃ i thi yÃªu cáº§u quÃ©t máº·t (chá»‰
+        // cho phÃ©p thi 1 láº§n)
         if (Boolean.TRUE.equals(quiz.getRequiresProctoring())) {
             boolean hasCompleted = existingAttempts.stream()
                     .anyMatch(a -> a.getStatus() == edufit_com_lms.module.quiz.entity.QuizStatus.COMPLETED);
             if (hasCompleted) {
-                throw new ConflictException("Bài thi này yêu cầu giám sát (quét mặt) nên bạn chỉ được phép thi 1 lần duy nhất!");
+                throw new ConflictException(
+                        "BÃ i thi nÃ y yÃªu cáº§u giÃ¡m sÃ¡t (quÃ©t máº·t) nÃªn báº¡n chá»‰ Ä‘Æ°á»£c phÃ©p thi 1 láº§n duy nháº¥t!");
             }
         }
 
@@ -150,23 +144,26 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         Integer timeLimit = quizAttempt.getQuiz().getTimeLimitMinutes();
         LocalDateTime submitTime = LocalDateTime.now();
 
-        // Kiểm tra xem bài thi đã qua thời gian tuyệt đối của hệ thống chưa
+        // Kiá»ƒm tra xem bÃ i thi Ä‘Ã£ qua thá»i gian tuyá»‡t Ä‘á»‘i cá»§a há»‡
+        // thá»‘ng chÆ°a
         if (quizAttempt.getQuiz().getEndTime() != null && submitTime.isAfter(quizAttempt.getQuiz().getEndTime())) {
-             log.warn("Nộp bài trễ (quá thời gian kết thúc) - Bài thi ID: {}", attemptId);
+            log.warn("Ná»™p bÃ i trá»… (quÃ¡ thá»i gian káº¿t thÃºc) - BÃ i thi ID: {}", attemptId);
         }
 
-        // Nếu quiz có giới hạn thời gian, check xem nộp muộn không
+        // Náº¿u quiz cÃ³ giá»›i háº¡n thá»i gian, check xem ná»™p muá»™n khÃ´ng
         if (timeLimit != null) {
-            LocalDateTime deadline = startTime.plusMinutes(timeLimit).plusMinutes(5); // Du di 5 phút cho độ trễ mạng
+            LocalDateTime deadline = startTime.plusMinutes(timeLimit);
             if (submitTime.isAfter(deadline)) {
-                log.warn("Nộp bài quá hạn làm bài - Bài thi ID: {}", attemptId);
+                throw new ConflictException("Ná»™p bÃ i quÃ¡ háº¡n lÃ m bÃ i (vÆ°á»£t quÃ¡ thá»i gian quy Ä‘á»‹nh).");
             }
         }
 
         // Check proctoring image if required
         if (Boolean.TRUE.equals(quizAttempt.getQuiz().getRequiresProctoring())) {
-            if (submitRequest.getProctoringImageUrl() == null || submitRequest.getProctoringImageUrl().trim().isEmpty()) {
-                throw new ConflictException("Bài thi này yêu cầu xác thực khuôn mặt! Vui lòng cung cấp ảnh đính kèm.");
+            if (submitRequest.getProctoringImageUrl() == null
+                    || submitRequest.getProctoringImageUrl().trim().isEmpty()) {
+                throw new ConflictException(
+                        "BÃ i thi nÃ y yÃªu cáº§u xÃ¡c thá»±c khuÃ´n máº·t! Vui lÃ²ng cung cáº¥p áº£nh Ä‘Ã­nh kÃ¨m.");
             }
             quizAttempt.setProctoringImageUrl(submitRequest.getProctoringImageUrl());
         }
@@ -177,7 +174,8 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
 
         if (submitRequest.getAnswers() != null && !submitRequest.getAnswers().isEmpty()) {
             for (StudentAnswerRequest answerReq : submitRequest.getAnswers()) {
-                // Tránh tình trạng spam 1 câu trả lời nhiều lần để buff điểm ảo
+                // TrÃ¡nh tÃ¬nh tráº¡ng spam 1 cÃ¢u tráº£ lá»i nhiá»u láº§n Ä‘á»ƒ buff Ä‘iá»ƒm
+                // áº£o
                 if (processedQuestionIds.contains(answerReq.getQuestionId())) {
                     continue;
                 }
@@ -185,16 +183,16 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
 
                 Question question = questionRepository.findById(answerReq.getQuestionId())
                         .orElse(null);
-                
+
                 if (question == null) {
-                    log.warn("Câu hỏi {} không còn tồn tại, bỏ qua.", answerReq.getQuestionId());
+                    log.warn("CÃ¢u há»i {} khÃ´ng cÃ²n tá»“n táº¡i, bá» qua.", answerReq.getQuestionId());
                     continue;
                 }
 
-                // Chặn đánh tráo câu hỏi từ bài thi khác
+                // Cháº·n Ä‘Ã¡nh trÃ¡o cÃ¢u há»i tá»« bÃ i thi khÃ¡c
                 if (!question.getQuiz().getId().equals(quizAttempt.getQuiz().getId())) {
-                    log.warn("Cảnh báo: Câu hỏi {} không thuộc về bài thi hiện tại!", question.getId());
-                    continue; // Bỏ qua thay vì làm hỏng toàn bộ request
+                    log.warn("Cáº£nh bÃ¡o: CÃ¢u há»i {} khÃ´ng thuá»™c vá» bÃ i thi hiá»‡n táº¡i!", question.getId());
+                    continue; // Bá» qua thay vÃ¬ lÃ m há»ng toÃ n bá»™ request
                 }
 
                 boolean isAwarded = false;
@@ -219,10 +217,11 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                         Set<Long> questionOptionIds = question.getOptions().stream()
                                 .map(QuestionOption::getId)
                                 .collect(java.util.stream.Collectors.toSet());
-                                
+
                         // Only keep valid options
-                        providedIds = providedIds.stream().filter(questionOptionIds::contains).collect(java.util.stream.Collectors.toList());
-                        
+                        providedIds = providedIds.stream().filter(questionOptionIds::contains)
+                                .collect(java.util.stream.Collectors.toList());
+
                         Set<Long> correctOptionIds = question.getOptions().stream()
                                 .filter(opt -> Boolean.TRUE.equals(opt.getIsCorrect()))
                                 .map(QuestionOption::getId)
@@ -252,7 +251,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                         }
                     }
                 } else if (question.getQuestionType() == QuestionType.ESSAY) {
-                    // Câu tự luận sẽ được giảng viên chấm thủ công sau
+                    // CÃ¢u tá»± luáº­n sáº½ Ä‘Æ°á»£c giáº£ng viÃªn cháº¥m thá»§ cÃ´ng sau
                     isAwarded = false;
                 }
 
@@ -260,7 +259,9 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                         .attempt(quizAttempt)
                         .question(question)
                         .selectedOption(selectedOption)
-                        .selectedOptionIds(answerReq.getSelectedOptionIds() != null ? new java.util.HashSet<>(answerReq.getSelectedOptionIds()) : null)
+                        .selectedOptionIds(answerReq.getSelectedOptionIds() != null
+                                ? new java.util.HashSet<>(answerReq.getSelectedOptionIds())
+                                : null)
                         .answerText(answerReq.getAnswerText())
                         .isAwarded(isAwarded)
                         .earnedPoints(isAwarded ? qPoints : 0.0)
@@ -268,8 +269,9 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                 studentAnswers.add(studentAnswer);
             }
         }
-        
-        // Auto-fill các câu hỏi bị sinh viên bỏ trống để có record chấm điểm (nhất là câu ESSAY)
+
+        // Auto-fill cÃ¡c cÃ¢u há»i bá»‹ sinh viÃªn bá» trá»‘ng Ä‘á»ƒ cÃ³ record
+        // cháº¥m Ä‘iá»ƒm (nháº¥t lÃ  cÃ¢u ESSAY)
         if (quizAttempt.getQuiz().getQuestions() != null) {
             for (Question question : quizAttempt.getQuiz().getQuestions()) {
                 if (!processedQuestionIds.contains(question.getId())) {
@@ -283,7 +285,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                 }
             }
         }
-        
+
         if (!studentAnswers.isEmpty()) {
             studentAnswerRepository.saveAll(studentAnswers);
         }
@@ -301,26 +303,29 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         quizAttempt.setEndTime(submitTime);
         quizAttempt.setStatus(QuizStatus.COMPLETED);
 
-        // Xóa hoàn toàn bản nháp trên Redis để dọn bề mặt RAM
+        // XÃ³a hoÃ n toÃ n báº£n nhÃ¡p trÃªn Redis Ä‘á»ƒ dá»n bá» máº·t RAM
         stringRedisTemplate.delete("quiz:attempt:" + attemptId);
 
         QuizAttempt savedAttempt = quizAttemptRepository.save(quizAttempt);
 
-        // Bắn thông báo cho người tạo đề (Giảng viên / Admin)
+        // Báº¯n thÃ´ng bÃ¡o cho ngÆ°á»i táº¡o Ä‘á» (Giáº£ng viÃªn / Admin)
         if (savedAttempt.getQuiz() != null && savedAttempt.getQuiz().getCreatedBy() != null) {
             eventPublisher.publishEvent(edufit_com_lms.module.notification.event.NotificationEvent.builder()
-                    .title("Có sinh viên nộp bài thi")
-                    .message("Sinh viên " + savedAttempt.getStudent().getFullName() + " vừa hoàn thành bài thi: " + savedAttempt.getQuiz().getTitle())
+                    .title("CÃ³ sinh viÃªn ná»™p bÃ i thi")
+                    .message("Sinh viÃªn " + savedAttempt.getStudent().getFullName() + " vá»«a hoÃ n thÃ nh bÃ i thi: "
+                            + savedAttempt.getQuiz().getTitle())
                     .type("SYSTEM_LOG")
                     .recipientId(savedAttempt.getQuiz().getCreatedBy().getUserId())
                     .build());
         }
 
-        // Tự động Gửi Cảnh Báo cho sinh viên nếu điểm thi dưới 5.0 (Automated Warning Alert)
+        // Tá»± Ä‘á»™ng Gá»­i Cáº£nh BÃ¡o cho sinh viÃªn náº¿u Ä‘iá»ƒm thi dÆ°á»›i 5.0
+        // (Automated Warning Alert)
         if (finalScore < 5.0) {
             eventPublisher.publishEvent(edufit_com_lms.module.notification.event.NotificationEvent.builder()
-                    .title("Cảnh báo học vụ: Điểm thi thấp")
-                    .message("Bạn vừa đạt " + finalScore + " điểm trong bài thi " + savedAttempt.getQuiz().getTitle() + ". Vui lòng ôn tập lại kiến thức!")
+                    .title("Cáº£nh bÃ¡o há»c vá»¥: Äiá»ƒm thi tháº¥p")
+                    .message("Báº¡n vá»«a Ä‘áº¡t " + finalScore + " Ä‘iá»ƒm trong bÃ i thi "
+                            + savedAttempt.getQuiz().getTitle() + ". Vui lÃ²ng Ã´n táº­p láº¡i kiáº¿n thá»©c!")
                     .type("WARNING")
                     .recipientId(savedAttempt.getStudent().getUserId())
                     .build());
@@ -350,10 +355,10 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         try {
             String key = "quiz:attempt:" + attemptId;
             String json = objectMapper.writeValueAsString(submitRequest.getAnswers());
-            // Lưu và set hạn tự sát sau 1 ngày nếu không xả bớt bộ nhớ
+            // LÆ°u vÃ  set háº¡n tá»± sÃ¡t sau 1 ngÃ y náº¿u khÃ´ng xáº£ bá»›t bá»™ nhá»›
             stringRedisTemplate.opsForValue().set(key, json, 1, TimeUnit.DAYS);
         } catch (JsonProcessingException e) {
-            log.error("Lỗi khi serialize câu trả lời để lưu nháp Redis cho bài thi: " + attemptId, e);
+            log.error("Lá»—i khi serialize cÃ¢u tráº£ lá»i Ä‘á»ƒ lÆ°u nhÃ¡p Redis cho bÃ i thi: " + attemptId, e);
         }
     }
 
@@ -369,14 +374,15 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         }
 
         if (studentId != null) {
-            // Học sinh chỉ được xem lại khi đã nộp bài (COMPLETED)
+            // Há»c sinh chá»‰ Ä‘Æ°á»£c xem láº¡i khi Ä‘Ã£ ná»™p bÃ i (COMPLETED)
             if (quizAttempt.getStatus() != QuizStatus.COMPLETED) {
                 throw new ConflictException("You can only review completed attempts");
             }
         } else {
-            // Giảng viên không được chấm bài thi đang làm (IN_PROGRESS)
+            // Giáº£ng viÃªn khÃ´ng Ä‘Æ°á»£c cháº¥m bÃ i thi Ä‘ang lÃ m (IN_PROGRESS)
             if (quizAttempt.getStatus() == QuizStatus.IN_PROGRESS) {
-                throw new ConflictException("Bài thi này sinh viên vẫn đang làm (In Progress). Chưa thể chấm điểm.");
+                throw new ConflictException(
+                        "BÃ i thi nÃ y sinh viÃªn váº«n Ä‘ang lÃ m (In Progress). ChÆ°a thá»ƒ cháº¥m Ä‘iá»ƒm.");
             }
         }
 
@@ -384,11 +390,12 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
 
         if (studentId != null && quiz.getReviewType() != null) {
             if (quiz.getReviewType() == ReviewType.NEVER) {
-                throw new ConflictException("Giáo viên không cho phép xem lại bài thi này.");
+                throw new ConflictException("GiÃ¡o viÃªn khÃ´ng cho phÃ©p xem láº¡i bÃ i thi nÃ y.");
             }
             if (quiz.getReviewType() == ReviewType.AFTER_DEADLINE) {
                 if (quiz.getEndTime() != null && LocalDateTime.now().isBefore(quiz.getEndTime())) {
-                    throw new ConflictException("Chưa đến thời gian xem lại bài (Phải chờ qua hạn kết thúc).");
+                    throw new ConflictException(
+                            "ChÆ°a Ä‘áº¿n thá»i gian xem láº¡i bÃ i (Pháº£i chá» qua háº¡n káº¿t thÃºc).");
                 }
             }
         }
@@ -407,8 +414,9 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                             .isCorrect(opt.getIsCorrect())
                             .build());
                 }
-                // Xáo trộn vị trí đáp án (options) theo cùng một seed
-                java.util.Collections.shuffle(optionDtos, new java.util.Random(quizAttempt.getStudent().getUserId() + quiz.getId()));
+                // XÃ¡o trá»™n vá»‹ trÃ­ Ä‘Ã¡p Ã¡n (options) theo cÃ¹ng má»™t seed
+                java.util.Collections.shuffle(optionDtos,
+                        new java.util.Random(quizAttempt.getStudent().getUserId() + quiz.getId()));
             }
 
             QuizReviewResponse.ReviewStudentAnswerDto answerDto = null;
@@ -419,7 +427,8 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                 answerDto = QuizReviewResponse.ReviewStudentAnswerDto.builder()
                         .id(ans.getId())
                         .selectedOptionId(ans.getSelectedOption() != null ? ans.getSelectedOption().getId() : null)
-                        .selectedOptionIds(ans.getSelectedOptionIds() != null ? new ArrayList<>(ans.getSelectedOptionIds()) : null)
+                        .selectedOptionIds(
+                                ans.getSelectedOptionIds() != null ? new ArrayList<>(ans.getSelectedOptionIds()) : null)
                         .answerText(ans.getAnswerText())
                         .isAwarded(ans.getIsAwarded())
                         .earnedPoints(ans.getEarnedPoints())
@@ -437,8 +446,10 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                     .build());
         }
 
-        // Xáo trộn vị trí câu hỏi theo cùng một seed để khớp với lúc thi
-        java.util.Collections.shuffle(questionDtos, new java.util.Random(quizAttempt.getStudent().getUserId() + quiz.getId()));
+        // XÃ¡o trá»™n vá»‹ trÃ­ cÃ¢u há»i theo cÃ¹ng má»™t seed Ä‘á»ƒ khá»›p vá»›i
+        // lÃºc thi
+        java.util.Collections.shuffle(questionDtos,
+                new java.util.Random(quizAttempt.getStudent().getUserId() + quiz.getId()));
 
         return QuizReviewResponse.builder()
                 .attemptId(quizAttempt.getId())
@@ -462,7 +473,8 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
 
     @Override
     @Transactional
-    public QuizAttemptResponse gradeQuizAttempt(Long attemptId, edufit_com_lms.module.quiz.dto.request.GradeEssayRequest request, Long lecturerId) {
+    public QuizAttemptResponse gradeQuizAttempt(Long attemptId,
+            edufit_com_lms.module.quiz.dto.request.GradeEssayRequest request, Long lecturerId) {
         QuizAttempt quizAttempt = quizAttemptRepository.findById(attemptId)
                 .orElseThrow(() -> new ResourceNotFound("Can not found quiz attempt"));
 
@@ -486,10 +498,11 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                 // Validate points do not exceed max points for the question
                 double maxPoints = answer.getQuestion().getPoints() != null ? answer.getQuestion().getPoints() : 0.0;
                 if (qg.getPoints() > maxPoints) {
-                    throw new ConflictException("Điểm chấm (" + qg.getPoints() + ") không được vượt quá điểm tối đa của câu hỏi (" + maxPoints + ")");
+                    throw new ConflictException("Äiá»ƒm cháº¥m (" + qg.getPoints()
+                            + ") khÃ´ng Ä‘Æ°á»£c vÆ°á»£t quÃ¡ Ä‘iá»ƒm tá»‘i Ä‘a cá»§a cÃ¢u há»i (" + maxPoints + ")");
                 }
                 if (qg.getPoints() < 0) {
-                    throw new ConflictException("Điểm chấm không được phép âm");
+                    throw new ConflictException("Äiá»ƒm cháº¥m khÃ´ng Ä‘Æ°á»£c phÃ©p Ã¢m");
                 }
 
                 answer.setEarnedPoints(qg.getPoints());
@@ -497,14 +510,14 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                 answer.setIsAwarded(qg.getPoints() > 0);
             }
         }
-        
+
         studentAnswerRepository.saveAll(studentAnswers);
 
         // Recalculate score
         double totalEarned = studentAnswers.stream()
                 .mapToDouble(a -> a.getEarnedPoints() != null ? a.getEarnedPoints() : 0.0)
                 .sum();
-        
+
         double totalMaxPoints = quizAttempt.getQuiz().getQuestions().stream()
                 .mapToDouble(q -> q.getPoints() != null ? q.getPoints() : 0.0).sum();
 
@@ -515,14 +528,17 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         }
 
         quizAttempt.setScore(finalScore);
-        
+
         QuizAttempt savedAttempt = quizAttemptRepository.save(quizAttempt);
 
-        // Bắn thông báo cảnh báo học vụ nếu điểm thấp sau khi GV chấm tự luận
+        // Báº¯n thÃ´ng bÃ¡o cáº£nh bÃ¡o há»c vá»¥ náº¿u Ä‘iá»ƒm tháº¥p sau khi GV
+        // cháº¥m tá»± luáº­n
         if (finalScore < 5.0) {
             eventPublisher.publishEvent(edufit_com_lms.module.notification.event.NotificationEvent.builder()
-                    .title("Cảnh báo học vụ: Điểm thi thấp")
-                    .message("Giảng viên vừa chấm điểm bài thi " + savedAttempt.getQuiz().getTitle() + ". Bạn chỉ đạt " + finalScore + " điểm. Vui lòng ôn tập lại kiến thức!")
+                    .title("Cáº£nh bÃ¡o há»c vá»¥: Äiá»ƒm thi tháº¥p")
+                    .message("Giáº£ng viÃªn vá»«a cháº¥m Ä‘iá»ƒm bÃ i thi " + savedAttempt.getQuiz().getTitle()
+                            + ". Báº¡n chá»‰ Ä‘áº¡t " + finalScore
+                            + " Ä‘iá»ƒm. Vui lÃ²ng Ã´n táº­p láº¡i kiáº¿n thá»©c!")
                     .type("WARNING")
                     .recipientId(savedAttempt.getStudent().getUserId())
                     .build());
@@ -532,61 +548,66 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
     }
 
     // ----------
-        // Timeout handling for IN_PROGRESS attempts
-        // ----------
-        @Scheduled(cron = "0 * * * * *") // runs every minute
-        public void abandonStaleAttempts() {
-            List<QuizAttempt> inProgressAttempts = quizAttemptRepository.findByStatus(QuizStatus.IN_PROGRESS);
-            if (inProgressAttempts == null || inProgressAttempts.isEmpty()) {
-                return;
-            }
-            LocalDateTime now = LocalDateTime.now();
+    // Timeout handling for IN_PROGRESS attempts
+    // ----------
+    @Scheduled(cron = "0 * * * * *")
+    @Transactional
+    public void abandonStaleAttempts() {
+        List<QuizAttempt> inProgressAttempts = quizAttemptRepository.findByStatus(QuizStatus.IN_PROGRESS);
+        if (inProgressAttempts == null || inProgressAttempts.isEmpty()) {
+            return;
+        }
+        LocalDateTime now = LocalDateTime.now();
 
-            for (QuizAttempt attempt : inProgressAttempts) {
-                Integer timeLimit = attempt.getQuiz().getTimeLimitMinutes();
-                LocalDateTime deadline = null;
-                if (timeLimit != null) {
-                    deadline = attempt.getStartTime().plusMinutes(timeLimit);
-                } else if (attempt.getQuiz().getEndTime() != null) {
-                    deadline = attempt.getQuiz().getEndTime();
-                }
-                if (deadline != null && now.isAfter(deadline)) {
-                    log.info("Attempt id {} is timing out, auto-submitting...", attempt.getId());
-                    try {
-                        String cachedData = stringRedisTemplate.opsForValue().get("quiz:attempt:" + attempt.getId());
-                        List<StudentAnswerRequest> cachedAnswers = new ArrayList<>();
-                        if (cachedData != null) {
-                            cachedAnswers = objectMapper.readValue(cachedData, new TypeReference<>() {});
-                        }
-                        
-                        SubmitQuizRequest autoSubmitReq = new SubmitQuizRequest();
-                        autoSubmitReq.setQuizAttemptId(attempt.getId());
-                        autoSubmitReq.setAnswers(cachedAnswers);
-                        if (Boolean.TRUE.equals(attempt.getQuiz().getRequiresProctoring())) {
-                            autoSubmitReq.setProctoringImageUrl(attempt.getProctoringImageUrl() != null ? attempt.getProctoringImageUrl() : "TIMEOUT_NO_IMAGE");
-                        }
-                        
-                        // Gọi hàm submitAttempt để tự động nộp bài và chấm điểm
-                        submitAttempt(attempt.getId(), autoSubmitReq);
-                        log.info("Attempt id {} auto-submitted successfully.", attempt.getId());
-                        
-                        if (attempt.getQuiz() != null && attempt.getQuiz().getCreatedBy() != null) {
-                            eventPublisher.publishEvent(edufit_com_lms.module.notification.event.NotificationEvent.builder()
-                                    .title("Hệ thống tự động thu bài")
-                                    .message("Attempt id " + attempt.getId() + " đã tự động nộp do hết thời gian làm bài.")
-                                    .type("SYSTEM_LOG")
-                                    .recipientId(attempt.getQuiz().getCreatedBy().getUserId())
-                                    .build());
-                        }
-                    } catch (Exception e) {
-                        log.error("Lỗi khi auto-submit attempt {}. Đánh dấu ABANDONED.", attempt.getId(), e);
-                        attempt.setStatus(QuizStatus.ABANDONED);
-                        attempt.setEndTime(now);
-                        quizAttemptRepository.save(attempt);
-                    } // end catch
-                } // end if (deadline != null)
-            } // end for
-        } // end abandonStaleAttempts
+        for (QuizAttempt attempt : inProgressAttempts) {
+            Integer timeLimit = attempt.getQuiz().getTimeLimitMinutes();
+            LocalDateTime deadline = null;
+            if (timeLimit != null) {
+                deadline = attempt.getStartTime().plusMinutes(timeLimit);
+            } else if (attempt.getQuiz().getEndTime() != null) {
+                deadline = attempt.getQuiz().getEndTime();
+            }
+            if (deadline != null && now.isAfter(deadline)) {
+                log.info("Attempt id {} is timing out, auto-submitting...", attempt.getId());
+                try {
+                    String cachedData = stringRedisTemplate.opsForValue().get("quiz:attempt:" + attempt.getId());
+                    List<StudentAnswerRequest> cachedAnswers = new ArrayList<>();
+                    if (cachedData != null) {
+                        cachedAnswers = objectMapper.readValue(cachedData, new TypeReference<>() {
+                        });
+                    }
+
+                    SubmitQuizRequest autoSubmitReq = new SubmitQuizRequest();
+                    autoSubmitReq.setQuizAttemptId(attempt.getId());
+                    autoSubmitReq.setAnswers(cachedAnswers);
+                    if (Boolean.TRUE.equals(attempt.getQuiz().getRequiresProctoring())) {
+                        autoSubmitReq.setProctoringImageUrl(
+                                attempt.getProctoringImageUrl() != null ? attempt.getProctoringImageUrl()
+                                        : "TIMEOUT_NO_IMAGE");
+                    }
+
+                    // Gá»i hÃ m submitAttempt Ä‘á»ƒ tá»± Ä‘á»™ng ná»™p bÃ i vÃ  cháº¥m Ä‘iá»ƒm
+                    quizAttemptService.submitAttempt(attempt.getId(), autoSubmitReq);
+                    log.info("Attempt id {} auto-submitted successfully.", attempt.getId());
+
+                    if (attempt.getQuiz() != null && attempt.getQuiz().getCreatedBy() != null) {
+                        eventPublisher.publishEvent(edufit_com_lms.module.notification.event.NotificationEvent.builder()
+                                .title("Há»‡ thá»‘ng tá»± Ä‘á»™ng thu bÃ i")
+                                .message("Attempt id " + attempt.getId()
+                                        + " Ä‘Ã£ tá»± Ä‘á»™ng ná»™p do háº¿t thá»i gian lÃ m bÃ i.")
+                                .type("SYSTEM_LOG")
+                                .recipientId(attempt.getQuiz().getCreatedBy().getUserId())
+                                .build());
+                    }
+                } catch (Exception e) {
+                    log.error("Lá»—i khi auto-submit attempt {}. ÄÃ¡nh dáº¥u ABANDONED.", attempt.getId(), e);
+                    attempt.setStatus(QuizStatus.ABANDONED);
+                    attempt.setEndTime(now);
+                    quizAttemptRepository.save(attempt);
+                } // end catch
+            } // end if (deadline != null)
+        } // end for
+    } // end abandonStaleAttempts
 
     @Override
     @Transactional(readOnly = true)
@@ -610,17 +631,20 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
 
         String questionContent = studentAnswer.getQuestion().getContent();
         String answerText = studentAnswer.getAnswerText();
-        double maxPoints = studentAnswer.getQuestion().getPoints() != null ? studentAnswer.getQuestion().getPoints() : 0.0;
+        double maxPoints = studentAnswer.getQuestion().getPoints() != null ? studentAnswer.getQuestion().getPoints()
+                : 0.0;
 
         return aiGradingService.suggestGrade(questionContent, answerText, maxPoints);
     }
+
     @Override
     @Transactional
     public void regradeQuiz(Long quizId, Long lecturerId) {
         Quiz quiz = quizRepository.findById(quizId).orElseThrow(() -> new ResourceNotFound("Can not found quiz"));
-        
+
         // Verify ownership
-        if (lecturerId != null && (quiz.getCreatedBy() == null || !quiz.getCreatedBy().getUserId().equals(lecturerId))) {
+        if (lecturerId != null
+                && (quiz.getCreatedBy() == null || !quiz.getCreatedBy().getUserId().equals(lecturerId))) {
             throw new ConflictException("You are not the owner of this quiz");
         }
 
@@ -634,8 +658,9 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
 
             for (StudentAnswer ans : studentAnswers) {
                 Question question = ans.getQuestion();
-                if (question == null) continue;
-                
+                if (question == null)
+                    continue;
+
                 double qPoints = question.getPoints() != null ? question.getPoints() : 0.0;
                 boolean isAwarded = false;
 
@@ -649,9 +674,11 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                             isAwarded = true;
                         }
                     }
-                } else if (question.getQuestionType() == QuestionType.SINGLE_CHOICE || question.getQuestionType() == QuestionType.TRUE_FALSE) {
+                } else if (question.getQuestionType() == QuestionType.SINGLE_CHOICE
+                        || question.getQuestionType() == QuestionType.TRUE_FALSE) {
                     if (ans.getSelectedOption() != null) {
-                        QuestionOption currentOption = questionOptionRepository.findById(ans.getSelectedOption().getId()).orElse(null);
+                        QuestionOption currentOption = questionOptionRepository
+                                .findById(ans.getSelectedOption().getId()).orElse(null);
                         if (currentOption != null && Boolean.TRUE.equals(currentOption.getIsCorrect())) {
                             isAwarded = true;
                         }
@@ -668,10 +695,10 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                         }
                     }
                 } else if (question.getQuestionType() == QuestionType.ESSAY) {
-                    // Giữ nguyên điểm cũ vì đã được giảng viên chấm thủ công
+                    // Giá»¯ nguyÃªn Ä‘iá»ƒm cÅ© vÃ¬ Ä‘Ã£ Ä‘Æ°á»£c giáº£ng viÃªn cháº¥m thá»§ cÃ´ng
                     isAwarded = ans.getIsAwarded() != null ? ans.getIsAwarded() : false;
                     earnedPoints += ans.getEarnedPoints() != null ? ans.getEarnedPoints() : 0.0;
-                    continue; 
+                    continue;
                 }
 
                 ans.setIsAwarded(isAwarded);
@@ -697,10 +724,12 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
 
     @Override
     @Transactional(readOnly = true)
-    public edufit_com_lms.module.quiz.dto.response.QuizAnalyticsResponse getQuizAnalytics(Long quizId, Long lecturerId) {
+    public edufit_com_lms.module.quiz.dto.response.QuizAnalyticsResponse getQuizAnalytics(Long quizId,
+            Long lecturerId) {
         Quiz quiz = quizRepository.findById(quizId).orElseThrow(() -> new ResourceNotFound("Can not found quiz"));
-        
-        if (lecturerId != null && (quiz.getCreatedBy() == null || !quiz.getCreatedBy().getUserId().equals(lecturerId))) {
+
+        if (lecturerId != null
+                && (quiz.getCreatedBy() == null || !quiz.getCreatedBy().getUserId().equals(lecturerId))) {
             throw new ConflictException("You are not the owner of this quiz");
         }
 
@@ -737,21 +766,30 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         for (QuizAttempt attempt : completedAttempts) {
             double score = attempt.getScore() != null ? attempt.getScore() : 0.0;
             sumScore += score;
-            if (score > maxScore) maxScore = score;
-            if (score < minScore) minScore = score;
-            if (score >= 5.0) passed++;
+            if (score > maxScore)
+                maxScore = score;
+            if (score < minScore)
+                minScore = score;
+            if (score >= 5.0)
+                passed++;
 
-            if (score <= 2.0) distribution.put("0.0 - 2.0", distribution.get("0.0 - 2.0") + 1);
-            else if (score <= 4.0) distribution.put("2.1 - 4.0", distribution.get("2.1 - 4.0") + 1);
-            else if (score <= 6.0) distribution.put("4.1 - 6.0", distribution.get("4.1 - 6.0") + 1);
-            else if (score <= 8.0) distribution.put("6.1 - 8.0", distribution.get("6.1 - 8.0") + 1);
-            else distribution.put("8.1 - 10.0", distribution.get("8.1 - 10.0") + 1);
+            if (score <= 2.0)
+                distribution.put("0.0 - 2.0", distribution.get("0.0 - 2.0") + 1);
+            else if (score <= 4.0)
+                distribution.put("2.1 - 4.0", distribution.get("2.1 - 4.0") + 1);
+            else if (score <= 6.0)
+                distribution.put("4.1 - 6.0", distribution.get("4.1 - 6.0") + 1);
+            else if (score <= 8.0)
+                distribution.put("6.1 - 8.0", distribution.get("6.1 - 8.0") + 1);
+            else
+                distribution.put("8.1 - 10.0", distribution.get("8.1 - 10.0") + 1);
 
             List<StudentAnswer> answers = studentAnswerRepository.findAllByAttemptId(attempt.getId());
             for (StudentAnswer ans : answers) {
                 if (ans.getQuestion() != null) {
                     if (ans.getIsAwarded() == null || !ans.getIsAwarded()) {
-                        wrongAnswerCountMap.put(ans.getQuestion().getId(), wrongAnswerCountMap.getOrDefault(ans.getQuestion().getId(), 0) + 1);
+                        wrongAnswerCountMap.put(ans.getQuestion().getId(),
+                                wrongAnswerCountMap.getOrDefault(ans.getQuestion().getId(), 0) + 1);
                         questionContentMap.putIfAbsent(ans.getQuestion().getId(), ans.getQuestion().getContent());
                     }
                 }
@@ -768,8 +806,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                         e -> questionContentMap.get(e.getKey()),
                         java.util.Map.Entry::getValue,
                         (e1, e2) -> e1,
-                        java.util.LinkedHashMap::new
-                ));
+                        java.util.LinkedHashMap::new));
 
         return edufit_com_lms.module.quiz.dto.response.QuizAnalyticsResponse.builder()
                 .quizId(quizId)
@@ -791,14 +828,15 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
     public byte[] exportQuizScoresToExcel(Long quizId, Long lecturerId) {
         Quiz quiz = quizRepository.findById(quizId).orElseThrow(() -> new ResourceNotFound("Can not found quiz"));
 
-        if (lecturerId != null && (quiz.getCreatedBy() == null || !quiz.getCreatedBy().getUserId().equals(lecturerId))) {
+        if (lecturerId != null
+                && (quiz.getCreatedBy() == null || !quiz.getCreatedBy().getUserId().equals(lecturerId))) {
             throw new ConflictException("You are not the owner of this quiz");
         }
 
         List<QuizAttempt> attempts = quizAttemptRepository.findByQuizId(quizId);
 
         try (org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
-             java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream()) {
+                java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream()) {
 
             org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("BangDiem");
 
@@ -815,23 +853,27 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
             org.apache.poi.ss.usermodel.Row headerRow = sheet.createRow(0);
 
             // Header labels
-            String[] columns = {"STT", "Họ và Tên", "Email", "Thời gian bắt đầu", "Thời gian nộp", "Trạng thái", "Điểm số"};
+            String[] columns = { "STT", "Há» vÃ  TÃªn", "Email", "Thá»i gian báº¯t Ä‘áº§u", "Thá»i gian ná»™p",
+                    "Tráº¡ng thÃ¡i", "Äiá»ƒm sá»‘" };
             for (int i = 0; i < columns.length; i++) {
                 org.apache.poi.ss.usermodel.Cell cell = headerRow.createCell(i);
                 cell.setCellValue(columns[i]);
                 cell.setCellStyle(headerCellStyle);
             }
 
-            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter
+                    .ofPattern("dd/MM/yyyy HH:mm:ss");
 
             int rowIdx = 1;
             for (QuizAttempt attempt : attempts) {
                 org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowIdx++);
 
                 row.createCell(0).setCellValue(rowIdx - 1);
-                row.createCell(1).setCellValue(attempt.getStudent().getFullName() != null ? attempt.getStudent().getFullName() : "N/A");
-                row.createCell(2).setCellValue(attempt.getStudent().getEmail() != null ? attempt.getStudent().getEmail() : "N/A");
-                
+                row.createCell(1).setCellValue(
+                        attempt.getStudent().getFullName() != null ? attempt.getStudent().getFullName() : "N/A");
+                row.createCell(2).setCellValue(
+                        attempt.getStudent().getEmail() != null ? attempt.getStudent().getEmail() : "N/A");
+
                 String startTimeStr = attempt.getStartTime() != null ? attempt.getStartTime().format(formatter) : "";
                 row.createCell(3).setCellValue(startTimeStr);
 
@@ -851,8 +893,8 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
             workbook.write(out);
             return out.toByteArray();
         } catch (java.io.IOException e) {
-            log.error("Lỗi khi tạo file Excel bảng điểm bài thi {}", quizId, e);
-            throw new RuntimeException("Lỗi hệ thống khi xuất file Excel");
+            log.error("Lá»—i khi táº¡o file Excel báº£ng Ä‘iá»ƒm bÃ i thi {}", quizId, e);
+            throw new RuntimeException("Lá»—i há»‡ thá»‘ng khi xuáº¥t file Excel");
         }
     }
 }

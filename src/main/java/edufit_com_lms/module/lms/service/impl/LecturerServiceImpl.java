@@ -1,8 +1,8 @@
 package edufit_com_lms.module.lms.service.impl;
 
 import edufit_com_lms.module.attendance.repository.AttendanceRepository;
-import edufit_com_lms.module.lms.dto.response.SchoolClassResponse;
 import edufit_com_lms.module.lms.dto.response.LecturerStatsResponse;
+import edufit_com_lms.module.lms.dto.response.SchoolClassResponse;
 import edufit_com_lms.module.lms.entity.SchoolClass;
 import edufit_com_lms.module.lms.repository.ClassEnrollmentRepository;
 import edufit_com_lms.module.lms.repository.SchoolClassRepository;
@@ -27,7 +27,7 @@ public class LecturerServiceImpl implements LecturerService {
     @Transactional(readOnly = true)
     @Override
     public LecturerStatsResponse getLecturerStats(Long lecturerId) {
-        // BRD 8.3: Classes (Lớp học phần) mà Giảng viên phụ trách
+        // BRD 8.3: Classes (Lá»›p há»c pháº§n) mÃ  Giáº£ng viÃªn phá»¥ trÃ¡ch
         List<SchoolClass> classes = schoolClassRepository.findByLecturer_UserId(lecturerId);
         long totalClasses = classes.size();
 

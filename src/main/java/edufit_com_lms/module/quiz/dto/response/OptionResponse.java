@@ -12,5 +12,5 @@ import lombok.NoArgsConstructor;
 public class OptionResponse {
     private Long id;
     private String content;
-    private Boolean isCorrect; // Bật cờ này để Giáo Viên (Lecturer) trên FE QuizManagement đọc được
+    private Boolean isCorrect; // Báº­t cá» nÃ y Ä‘á»ƒ GiÃ¡o ViÃªn (Lecturer) trÃªn FE QuizManagement Ä‘á»c Ä‘Æ°á»£c
 }

@@ -2,7 +2,6 @@ package edufit_com_lms.module.auth.mapper;
 
 import edufit_com_lms.module.auth.dto.response.UserResponse;
 import edufit_com_lms.module.auth.entity.User;
-
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;

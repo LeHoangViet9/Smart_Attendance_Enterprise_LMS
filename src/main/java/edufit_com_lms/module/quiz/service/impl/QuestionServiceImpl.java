@@ -34,7 +34,7 @@ public class QuestionServiceImpl implements QuestionService {
     private void checkQuizOwnership(Quiz quiz, Long lecturerId) {
         if (lecturerId != null) {
             if (quiz.getCreatedBy() == null || !quiz.getCreatedBy().getUserId().equals(lecturerId)) {
-                throw new org.springframework.security.access.AccessDeniedException("Bạn không có quyền chỉnh sửa bộ câu hỏi của bài Quiz này!");
+                throw new org.springframework.security.access.AccessDeniedException("Báº¡n khÃ´ng cÃ³ quyá»n chá»‰nh sá»­a bá»™ cÃ¢u há»i cá»§a bÃ i Quiz nÃ y!");
             }
         }
     }
@@ -43,7 +43,7 @@ public class QuestionServiceImpl implements QuestionService {
         Question question = questionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFound("Can not found question"));
         if (!question.getQuiz().getId().equals(quizId)) {
-            throw new RuntimeException("Câu hỏi này không thuộc về bài Quiz này!");
+            throw new RuntimeException("CÃ¢u há»i nÃ y khÃ´ng thuá»™c vá» bÃ i Quiz nÃ y!");
         }
         return quizMapper.toQuestionResponse(question);
     }
@@ -79,7 +79,7 @@ public class QuestionServiceImpl implements QuestionService {
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new ResourceNotFound("Can not found question"));
         if (!question.getQuiz().getId().equals(quizId)) {
-            throw new RuntimeException("Câu hỏi này không thuộc về bài Quiz này!");
+            throw new RuntimeException("CÃ¢u há»i nÃ y khÃ´ng thuá»™c vá» bÃ i Quiz nÃ y!");
         }
         question.setContent(request.getContent());
         question.setPoints(request.getPoints());
@@ -107,19 +107,19 @@ public class QuestionServiceImpl implements QuestionService {
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new ResourceNotFound("Can not found question"));
         if (!question.getQuiz().getId().equals(quizId)) {
-            throw new RuntimeException("Câu hỏi này không thuộc về bài Quiz này!");
+            throw new RuntimeException("CÃ¢u há»i nÃ y khÃ´ng thuá»™c vá» bÃ i Quiz nÃ y!");
         }
         try {
             questionRepository.delete(question);
             questionRepository.flush();
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
-            throw new RuntimeException("Không thể xóa câu hỏi này vì đã có sinh viên làm bài (dữ liệu lịch sử đang tham chiếu).");
+            throw new RuntimeException("KhÃ´ng thá»ƒ xÃ³a cÃ¢u há»i nÃ y vÃ¬ Ä‘Ã£ cÃ³ sinh viÃªn lÃ m bÃ i (dá»¯ liá»‡u lá»‹ch sá»­ Ä‘ang tham chiáº¿u).");
         }
     }
 
     @Override
     public Page<QuestionResponse> findAllQuestions(Long quizId, String keyword, Pageable pageable) {
-        // Kiểm tra quiz có tồn tại không
+        // Kiá»ƒm tra quiz cÃ³ tá»“n táº¡i khÃ´ng
         if (!quizRepository.existsById(quizId)) {
             throw new ResourceNotFound("Can not found quiz");
         }
@@ -179,9 +179,9 @@ public class QuestionServiceImpl implements QuestionService {
                     else question.setQuestionType(edufit_com_lms.module.quiz.entity.QuestionType.MULTIPLE_CHOICE);
 
                     String[] labels = {"A", "B", "C", "D"};
-                    int maxCols = typeId == 2 ? 2 : 4; // True/False chỉ có 2 cột đáp án
+                    int maxCols = typeId == 2 ? 2 : 4; // True/False chá»‰ cÃ³ 2 cá»™t Ä‘Ã¡p Ã¡n
                     
-                    // Hỗ trợ trường hợp nhiều đáp án đúng, ví dụ: "A, B" hoặc "A,B,C"
+                    // Há»— trá»£ trÆ°á»ng há»£p nhiá»u Ä‘Ã¡p Ã¡n Ä‘Ãºng, vÃ­ dá»¥: "A, B" hoáº·c "A,B,C"
                     java.util.List<String> correctAnswers = java.util.Arrays.stream(correctVal.split(","))
                             .map(String::trim)
                             .filter(s -> !s.isEmpty())

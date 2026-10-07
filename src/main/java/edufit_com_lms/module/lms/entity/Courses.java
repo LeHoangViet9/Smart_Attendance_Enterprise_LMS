@@ -2,13 +2,14 @@ package edufit_com_lms.module.lms.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Môn học (Course Catalog) - chỉ là danh mục môn học.
- * BRD 8.3: Một Course có thể có nhiều Class.
- * Giảng viên được gán vào từng Class, không gán trực tiếp vào Course.
+ * MÃ´n há»c (Course Catalog) - chá»‰ lÃ  danh má»¥c mÃ´n há»c.
+ * BRD 8.3: Má»™t Course cÃ³ thá»ƒ cÃ³ nhiá»u Class.
+ * Giáº£ng viÃªn Ä‘Æ°á»£c gÃ¡n vÃ o tá»«ng Class, khÃ´ng gÃ¡n trá»±c tiáº¿p vÃ o Course.
  */
 @Entity
 @Table(name = "courses")

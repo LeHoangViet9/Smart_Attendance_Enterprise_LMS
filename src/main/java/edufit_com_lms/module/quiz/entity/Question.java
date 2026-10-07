@@ -19,7 +19,7 @@ public class Question {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Liên kết với bảng Đề bài
+    // LiÃªn káº¿t vá»›i báº£ng Äá» bÃ i
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "quiz_id", nullable = false)
     private Quiz quiz;
@@ -28,13 +28,13 @@ public class Question {
     private String content;
 
     @Column(nullable = false)
-    private Double points; // Thang điểm cho câu hỏi này
+    private Double points; // Thang Ä‘iá»ƒm cho cÃ¢u há»i nÃ y
 
     @Enumerated(EnumType.STRING)
     @Column(name = "question_type", nullable = false)
     private QuestionType questionType;
 
-    // Các đáp án tuỳ chọn cho câu hỏi
+    // CÃ¡c Ä‘Ã¡p Ã¡n tuá»³ chá»n cho cÃ¢u há»i
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<QuestionOption> options;
 }

@@ -6,22 +6,23 @@ import edufit_com_lms.common.exception.UnauthorizedException;
 import edufit_com_lms.module.auth.dto.request.AdminRegisterRequest;
 import edufit_com_lms.module.auth.dto.request.ChangePasswordRequest;
 import edufit_com_lms.module.auth.dto.request.LoginRequest;
+import edufit_com_lms.module.auth.dto.request.RefreshTokenRequest;
 import edufit_com_lms.module.auth.dto.response.UserResponse;
-import edufit_com_lms.module.auth.entity.User;
+import edufit_com_lms.module.auth.entity.LecturerProfile;
 import edufit_com_lms.module.auth.entity.Role;
 import edufit_com_lms.module.auth.entity.StudentProfile;
-import edufit_com_lms.module.auth.entity.LecturerProfile;
-import edufit_com_lms.module.auth.repository.UserRepository;
-import edufit_com_lms.module.auth.repository.StudentProfileRepository;
+import edufit_com_lms.module.auth.entity.User;
 import edufit_com_lms.module.auth.repository.LecturerProfileRepository;
+import edufit_com_lms.module.auth.repository.StudentProfileRepository;
+import edufit_com_lms.module.auth.repository.UserRepository;
 import edufit_com_lms.module.auth.service.AuthService;
 import edufit_com_lms.module.auth.service.TokenService;
-import edufit_com_lms.security.CustomUserDetail;
-import edufit_com_lms.security.JwtTokenProvider;
-import edufit_com_lms.module.lms.repository.SchoolClassRepository;
+import edufit_com_lms.module.lms.entity.Major;
 import edufit_com_lms.module.lms.entity.SchoolClass;
 import edufit_com_lms.module.lms.repository.MajorRepository;
-import edufit_com_lms.module.lms.entity.Major;
+import edufit_com_lms.module.lms.repository.SchoolClassRepository;
+import edufit_com_lms.security.CustomUserDetail;
+import edufit_com_lms.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -55,7 +56,7 @@ public class AuthServiceImpl implements AuthService {
                 throw new ConflictException("Parent phone already exists");
             }
         }
-        String password = registerRequest.getEmail(); // Đặt mật khẩu mặc định là email
+        String password = registerRequest.getEmail(); // Äáº·t máº­t kháº©u máº·c Ä‘á»‹nh lÃ  email
         User user = new User();
         user.setEmail(registerRequest.getEmail());
         user.setCode(registerRequest.getCode());
@@ -101,7 +102,6 @@ public class AuthServiceImpl implements AuthService {
                 .code(savedUser.getCode())
                 .fullName(savedUser.getFullName())
                 .isActive(savedUser.getIsActive())
-                .password(password)
                 .createdAt(savedUser.getCreatedAt())
                 .parentPhone(registerRequest.getParentPhone())
                 .className(registerRequest.getClassName())
@@ -115,12 +115,12 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public UserResponse login(LoginRequest loginRequest) {
         User user = userRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new ResourceNotFound("Email không tồn tai"));
+                .orElseThrow(() -> new ResourceNotFound("Email khÃ´ng tá»“n tai"));
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            throw new UnauthorizedException("Sai mật khẩu hoặc email");
+            throw new UnauthorizedException("Sai máº­t kháº©u hoáº·c email");
         }
         if (!user.getIsActive()) {
-            throw new UnauthorizedException("Tài khoản không hợp lệ");
+            throw new UnauthorizedException("TÃ i khoáº£n khÃ´ng há»£p lá»‡");
         }
         String accessToken = jwtTokenProvider.generateToken(user.getEmail(), user.getRole().toString());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getEmail());
@@ -160,6 +160,40 @@ public class AuthServiceImpl implements AuthService {
             tokenService.revokeRefreshToken(customUserDetail.getUsername());
             SecurityContextHolder.clearContext();
         }
+    }
+
+    @Override
+    public UserResponse refreshToken(RefreshTokenRequest request) {
+        String refreshToken = request.getRefreshToken();
+        // Validate token structure and ensure it's a refresh token
+        if (!jwtTokenProvider.validateToken(refreshToken) ||
+                !"refresh".equals(jwtTokenProvider.getTokenType(refreshToken))) {
+            throw new ConflictException("Refresh token khÃ´ng há»£p lá»‡");
+        }
+        // Extract email (subject) from token
+        String email = jwtTokenProvider.getEmailFromToken(refreshToken);
+        // Verify token is stored and not revoked
+        if (!tokenService.isValidRefreshToken(email, refreshToken)) {
+            throw new ConflictException("Refresh token Ä‘Ã£ bá»‹ thu há»“i hoáº·c khÃ´ng tá»“n táº¡i");
+        }
+        // Load user
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFound("KhÃ´ng tÃ¬m tháº¥y ngÆ°á»i dÃ¹ng"));
+        // Generate new tokens (rotate)
+        String newAccess = jwtTokenProvider.generateToken(email, user.getRole().toString());
+        String newRefresh = jwtTokenProvider.generateRefreshToken(email);
+        // Save new refresh token (override old one)
+        tokenService.saveRefreshToken(email, newRefresh);
+        // Build response
+        return UserResponse.builder()
+                .email(user.getEmail())
+                .role(user.getRole())
+                .fullName(user.getFullName())
+                .isActive(user.getIsActive())
+                .avatarUrl(user.getAvatarUrl())
+                .accessToken(newAccess)
+                .refreshToken(newRefresh)
+                .build();
     }
 
 }

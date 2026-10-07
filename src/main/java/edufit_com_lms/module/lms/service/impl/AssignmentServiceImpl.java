@@ -1,16 +1,19 @@
 package edufit_com_lms.module.lms.service.impl;
 
 import edufit_com_lms.common.exception.ResourceNotFound;
-import edufit_com_lms.module.lms.dto.response.AssignmentResponse;
 import edufit_com_lms.module.lms.dto.request.CreateAssignmentRequest;
 import edufit_com_lms.module.lms.dto.request.UpdateAssignmentRequest;
+import edufit_com_lms.module.lms.dto.response.AssignmentResponse;
 import edufit_com_lms.module.lms.entity.Assignment;
-import edufit_com_lms.module.lms.repository.AssignmentRepository;
-import edufit_com_lms.module.lms.repository.SubmissionRepository;
-import edufit_com_lms.module.lms.repository.SchoolClassRepository;
 import edufit_com_lms.module.lms.entity.SchoolClass;
+import edufit_com_lms.module.lms.repository.AssignmentRepository;
+import edufit_com_lms.module.lms.repository.SchoolClassRepository;
+import edufit_com_lms.module.lms.repository.SubmissionRepository;
 import edufit_com_lms.module.lms.service.AssignmentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,9 +21,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.PageImpl;
 
 @Service
 @RequiredArgsConstructor
@@ -38,7 +38,7 @@ public class AssignmentServiceImpl implements AssignmentService {
         SchoolClass schoolClass = schoolClassRepository.findById(classId)
                 .orElseThrow(() -> new ResourceNotFound("Class not found with ID: " + classId));
         if (schoolClass.getLecturer() == null || !schoolClass.getLecturer().getUserId().equals(lecturerId)) {
-            throw new RuntimeException("Bạn không có quyền quản lý Assignment của lớp học này.");
+            throw new RuntimeException("Báº¡n khÃ´ng cÃ³ quyá»n quáº£n lÃ½ Assignment cá»§a lá»›p há»c nÃ y.");
         }
     }
 
@@ -62,8 +62,8 @@ public class AssignmentServiceImpl implements AssignmentService {
         List<edufit_com_lms.module.lms.entity.ClassEnrollment> enrollments = classEnrollmentRepository.findBySchoolClassId(request.getClassId());
         for (edufit_com_lms.module.lms.entity.ClassEnrollment enrollment : enrollments) {
             eventPublisher.publishEvent(edufit_com_lms.module.notification.event.NotificationEvent.builder()
-                    .title("Bài tập mới: " + saved.getTitle())
-                    .message("Giảng viên vừa giao bài tập mới. Hạn nộp: " + (saved.getDueDate() != null ? saved.getDueDate() : "Không có hạn"))
+                    .title("BÃ i táº­p má»›i: " + saved.getTitle())
+                    .message("Giáº£ng viÃªn vá»«a giao bÃ i táº­p má»›i. Háº¡n ná»™p: " + (saved.getDueDate() != null ? saved.getDueDate() : "KhÃ´ng cÃ³ háº¡n"))
                     .type("SYSTEM_LOG")
                     .recipientId(enrollment.getStudent().getUserId())
                     .build());

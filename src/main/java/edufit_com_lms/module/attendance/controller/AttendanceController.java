@@ -6,24 +6,24 @@ import edufit_com_lms.module.attendance.dto.response.AttendanceRecordResponse;
 import edufit_com_lms.module.attendance.entity.AttendanceRecord;
 import edufit_com_lms.module.attendance.repository.AttendanceRepository;
 import edufit_com_lms.module.attendance.service.AttendanceService;
+import edufit_com_lms.security.CustomUserDetail;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import java.util.concurrent.CompletableFuture;
 
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import org.springframework.format.annotation.DateTimeFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import edufit_com_lms.security.CustomUserDetail;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/attendance")
@@ -37,7 +37,7 @@ public class AttendanceController {
     public ResponseEntity<ApiResponse<Void>> submitAttendance(@RequestBody AttendanceSubmitRequest request) {
         attendanceService.submitAttendance(request);
         return new ResponseEntity<>(new ApiResponse<>(
-                true, "Điểm danh thành công", null, null, HttpStatus.OK), HttpStatus.OK);
+                true, "Äiá»ƒm danh thÃ nh cÃ´ng", null, null, HttpStatus.OK), HttpStatus.OK);
     }
 
 
@@ -67,7 +67,7 @@ public class AttendanceController {
                 .build()).collect(Collectors.toList());
                 
         return new ResponseEntity<>(new ApiResponse<>(
-                true, "Lấy lịch sử điểm danh thành công", null, response, HttpStatus.OK), HttpStatus.OK);
+                true, "Láº¥y lá»‹ch sá»­ Ä‘iá»ƒm danh thÃ nh cÃ´ng", null, response, HttpStatus.OK), HttpStatus.OK);
     }
 
     @PreAuthorize("hasRole('STUDENT')")
@@ -99,7 +99,7 @@ public class AttendanceController {
                 .build()).collect(Collectors.toList());
                 
         return new ResponseEntity<>(new ApiResponse<>(
-                true, "Lấy lịch sử điểm danh của bạn thành công", null, response, HttpStatus.OK), HttpStatus.OK);
+                true, "Láº¥y lá»‹ch sá»­ Ä‘iá»ƒm danh cá»§a báº¡n thÃ nh cÃ´ng", null, response, HttpStatus.OK), HttpStatus.OK);
     }
 
     @PreAuthorize("hasRole('LECTURER')")

@@ -13,5 +13,7 @@ public interface UserService {
 
     void deleteUser(Long id);
 
+    UserResponse toggleUserActive(Long id);
+
     UserResponse getCurrentUserProfile();
 }

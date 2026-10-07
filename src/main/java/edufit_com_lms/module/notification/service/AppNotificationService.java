@@ -1,14 +1,17 @@
 package edufit_com_lms.module.notification.service;
 
+import edufit_com_lms.module.notification.dto.response.AppNotificationResponse;
 import edufit_com_lms.module.notification.entity.AppNotification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.UUID;
 
 public interface AppNotificationService {
-    org.springframework.data.domain.Page<edufit_com_lms.module.notification.dto.response.AppNotificationResponse> getAllNotifications(Long userId, org.springframework.data.domain.Pageable pageable);
+    Page<AppNotificationResponse> getAllNotifications(Long userId, Pageable pageable);
 
     AppNotification createNotification(String title, String message, String type, UUID relatedCourseId,
-            UUID relatedLessionId, Long senderId, Long recipientId);
+            UUID relatedLessonId, Long senderId, Long recipientId);
 
     void markAsRead(UUID id, Long userId);
     

@@ -3,13 +3,14 @@ package edufit_com_lms.module.lms.repository;
 import edufit_com_lms.module.lms.entity.SchoolClass;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import java.util.UUID;
-import java.util.Optional;
+
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
- * Repository cho SchoolClass (Lớp học phần).
- * BRD 8.3: Một Course có thể có nhiều Class. Một Class có ít nhất một Lecturer phụ trách.
+ * Repository cho SchoolClass (Lá»›p há»c pháº§n).
+ * BRD 8.3: Má»™t Course cÃ³ thá»ƒ cÃ³ nhiá»u Class. Má»™t Class cÃ³ Ã­t nháº¥t má»™t Lecturer phá»¥ trÃ¡ch.
  */
 @Repository
 public interface SchoolClassRepository extends JpaRepository<SchoolClass, UUID> {
@@ -17,9 +18,11 @@ public interface SchoolClassRepository extends JpaRepository<SchoolClass, UUID> 
 
     List<SchoolClass> findByMajorId(UUID majorId);
 
-    /** Tìm các Lớp học phần do Giảng viên phụ trách (theo BRD: Lecturer Assignment) */
+    /** TÃ¬m cÃ¡c Lá»›p há»c pháº§n do Giáº£ng viÃªn phá»¥ trÃ¡ch (theo BRD: Lecturer Assignment) */
     List<SchoolClass> findByLecturer_UserId(Long userId);
 
-    /** Tìm tất cả Lớp học phần thuộc một Môn học (BRD: Một Course -> nhiều Class) */
+    /** TÃ¬m táº¥t cáº£ Lá»›p há»c pháº§n thuá»™c má»™t MÃ´n há»c (BRD: Má»™t Course -> nhiá»u Class) */
     List<SchoolClass> findByCourseId(UUID courseId);
+
+    long countByLecturer(edufit_com_lms.module.auth.entity.User lecturer);
 }

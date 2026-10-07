@@ -10,8 +10,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Bảng đăng ký Sinh viên vào Lớp học phần (Class).
- * BRD 8.3: Student chỉ được truy cập Class mà mình được enrollment.
+ * Báº£ng Ä‘Äƒng kÃ½ Sinh viÃªn vÃ o Lá»›p há»c pháº§n (Class).
+ * BRD 8.3: Student chá»‰ Ä‘Æ°á»£c truy cáº­p Class mÃ  mÃ¬nh Ä‘Æ°á»£c enrollment.
  */
 @Entity
 @Table(name = "class_enrollments", uniqueConstraints = {

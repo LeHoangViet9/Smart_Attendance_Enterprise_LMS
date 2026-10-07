@@ -17,6 +17,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
 import java.util.Arrays;
 
 @RequiredArgsConstructor
@@ -64,13 +65,13 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Cấp phép cho tên miền của React (Vite)
+        // Cáº¥p phÃ©p cho tÃªn miá»n cá»§a React (Vite)
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:3000"));
-        // Cấp phép tất cả các loại method (GET, POST, PUT, DELETE...)
+        // Cáº¥p phÃ©p táº¥t cáº£ cÃ¡c loáº¡i method (GET, POST, PUT, DELETE...)
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        // Cấp phép tất cả các Headers
+        // Cáº¥p phÃ©p táº¥t cáº£ cÃ¡c Headers
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "x-auth-token"));
-        // Bắt buộc nếu muốn ném token vào localStorage thì cần credential
+        // Báº¯t buá»™c náº¿u muá»‘n nÃ©m token vÃ o localStorage thÃ¬ cáº§n credential
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

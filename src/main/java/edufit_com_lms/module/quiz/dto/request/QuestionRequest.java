@@ -15,8 +15,8 @@ import java.util.List;
 public class QuestionRequest {
     private String content;
     private Double points;
-    private QuestionType questionType; // Loại câu hỏi
+    private QuestionType questionType; // Loáº¡i cÃ¢u há»i
 
-    // Mảng chứa các đáp án (A,B,C,D) hoặc các chữ đáp án mẫu
+    // Máº£ng chá»©a cÃ¡c Ä‘Ã¡p Ã¡n (A,B,C,D) hoáº·c cÃ¡c chá»¯ Ä‘Ã¡p Ã¡n máº«u
     private List<OptionRequest> options;
 }

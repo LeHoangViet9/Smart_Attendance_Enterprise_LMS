@@ -1,9 +1,14 @@
 package edufit_com_lms.module.quiz.service.impl;
 
 import edufit_com_lms.common.exception.AppException;
+import edufit_com_lms.module.auth.entity.User;
+import edufit_com_lms.module.auth.repository.UserRepository;
+import edufit_com_lms.module.lms.entity.Major;
+import edufit_com_lms.module.lms.repository.MajorRepository;
 import edufit_com_lms.module.quiz.dto.request.QuizRequest;
 import edufit_com_lms.module.quiz.dto.response.QuizResponse;
 import edufit_com_lms.module.quiz.entity.Quiz;
+import edufit_com_lms.module.quiz.mapper.QuizMapper;
 import edufit_com_lms.module.quiz.repository.QuizRepository;
 import edufit_com_lms.module.quiz.service.QuizService;
 import lombok.RequiredArgsConstructor;
@@ -11,13 +16,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-
-import edufit_com_lms.module.auth.repository.UserRepository;
-import edufit_com_lms.module.lms.repository.MajorRepository;
-import edufit_com_lms.module.auth.entity.User;
-import edufit_com_lms.module.lms.entity.Major;
-import edufit_com_lms.module.quiz.mapper.QuizMapper;
-
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -32,12 +30,12 @@ public class QuizServiceImpl implements QuizService {
     @Override
     public QuizResponse createQuiz(QuizRequest request, Long creatorId) {
         User creator = userRepository.findById(creatorId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Người dùng không tồn tại với id: " + creatorId));
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i vá»›i id: " + creatorId));
                 
         Major major = null;
         if (request.getMajorId() != null) {
             major = majorRepository.findById(request.getMajorId())
-                    .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Ngành học không tồn tại với id: " + request.getMajorId()));
+                    .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "NgÃ nh há»c khÃ´ng tá»“n táº¡i vá»›i id: " + request.getMajorId()));
         } else {
             if (creator.getRole() == edufit_com_lms.module.auth.entity.Role.LECTURER && creator.getLecturerProfile() != null) {
                 major = creator.getLecturerProfile().getMajor();
@@ -63,10 +61,10 @@ public class QuizServiceImpl implements QuizService {
     @Override
     public QuizResponse updateQuiz(Long quizId, QuizRequest request, Long lecturerId) {
         Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Quiz không tồn tại với id: " + quizId));
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Quiz khÃ´ng tá»“n táº¡i vá»›i id: " + quizId));
 
         if (lecturerId != null && (quiz.getCreatedBy() == null || !quiz.getCreatedBy().getUserId().equals(lecturerId))) {
-            throw new AppException(HttpStatus.FORBIDDEN, "Bạn không có quyền sửa Quiz này vì không phải là người tạo.");
+            throw new AppException(HttpStatus.FORBIDDEN, "Báº¡n khÃ´ng cÃ³ quyá»n sá»­a Quiz nÃ y vÃ¬ khÃ´ng pháº£i lÃ  ngÆ°á»i táº¡o.");
         }
 
         quiz.setTitle(request.getTitle());
@@ -79,7 +77,7 @@ public class QuizServiceImpl implements QuizService {
         
         if (request.getMajorId() != null) {
             Major major = majorRepository.findById(request.getMajorId())
-                    .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Ngành học không tồn tại với id: " + request.getMajorId()));
+                    .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "NgÃ nh há»c khÃ´ng tá»“n táº¡i vá»›i id: " + request.getMajorId()));
             quiz.setMajor(major);
         }
 
@@ -90,10 +88,10 @@ public class QuizServiceImpl implements QuizService {
     @Override
     public void deleteQuiz(Long quizId, Long lecturerId) {
         Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Quiz không tồn tại với id: " + quizId));
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Quiz khÃ´ng tá»“n táº¡i vá»›i id: " + quizId));
                 
         if (lecturerId != null && (quiz.getCreatedBy() == null || !quiz.getCreatedBy().getUserId().equals(lecturerId))) {
-            throw new AppException(HttpStatus.FORBIDDEN, "Bạn không có quyền xóa Quiz này vì không phải là người tạo.");
+            throw new AppException(HttpStatus.FORBIDDEN, "Báº¡n khÃ´ng cÃ³ quyá»n xÃ³a Quiz nÃ y vÃ¬ khÃ´ng pháº£i lÃ  ngÆ°á»i táº¡o.");
         }
         
         quizRepository.deleteById(quizId);
@@ -128,7 +126,7 @@ public class QuizServiceImpl implements QuizService {
     @Override
     public QuizResponse findQuizById(Long quizId) {
         Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Quiz không tồn tại với id: " + quizId));
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Quiz khÃ´ng tá»“n táº¡i vá»›i id: " + quizId));
         return quizMapper.toResponse(quiz);
     }
 }

@@ -17,16 +17,16 @@ public class QuestionOption {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Nằm trong câu hỏi nào
+    // Náº±m trong cÃ¢u há»i nÃ o
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id", nullable = false)
     private Question question;
 
-    // Nội dung đáp án (Hoặc chứa "keyword đáp án" nếu là câu điền chữ)
+    // Ná»™i dung Ä‘Ã¡p Ã¡n (Hoáº·c chá»©a "keyword Ä‘Ã¡p Ã¡n" náº¿u lÃ  cÃ¢u Ä‘iá»n chá»¯)
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
-    // Biến cờ máu chốt giấu React (True nếu đây là câu đúng)
+    // Biáº¿n cá» mÃ¡u chá»‘t giáº¥u React (True náº¿u Ä‘Ã¢y lÃ  cÃ¢u Ä‘Ãºng)
     @Column(name = "is_correct", nullable = false)
     private Boolean isCorrect;
 }

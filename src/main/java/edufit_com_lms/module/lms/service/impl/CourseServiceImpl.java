@@ -3,30 +3,30 @@ package edufit_com_lms.module.lms.service.impl;
 import edufit_com_lms.common.exception.ResourceNotFound;
 import edufit_com_lms.module.auth.repository.UserRepository;
 import edufit_com_lms.module.lms.dto.request.CreateCourseRequest;
-import edufit_com_lms.module.lms.dto.request.CreateLessionRequest;
+import edufit_com_lms.module.lms.dto.request.CreateLessonRequest;
 import edufit_com_lms.module.lms.dto.request.UpdateCourseRequest;
-import edufit_com_lms.module.lms.dto.request.UpdateLessionRequest;
+import edufit_com_lms.module.lms.dto.request.UpdateLessonRequest;
 import edufit_com_lms.module.lms.dto.response.CourseResponse;
-import edufit_com_lms.module.lms.dto.response.LessionResponse;
+import edufit_com_lms.module.lms.dto.response.LessonResponse;
 import edufit_com_lms.module.lms.entity.Courses;
 import edufit_com_lms.module.lms.entity.Lesson;
 import edufit_com_lms.module.lms.entity.Major;
-import edufit_com_lms.module.notification.event.NotificationEvent;
 import edufit_com_lms.module.lms.repository.CourseRepository;
-import edufit_com_lms.module.lms.repository.LessionRepository;
+import edufit_com_lms.module.lms.repository.LessonRepository;
 import edufit_com_lms.module.lms.service.CourseService;
+import edufit_com_lms.module.notification.event.NotificationEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.PageImpl;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +35,7 @@ import org.springframework.data.domain.PageImpl;
 public class CourseServiceImpl implements CourseService {
 
     private final CourseRepository courseRepository;
-    private final LessionRepository lessionRepository;
+    private final LessonRepository lessonRepository;
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -102,8 +102,8 @@ public class CourseServiceImpl implements CourseService {
         Courses course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFound("Course not found with ID: " + id));
 
-        List<LessionResponse> lessions = lessionRepository.findByCourseIdOrderByOrderIndexAsc(id).stream()
-                .map(this::mapToLessionResponse)
+        List<LessonResponse> lessons = lessonRepository.findByCourseIdOrderByOrderIndexAsc(id).stream()
+                .map(this::mapToLessonResponse)
                 .collect(Collectors.toList());
 
         return CourseResponse.builder()
@@ -112,9 +112,9 @@ public class CourseServiceImpl implements CourseService {
                 .description(course.getDescription())
                 .thumbnailUrl(course.getThumbnailUrl())
                 .isPublished(course.getIsPublished())
-                .totalLessons(lessions.size())
+                .totalLessons(lessons.size())
                 .createdAt(course.getCreatedAt())
-                .lessions(lessions)
+                .lessons(lessons)
                 .build();
     }
 
@@ -143,8 +143,8 @@ public class CourseServiceImpl implements CourseService {
         log.info("Created course: {}", saved.getTitle());
 
         eventPublisher.publishEvent(NotificationEvent.builder()
-                .title("Khóa học mới: " + saved.getTitle())
-                .message("Giảng viên vừa tạo khóa học mới. Vui lòng kiểm duyệt.")
+                .title("KhÃƒÂ³a hÃ¡Â»Âc mÃ¡Â»â€ºi: " + saved.getTitle())
+                .message("GiÃ¡ÂºÂ£ng viÃƒÂªn vÃ¡Â»Â«a tÃ¡ÂºÂ¡o khÃƒÂ³a hÃ¡Â»Âc mÃ¡Â»â€ºi. Vui lÃƒÂ²ng kiÃ¡Â»Æ’m duyÃ¡Â»â€¡t.")
                 .type("SYSTEM_LOG")
                 .relatedCourseId(saved.getId())
                 .build());
@@ -180,49 +180,49 @@ public class CourseServiceImpl implements CourseService {
         if (!courseRepository.existsById(id)) {
             throw new ResourceNotFound("Course not found with ID: " + id);
         }
-        List<Lesson> lessions = lessionRepository.findByCourseIdOrderByOrderIndexAsc(id);
-        lessionRepository.deleteAll(lessions);
+        List<Lesson> lessons = lessonRepository.findByCourseIdOrderByOrderIndexAsc(id);
+        lessonRepository.deleteAll(lessons);
         courseRepository.deleteById(id);
         log.info("Deleted course ID: {}", id);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<LessionResponse> getLessionsByCourseId(UUID courseId) {
+    public List<LessonResponse> getLessonsByCourseId(UUID courseId) {
         if (!courseRepository.existsById(courseId)) {
             throw new ResourceNotFound("Course not found with ID: " + courseId);
         }
-        return lessionRepository.findByCourseIdOrderByOrderIndexAsc(courseId).stream()
-                .map(this::mapToLessionResponse)
+        return lessonRepository.findByCourseIdOrderByOrderIndexAsc(courseId).stream()
+                .map(this::mapToLessonResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<LessionResponse> getPaginatedLessionsByCourseId(UUID courseId, Pageable pageable) {
+    public Page<LessonResponse> getPaginatedLessonsByCourseId(UUID courseId, Pageable pageable) {
         if (!courseRepository.existsById(courseId)) {
             throw new ResourceNotFound("Course not found with ID: " + courseId);
         }
-        Page<Lesson> pageResult = lessionRepository.findByCourseIdOrderByOrderIndexAsc(courseId, pageable);
-        List<LessionResponse> content = pageResult.getContent().stream()
-                .map(this::mapToLessionResponse)
+        Page<Lesson> pageResult = lessonRepository.findByCourseIdOrderByOrderIndexAsc(courseId, pageable);
+        List<LessonResponse> content = pageResult.getContent().stream()
+                .map(this::mapToLessonResponse)
                 .collect(Collectors.toList());
         return new PageImpl<>(content, pageable, pageResult.getTotalElements());
     }
 
     @Override
-    public LessionResponse addLession(UUID courseId, CreateLessionRequest request) {
+    public LessonResponse addLesson(UUID courseId, CreateLessonRequest request) {
         if (!courseRepository.existsById(courseId)) {
             throw new ResourceNotFound("Course not found with ID: " + courseId);
         }
 
         int nextOrder = request.getOrderIndex() != null ? request.getOrderIndex() : 1;
         if (request.getOrderIndex() == null) {
-            List<Lesson> existing = lessionRepository.findByCourseIdOrderByOrderIndexAsc(courseId);
+            List<Lesson> existing = lessonRepository.findByCourseIdOrderByOrderIndexAsc(courseId);
             nextOrder = existing.size() + 1;
         }
 
-        Lesson lession = Lesson.builder()
+        Lesson lesson = Lesson.builder()
                 .courseId(courseId)
                 .title(request.getTitle())
                 .content(request.getContent())
@@ -232,60 +232,60 @@ public class CourseServiceImpl implements CourseService {
                 .isPublished(request.getIsPublished() != null ? request.getIsPublished() : true)
                 .build();
 
-        Lesson saved = lessionRepository.save(lession);
-        log.info("Added lession: {} to course {}", saved.getTitle(), courseId);
+        Lesson saved = lessonRepository.save(lesson);
+        log.info("Added Lesson: {} to course {}", saved.getTitle(), courseId);
 
         eventPublisher.publishEvent(NotificationEvent.builder()
-                .title("Bài học mới: " + saved.getTitle())
-                .message("Giảng viên vừa thêm bài học mới. Vui lòng kiểm duyệt.")
+                .title("BÃƒÂ i hÃ¡Â»Âc mÃ¡Â»â€ºi: " + saved.getTitle())
+                .message("GiÃ¡ÂºÂ£ng viÃƒÂªn vÃ¡Â»Â«a thÃƒÂªm bÃƒÂ i hÃ¡Â»Âc mÃ¡Â»â€ºi. Vui lÃƒÂ²ng kiÃ¡Â»Æ’m duyÃ¡Â»â€¡t.")
                 .type("SYSTEM_LOG")
                 .relatedCourseId(courseId)
-                .relatedLessionId(saved.getId())
+                .relatedLessonId(saved.getId())
                 .build());
 
-        return mapToLessionResponse(saved);
+        return mapToLessonResponse(saved);
     }
 
     @Override
-    public LessionResponse updateLession(UUID lessionId, UpdateLessionRequest request) {
-        Lesson lession = lessionRepository.findById(lessionId)
-                .orElseThrow(() -> new ResourceNotFound("Lession not found with ID: " + lessionId));
+    public LessonResponse updateLesson(UUID LessonId, UpdateLessonRequest request) {
+        Lesson lesson = lessonRepository.findById(LessonId)
+                .orElseThrow(() -> new ResourceNotFound("Lesson not found with ID: " + LessonId));
 
         if (request.getTitle() != null && !request.getTitle().isBlank()) {
-            lession.setTitle(request.getTitle());
+            lesson.setTitle(request.getTitle());
         }
         if (request.getContent() != null) {
-            lession.setContent(request.getContent());
+            lesson.setContent(request.getContent());
         }
         if (request.getVideoUrl() != null) {
-            lession.setVideoUrl(request.getVideoUrl());
+            lesson.setVideoUrl(request.getVideoUrl());
         }
         if (request.getDocumentUrl() != null) {
-            lession.setDocumentUrl(request.getDocumentUrl());
+            lesson.setDocumentUrl(request.getDocumentUrl());
         }
         if (request.getOrderIndex() != null) {
-            lession.setOrderIndex(request.getOrderIndex());
+            lesson.setOrderIndex(request.getOrderIndex());
         }
         if (request.getIsPublished() != null) {
-            lession.setIsPublished(request.getIsPublished());
+            lesson.setIsPublished(request.getIsPublished());
         }
 
-        Lesson updated = lessionRepository.save(lession);
-        log.info("Updated lession ID: {}", lessionId);
-        return mapToLessionResponse(updated);
+        Lesson updated = lessonRepository.save(lesson);
+        log.info("Updated Lesson ID: {}", LessonId);
+        return mapToLessonResponse(updated);
     }
 
     @Override
-    public void deleteLession(UUID lessionId) {
-        if (!lessionRepository.existsById(lessionId)) {
-            throw new ResourceNotFound("Lession not found with ID: " + lessionId);
+    public void deleteLesson(UUID LessonId) {
+        if (!lessonRepository.existsById(LessonId)) {
+            throw new ResourceNotFound("Lesson not found with ID: " + LessonId);
         }
-        lessionRepository.deleteById(lessionId);
-        log.info("Deleted lession ID: {}", lessionId);
+        lessonRepository.deleteById(LessonId);
+        log.info("Deleted Lesson ID: {}", LessonId);
     }
 
     private CourseResponse mapToCourseSummaryResponse(Courses course) {
-        List<Lesson> lessions = lessionRepository.findByCourseIdOrderByOrderIndexAsc(course.getId());
+        List<Lesson> lessons = lessonRepository.findByCourseIdOrderByOrderIndexAsc(course.getId());
 
         return CourseResponse.builder()
                 .id(course.getId())
@@ -293,22 +293,22 @@ public class CourseServiceImpl implements CourseService {
                 .description(course.getDescription())
                 .thumbnailUrl(course.getThumbnailUrl())
                 .isPublished(course.getIsPublished())
-                .totalLessons(lessions.size())
+                .totalLessons(lessons.size())
                 .createdAt(course.getCreatedAt())
                 .build();
     }
 
-    private LessionResponse mapToLessionResponse(Lesson lession) {
-        return LessionResponse.builder()
-                .id(lession.getId())
-                .courseId(lession.getCourseId())
-                .title(lession.getTitle())
-                .content(lession.getContent())
-                .videoUrl(lession.getVideoUrl())
-                .documentUrl(lession.getDocumentUrl())
-                .orderIndex(lession.getOrderIndex())
-                .isPublished(lession.getIsPublished())
-                .createdAt(lession.getCreatedAt())
+    private LessonResponse mapToLessonResponse(Lesson lesson) {
+        return LessonResponse.builder()
+                .id(lesson.getId())
+                .courseId(lesson.getCourseId())
+                .title(lesson.getTitle())
+                .content(lesson.getContent())
+                .videoUrl(lesson.getVideoUrl())
+                .documentUrl(lesson.getDocumentUrl())
+                .orderIndex(lesson.getOrderIndex())
+                .isPublished(lesson.getIsPublished())
+                .createdAt(lesson.getCreatedAt())
                 .build();
     }
 }

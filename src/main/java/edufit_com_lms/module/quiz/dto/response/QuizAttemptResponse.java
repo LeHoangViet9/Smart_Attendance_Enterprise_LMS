@@ -14,22 +14,22 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class QuizAttemptResponse {
     private Long id;
-    private Long quizId; // ID của đề thi
-    private Long studentId; // ID của học viên
+    private Long quizId; // ID cá»§a Ä‘á» thi
+    private Long studentId; // ID cá»§a há»c viÃªn
     private String studentName;
     private String studentCode;
 
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 
-    // Tổng điểm đạt được (Sẽ null nếu đang thi / chưa chấm)
+    // Tá»•ng Ä‘iá»ƒm Ä‘áº¡t Ä‘Æ°á»£c (Sáº½ null náº¿u Ä‘ang thi / chÆ°a cháº¥m)
     private Double score;
 
-    // Trạng thái: IN_PROGRESS, COMPLETED, ABANDONED
+    // Tráº¡ng thÃ¡i: IN_PROGRESS, COMPLETED, ABANDONED
     private QuizStatus status;
 
     private String proctoringImageUrl;
 
-    // Bộ cache tạm phục vụ trường hợp rớt mạng
+    // Bá»™ cache táº¡m phá»¥c vá»¥ trÆ°á»ng há»£p rá»›t máº¡ng
     private java.util.List<edufit_com_lms.module.quiz.dto.request.StudentAnswerRequest> cachedAnswers;
 }

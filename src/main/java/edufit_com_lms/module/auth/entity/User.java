@@ -1,11 +1,7 @@
 package edufit_com_lms.module.auth.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -57,8 +53,8 @@ public class User {
     private LecturerProfile lecturerProfile;
 
     /**
-     * Chỉ so sánh theo userId để tránh vòng lặp vô tận khi Hibernate
-     * duyệt qua các quan hệ Lazy (studentProfile, lecturerProfile).
+     * Chá»‰ so sÃ¡nh theo userId Ä‘á»ƒ trÃ¡nh vÃ²ng láº·p vÃ´ táº­n khi Hibernate
+     * duyá»‡t qua cÃ¡c quan há»‡ Lazy (studentProfile, lecturerProfile).
      */
     @Override
     public boolean equals(Object o) {

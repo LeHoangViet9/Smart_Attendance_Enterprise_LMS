@@ -49,7 +49,7 @@ public class QuizReviewResponse {
     public static class ReviewOptionDto {
         private Long id;
         private String content;
-        private Boolean isCorrect; // Bật mí đáp án đúng ở chế độ xem lại bài
+        private Boolean isCorrect; // Báº­t mÃ­ Ä‘Ã¡p Ã¡n Ä‘Ãºng á»Ÿ cháº¿ Ä‘á»™ xem láº¡i bÃ i
     }
 
     @Data

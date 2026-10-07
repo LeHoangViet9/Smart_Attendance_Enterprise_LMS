@@ -5,21 +5,12 @@ import edufit_com_lms.module.attendance.repository.AttendanceRepository;
 import edufit_com_lms.module.auth.entity.User;
 import edufit_com_lms.module.lms.dto.request.UpdateGradebookRequest;
 import edufit_com_lms.module.lms.dto.response.GradebookItemResponse;
-import edufit_com_lms.module.lms.entity.Assignment;
-import edufit_com_lms.module.lms.entity.ClassEnrollment;
-import edufit_com_lms.module.lms.entity.Gradebook;
-import edufit_com_lms.module.lms.entity.SchoolClass;
-import edufit_com_lms.module.lms.entity.Submission;
-import edufit_com_lms.module.lms.repository.AssignmentRepository;
-import edufit_com_lms.module.lms.repository.ClassEnrollmentRepository;
-import edufit_com_lms.module.lms.repository.GradebookRepository;
-import edufit_com_lms.module.lms.repository.SchoolClassRepository;
-import edufit_com_lms.module.lms.repository.SubmissionRepository;
+import edufit_com_lms.module.lms.entity.*;
+import edufit_com_lms.module.lms.repository.*;
 import edufit_com_lms.module.lms.service.GradebookService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
@@ -60,10 +51,10 @@ public class GradebookServiceImpl implements GradebookService {
     @Override
     public List<GradebookItemResponse> getGradebookForClass(UUID classId, Long lecturerId) {
         SchoolClass schoolClass = schoolClassRepository.findById(classId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Lớp học không tồn tại"));
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Lá»›p há»c khÃ´ng tá»“n táº¡i"));
 
         if (!schoolClass.getLecturer().getUserId().equals(lecturerId)) {
-            throw new AppException(HttpStatus.FORBIDDEN, "Bạn không có quyền xem sổ điểm của lớp này");
+            throw new AppException(HttpStatus.FORBIDDEN, "Báº¡n khÃ´ng cÃ³ quyá»n xem sá»• Ä‘iá»ƒm cá»§a lá»›p nÃ y");
         }
 
         List<Gradebook> gradebooks = gradebookRepository.findByClassId(classId);
@@ -79,10 +70,10 @@ public class GradebookServiceImpl implements GradebookService {
     @Override
     public List<GradebookItemResponse> syncGradebookForClass(UUID classId, Long lecturerId) {
         SchoolClass schoolClass = schoolClassRepository.findById(classId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Lớp học không tồn tại"));
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Lá»›p há»c khÃ´ng tá»“n táº¡i"));
 
         if (!schoolClass.getLecturer().getUserId().equals(lecturerId)) {
-            throw new AppException(HttpStatus.FORBIDDEN, "Bạn không có quyền xem sổ điểm của lớp này");
+            throw new AppException(HttpStatus.FORBIDDEN, "Báº¡n khÃ´ng cÃ³ quyá»n xem sá»• Ä‘iá»ƒm cá»§a lá»›p nÃ y");
         }
 
         long totalAttendanceSessions = attendanceRepository.countDistinctCheckInTimeBySchoolClassId(classId);
@@ -174,10 +165,10 @@ public class GradebookServiceImpl implements GradebookService {
     @Override
     public void updateGradebook(UUID gradebookId, UpdateGradebookRequest request, Long lecturerId) {
         Gradebook gradebook = gradebookRepository.findById(gradebookId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Bản ghi sổ điểm không tồn tại"));
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Báº£n ghi sá»• Ä‘iá»ƒm khÃ´ng tá»“n táº¡i"));
 
         if (!gradebook.getEnrollment().getSchoolClass().getLecturer().getUserId().equals(lecturerId)) {
-            throw new AppException(HttpStatus.FORBIDDEN, "Bạn không có quyền sửa sổ điểm này");
+            throw new AppException(HttpStatus.FORBIDDEN, "Báº¡n khÃ´ng cÃ³ quyá»n sá»­a sá»• Ä‘iá»ƒm nÃ y");
         }
 
         if (request.getAttendanceScore() != null) gradebook.setAttendanceScore(request.getAttendanceScore());

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Outlet, Link, NavLink, useNavigate } from 'react-router-dom';
+import React, {useState} from 'react';
+import {Link, NavLink, Outlet, useNavigate} from 'react-router-dom';
 import axiosInstance from '../../../api/axios';
 import NotificationBell from '../../../components/NotificationBell/NotificationBell';
 import './Layout.css';

@@ -4,11 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import java.util.UUID;
 
 /**
- * DTO response cho Lớp học phần (Class).
- * BRD 8.3: Một Class có Lecturer phụ trách và thuộc về một Course.
+ * DTO response cho Lá»›p há»c pháº§n (Class).
+ * BRD 8.3: Má»™t Class cÃ³ Lecturer phá»¥ trÃ¡ch vÃ  thuá»™c vá» má»™t Course.
  */
 @Data
 @Builder
@@ -20,11 +21,11 @@ public class SchoolClassResponse {
     private String majorName;
     private Integer entryYear;
 
-    // BRD: Lecturer phụ trách lớp học phần
+    // BRD: Lecturer phá»¥ trÃ¡ch lá»›p há»c pháº§n
     private Long lecturerId;
     private String lecturerName;
 
-    // BRD: Môn học mà lớp này thuộc về
+    // BRD: MÃ´n há»c mÃ  lá»›p nÃ y thuá»™c vá»
     private UUID courseId;
     private String courseName;
 

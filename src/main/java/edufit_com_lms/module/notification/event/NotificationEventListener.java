@@ -13,13 +13,13 @@ public class NotificationEventListener {
 
     @EventListener
     public void handleNotificationEvent(NotificationEvent event) {
-        // Lưu thông báo dạng bất đồng bộ hoặc đồng bộ tuỳ config (mặc định đồng bộ)
+        // LÃ†Â°u thÃƒÂ´ng bÃƒÂ¡o dÃ¡ÂºÂ¡ng bÃ¡ÂºÂ¥t Ã„â€˜Ã¡Â»â€œng bÃ¡Â»â„¢ hoÃ¡ÂºÂ·c Ã„â€˜Ã¡Â»â€œng bÃ¡Â»â„¢ tuÃ¡Â»Â³ config (mÃ¡ÂºÂ·c Ã„â€˜Ã¡Â»â€¹nh Ã„â€˜Ã¡Â»â€œng bÃ¡Â»â„¢)
         appNotificationService.createNotification(
                 event.getTitle(),
                 event.getMessage(),
                 event.getType(),
                 event.getRelatedCourseId(),
-                event.getRelatedLessionId(),
+                event.getRelatedLessonId(),
                 event.getSenderId(),
                 event.getRecipientId());
     }

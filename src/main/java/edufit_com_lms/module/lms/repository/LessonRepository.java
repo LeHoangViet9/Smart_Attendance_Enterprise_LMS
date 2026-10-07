@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface LessionRepository extends JpaRepository<Lesson, UUID> {
+public interface LessonRepository extends JpaRepository<Lesson, UUID> {
     List<Lesson> findByCourseIdOrderByOrderIndexAsc(UUID courseId);
 
     Page<Lesson> findByCourseIdOrderByOrderIndexAsc(UUID courseId,

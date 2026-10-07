@@ -1,7 +1,7 @@
 package edufit_com_lms.module.quiz.entity;
 
 public enum QuizStatus {
-    IN_PROGRESS, // Đang làm bài
-    COMPLETED, // Đã nộp bài
-    ABANDONED // Hủy bỏ / Quá hạn mà chưa nộp
+    IN_PROGRESS, // Äang lÃ m bÃ i
+    COMPLETED, // ÄÃ£ ná»™p bÃ i
+    ABANDONED // Há»§y bá» / QuÃ¡ háº¡n mÃ  chÆ°a ná»™p
 }

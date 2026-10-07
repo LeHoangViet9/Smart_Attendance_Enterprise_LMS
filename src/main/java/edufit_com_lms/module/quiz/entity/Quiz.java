@@ -27,12 +27,12 @@ public class Quiz {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    // Số lần làm tối đa (null = không giới hạn)
+    // Sá»‘ láº§n lÃ m tá»‘i Ä‘a (null = khÃ´ng giá»›i háº¡n)
     @Column(name = "max_attempts")
     private Integer maxAttempts;
 
-    // Giờ mở và khóa bài thi
-    // Thời gian làm bài tính bằng phút
+    // Giá» má»Ÿ vÃ  khÃ³a bÃ i thi
+    // Thá»i gian lÃ m bÃ i tÃ­nh báº±ng phÃºt
     @Column(name = "time_limit_minutes")
     private Integer timeLimitMinutes;
 
@@ -42,17 +42,17 @@ public class Quiz {
     @Column(name = "end_time")
     private LocalDateTime endTime;
 
-    // Trỏ tới Giảng viên / Admin người tạo đề
+    // Trá» tá»›i Giáº£ng viÃªn / Admin ngÆ°á»i táº¡o Ä‘á»
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_user_id")
     private User createdBy;
 
-    // Trỏ tới Chuyên ngành (Quiz thuộc chuyên ngành nào)
+    // Trá» tá»›i ChuyÃªn ngÃ nh (Quiz thuá»™c chuyÃªn ngÃ nh nÃ o)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "major_id")
     private edufit_com_lms.module.lms.entity.Major major;
 
-    // Danh sách Câu hỏi (Xóa quiz thì xóa luôn dàn câu hỏi)
+    // Danh sÃ¡ch CÃ¢u há»i (XÃ³a quiz thÃ¬ xÃ³a luÃ´n dÃ n cÃ¢u há»i)
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Question> questions;
 
@@ -67,7 +67,7 @@ public class Quiz {
     @Builder.Default
     private Boolean requiresProctoring = false;
 
-    // Mật khẩu đề thi (nếu giảng viên muốn cài đặt)
+    // Máº­t kháº©u Ä‘á» thi (náº¿u giáº£ng viÃªn muá»‘n cÃ i Ä‘áº·t)
     @Column(name = "access_code")
     private String accessCode;
 

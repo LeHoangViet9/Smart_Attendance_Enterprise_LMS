@@ -18,7 +18,7 @@ public class AppNotificationResponse {
     private String message;
     private String type;
     private UUID relatedCourseId;
-    private UUID relatedLessionId;
+    private UUID relatedLessonId;
     private Long senderId;
     private Boolean isRead;
     private LocalDateTime createdAt;

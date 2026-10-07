@@ -3,6 +3,7 @@ package edufit_com_lms.module.lms.entity;
 import edufit_com_lms.module.auth.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 

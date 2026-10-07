@@ -38,7 +38,7 @@ public class AIGradingServiceImpl implements AIGradingService {
             log.info("Gemini API Key is not configured or answer is empty. Returning mock response.");
             return AIGradeSuggestionResponse.builder()
                     .points(Math.round(maxPoints * 0.8 * 10.0) / 10.0)
-                    .feedback("Đây là phản hồi giả lập từ AI. Bài làm khá tốt tuy nhiên cần triển khai ý sâu hơn.")
+                    .feedback("ÄÃ¢y lÃ  pháº£n há»“i giáº£ láº­p tá»« AI. BÃ i lÃ m khÃ¡ tá»‘t tuy nhiÃªn cáº§n triá»ƒn khai Ã½ sÃ¢u hÆ¡n.")
                     .build();
         }
 
@@ -96,7 +96,7 @@ public class AIGradingServiceImpl implements AIGradingService {
             log.error("Error calling Gemini API for grading: ", e);
             return AIGradeSuggestionResponse.builder()
                     .points(maxPoints / 2)
-                    .feedback("Lỗi kết nối AI: " + e.getMessage() + ". Vui lòng chấm điểm thủ công.")
+                    .feedback("Lá»—i káº¿t ná»‘i AI: " + e.getMessage() + ". Vui lÃ²ng cháº¥m Ä‘iá»ƒm thá»§ cÃ´ng.")
                     .build();
         }
     }

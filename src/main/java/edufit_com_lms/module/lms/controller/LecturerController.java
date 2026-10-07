@@ -5,8 +5,9 @@ import edufit_com_lms.module.lms.dto.response.LecturerStatsResponse;
 import edufit_com_lms.module.lms.service.LecturerService;
 import edufit_com_lms.security.CustomUserDetail;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +21,7 @@ public class LecturerController {
 
     private final LecturerService lecturerService;
 
+    @PreAuthorize("hasAnyRole('LECTURER','ADMIN')")
     @GetMapping("/stats")
     public ResponseEntity<ApiResponse<LecturerStatsResponse>> getLecturerStats() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

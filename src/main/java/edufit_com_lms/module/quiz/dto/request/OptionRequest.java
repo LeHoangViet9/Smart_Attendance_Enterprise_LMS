@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class OptionRequest {
-    private String content; // Nội dung đáp án (vd: Bằng 2)
-    private Boolean isCorrect; // Phải CÓ biến này để Admin đánh dấu câu đúng sai!
+    private String content; // Ná»™i dung Ä‘Ã¡p Ã¡n (vd: Báº±ng 2)
+    private Boolean isCorrect; // Pháº£i CÃ“ biáº¿n nÃ y Ä‘á»ƒ Admin Ä‘Ã¡nh dáº¥u cÃ¢u Ä‘Ãºng sai!
 }

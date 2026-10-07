@@ -1,11 +1,10 @@
 package edufit_com_lms;
 
+import edufit_com_lms.module.auth.service.DataSeederService;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-
 import org.springframework.context.annotation.Bean;
-import org.springframework.boot.CommandLineRunner;
-import edufit_com_lms.module.auth.service.DataSeederService;
 import org.springframework.data.web.config.EnableSpringDataWebSupport;
 
 @SpringBootApplication

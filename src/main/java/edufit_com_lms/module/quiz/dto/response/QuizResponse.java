@@ -21,7 +21,7 @@ public class QuizResponse {
     private LocalDateTime endTime;
     private LocalDateTime startTime;
     private Boolean requiresProctoring;
-    private List<QuestionResponse> questions; // Toàn bộ đề thi được nhồi vào cục này để ném về React
+    private List<QuestionResponse> questions; // ToÃ n bá»™ Ä‘á» thi Ä‘Æ°á»£c nhá»“i vÃ o cá»¥c nÃ y Ä‘á»ƒ nÃ©m vá» React
     private UUID majorId;
     private String majorName;
     private Long createdBy;

@@ -12,7 +12,7 @@ public class NotificationEvent {
     private String message;
     private String type; // "SYSTEM_LOG", "REPORT"
     private UUID relatedCourseId;
-    private UUID relatedLessionId;
+    private UUID relatedLessonId;
     private Long senderId;
     private Long recipientId;
 }

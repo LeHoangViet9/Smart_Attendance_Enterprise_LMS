@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     private final UserService userService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<UserResponse>>> getAllUsers(@RequestParam(required = false) String keyword,
             @RequestParam(required = false) Role role,
@@ -55,6 +56,13 @@ public class UserController {
                 null,
                 null,
                 HttpStatus.OK), HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{id}/toggle-active")
+    public ResponseEntity<ApiResponse<UserResponse>> toggleUserActive(@PathVariable Long id) {
+        return new ResponseEntity<>(new ApiResponse<>(true, "Cáº­p nháº­t tráº¡ng thÃ¡i tÃ i khoáº£n thÃ nh cÃ´ng", null,
+                userService.toggleUserActive(id), HttpStatus.OK), HttpStatus.OK);
     }
 
     @GetMapping("/me")

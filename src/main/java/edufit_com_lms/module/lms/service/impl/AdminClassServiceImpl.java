@@ -13,12 +13,12 @@ import edufit_com_lms.module.lms.repository.MajorRepository;
 import edufit_com_lms.module.lms.repository.SchoolClassRepository;
 import edufit_com_lms.module.lms.service.AdminClassService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import java.util.stream.Collectors;
 
 @Service
@@ -126,43 +126,33 @@ public class AdminClassServiceImpl implements AdminClassService {
                 .filter(c -> c.getLecturer() == null && c.getMajor() != null)
                 .collect(Collectors.toList());
 
-        Set<Long> assignedLecturerIds = allIncludedClasses.stream()
-                .filter(c -> c.getLecturer() != null)
-                .map(c -> c.getLecturer().getUserId())
-                .collect(Collectors.toSet());
-
-        // We can fetch LECTURER users, assuming we have a custom way.
-        // User repository might not have findByRole(Role) explicitly if we used custom
-        // queries.
-        // Let's rely on finding all users and filtering, as data size is small for this
-        // prototype.
-        List<User> availableLecturers = userRepository.findAll().stream()
-                .filter(u -> u.getRole() == Role.LECTURER && !assignedLecturerIds.contains(u.getUserId()))
+        List<User> lecturers = userRepository.findAll().stream()
+                .filter(u -> u.getRole() == Role.LECTURER && u.getLecturerProfile() != null)
                 .collect(Collectors.toList());
 
         List<SchoolClass> classesToUpdate = new ArrayList<>();
 
         for (SchoolClass c : classesWithoutLecturer) {
-            if (availableLecturers.isEmpty())
-                break;
-
-            // Try to match by major name
-            Optional<User> match = availableLecturers.stream()
-                    .filter(l -> l.getLecturerProfile() != null &&
-                            l.getLecturerProfile().getMajor() != null &&
+            // Find a lecturer who matches the major and has < 3 classes assigned
+            Optional<User> match = lecturers.stream()
+                    .filter(l -> l.getLecturerProfile().getMajor() != null &&
                             c.getMajor().getId().equals(l.getLecturerProfile().getMajor().getId()))
+                    .filter(l -> schoolClassRepository.countByLecturer(l) < 3)
                     .findFirst();
 
             if (match.isPresent()) {
                 c.setLecturer(match.get());
-                availableLecturers.remove(match.get());
+                classesToUpdate.add(c);
             } else {
-                // If no exact match, just pick the first available
-                User fallback = availableLecturers.get(0);
-                c.setLecturer(fallback);
-                availableLecturers.remove(fallback);
+                // If no exact match, pick any lecturer with < 3 classes
+                Optional<User> fallback = lecturers.stream()
+                        .filter(l -> schoolClassRepository.countByLecturer(l) < 3)
+                        .findFirst();
+                if (fallback.isPresent()) {
+                    c.setLecturer(fallback.get());
+                    classesToUpdate.add(c);
+                }
             }
-            classesToUpdate.add(c);
         }
 
         if (!classesToUpdate.isEmpty()) {

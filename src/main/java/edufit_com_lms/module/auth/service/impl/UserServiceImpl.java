@@ -13,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -69,6 +68,14 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFound("Can not found user"));
         user.setIsActive(user.getIsActive() != null ? !user.getIsActive() : false);
         userRepository.save(user);
+    }
+    @Override
+    public UserResponse toggleUserActive(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFound("Cannot find user with id " + id));
+        user.setIsActive(user.getIsActive() != null ? !user.getIsActive() : false);
+        userRepository.save(user);
+        return userMapper.toUserResponse(user);
     }
 
     @Override

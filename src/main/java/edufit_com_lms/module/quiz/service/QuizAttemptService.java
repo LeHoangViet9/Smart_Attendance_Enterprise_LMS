@@ -6,8 +6,6 @@ import edufit_com_lms.module.quiz.dto.response.QuizReviewResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.List;
-
 public interface QuizAttemptService {
     QuizAttemptResponse startAttempt(Long quizId, Long studentId, String accessCode);
 

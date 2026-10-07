@@ -19,7 +19,6 @@ public class CreateQuizRequest {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 
-    // Mảng dữ liệu móng vuốt chứa tất tần tật câu hỏi
     private List<QuestionRequest> questions;
     
     private Boolean requiresProctoring;

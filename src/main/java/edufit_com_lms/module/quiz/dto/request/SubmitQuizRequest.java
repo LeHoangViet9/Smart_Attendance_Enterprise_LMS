@@ -13,6 +13,6 @@ import java.util.List;
 @NoArgsConstructor
 public class SubmitQuizRequest {
     private Long quizAttemptId;
-    private List<StudentAnswerRequest> answers; // Danh sách hòm chứa toàn bộ tick A B C của SV
+    private List<StudentAnswerRequest> answers; // Danh sÃ¡ch hÃ²m chá»©a toÃ n bá»™ tick A B C cá»§a SV
     private String proctoringImageUrl;
 }

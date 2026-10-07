@@ -7,13 +7,12 @@ import edufit_com_lms.security.CustomUserDetail;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
-
-import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/v1/notifications")
@@ -52,7 +51,7 @@ public class AppNotificationController {
             userId = ((CustomUserDetail) authentication.getPrincipal()).getId();
         }
         notificationService.markAsRead(id, userId);
-        return ResponseEntity.ok(ApiResponse.success("Đã đánh dấu đọc", null));
+        return ResponseEntity.ok(ApiResponse.success("Ã„ÂÃƒÂ£ Ã„â€˜ÃƒÂ¡nh dÃ¡ÂºÂ¥u Ã„â€˜Ã¡Â»Âc", null));
     }
 
     @PutMapping("/read-all")
@@ -63,7 +62,7 @@ public class AppNotificationController {
             userId = ((CustomUserDetail) authentication.getPrincipal()).getId();
         }
         notificationService.markAllAsRead(userId);
-        return ResponseEntity.ok(ApiResponse.success("Đã đánh dấu đọc tất cả", null));
+        return ResponseEntity.ok(ApiResponse.success("Ã„ÂÃƒÂ£ Ã„â€˜ÃƒÂ¡nh dÃ¡ÂºÂ¥u Ã„â€˜Ã¡Â»Âc tÃ¡ÂºÂ¥t cÃ¡ÂºÂ£", null));
     }
 
     @PostMapping("/report")
@@ -75,13 +74,13 @@ public class AppNotificationController {
         }
 
         notificationService.createNotification(
-                "Báo cáo có nội dung vi phạm",
+                "BÃƒÂ¡o cÃƒÂ¡o cÃƒÂ³ nÃ¡Â»â„¢i dung vi phÃ¡ÂºÂ¡m",
                 request.getReason(),
                 "REPORT",
                 request.getRelatedCourseId(),
-                request.getRelatedLessionId(),
+                request.getRelatedLessonId(),
                 studentId,
                 null);
-        return ResponseEntity.ok(ApiResponse.success("Gửi báo cáo thành công", null));
+        return ResponseEntity.ok(ApiResponse.success("GÃ¡Â»Â­i bÃƒÂ¡o cÃƒÂ¡o thÃƒÂ nh cÃƒÂ´ng", null));
     }
 }

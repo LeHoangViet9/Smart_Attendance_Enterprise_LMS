@@ -1,23 +1,23 @@
 package edufit_com_lms.module.attendance.service.impl;
 
-import org.springframework.stereotype.Service;
-import edufit_com_lms.module.attendance.dto.response.FaceOnboardingResponse;
-import edufit_com_lms.module.auth.entity.User;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edufit_com_lms.common.exception.ResourceNotFound;
+import edufit_com_lms.module.attendance.dto.response.FaceOnboardingResponse;
+import edufit_com_lms.module.auth.entity.User;
 import edufit_com_lms.module.auth.repository.UserRepository;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.client.RestTemplate;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.core.io.ByteArrayResource;
-import com.fasterxml.jackson.databind.JsonNode;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -55,7 +55,7 @@ public class StudentProfileServiceImpl {
             ResponseEntity<JsonNode> aiResponse = restTemplate.postForEntity(aiServiceUrl, requestEntity, JsonNode.class);
 
             if (!aiResponse.getStatusCode().is2xxSuccessful() || aiResponse.getBody() == null) {
-                throw new RuntimeException("Lỗi kết nối tới AI Service");
+                throw new RuntimeException("Lá»—i káº¿t ná»‘i tá»›i AI Service");
             }
 
             JsonNode responseBody = aiResponse.getBody();
@@ -73,13 +73,13 @@ public class StudentProfileServiceImpl {
             log.info("Face onboarding successful for user: {}", email);
 
             return FaceOnboardingResponse.builder()
-                    .message("Khuôn mặt đã được đăng ký thành công!")
+                    .message("KhuÃ´n máº·t Ä‘Ã£ Ä‘Æ°á»£c Ä‘Äƒng kÃ½ thÃ nh cÃ´ng!")
                     .avatarUrl(user.getAvatarUrl())
                     .isVectorGenerated(true)
                     .build();
         } catch (Exception e) {
             log.error("Error saving face descriptor for user: {}", email, e);
-            throw new RuntimeException("Lỗi lưu dữ liệu sinh trắc học: " + e.getMessage());
+            throw new RuntimeException("Lá»—i lÆ°u dá»¯ liá»‡u sinh tráº¯c há»c: " + e.getMessage());
         }
     }
 }

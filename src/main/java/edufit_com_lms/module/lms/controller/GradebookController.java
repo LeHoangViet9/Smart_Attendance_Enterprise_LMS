@@ -51,7 +51,7 @@ public class GradebookController {
         Long lecturerId = ((CustomUserDetail) authentication.getPrincipal()).getId();
         
         gradebookService.updateGradebook(gradebookId, request, lecturerId);
-        return ResponseEntity.ok(ApiResponse.success("Lưu điểm thành công"));
+        return ResponseEntity.ok(ApiResponse.success("LÆ°u Ä‘iá»ƒm thÃ nh cÃ´ng"));
     }
 
     @GetMapping("/my-grades")

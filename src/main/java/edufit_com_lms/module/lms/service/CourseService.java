@@ -1,16 +1,16 @@
 package edufit_com_lms.module.lms.service;
 
 import edufit_com_lms.module.lms.dto.request.CreateCourseRequest;
-import edufit_com_lms.module.lms.dto.request.CreateLessionRequest;
+import edufit_com_lms.module.lms.dto.request.CreateLessonRequest;
 import edufit_com_lms.module.lms.dto.request.UpdateCourseRequest;
-import edufit_com_lms.module.lms.dto.request.UpdateLessionRequest;
+import edufit_com_lms.module.lms.dto.request.UpdateLessonRequest;
 import edufit_com_lms.module.lms.dto.response.CourseResponse;
-import edufit_com_lms.module.lms.dto.response.LessionResponse;
+import edufit_com_lms.module.lms.dto.response.LessonResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.UUID;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 public interface CourseService {
     // Course Operations
@@ -31,14 +31,14 @@ public interface CourseService {
 
     void deleteCourse(UUID id);
 
-    // Lession Operations
-    List<LessionResponse> getLessionsByCourseId(UUID courseId);
+    // Lesson Operations
+    List<LessonResponse> getLessonsByCourseId(UUID courseId);
 
-    Page<LessionResponse> getPaginatedLessionsByCourseId(UUID courseId, Pageable pageable);
+    Page<LessonResponse> getPaginatedLessonsByCourseId(UUID courseId, Pageable pageable);
 
-    LessionResponse addLession(UUID courseId, CreateLessionRequest request);
+    LessonResponse addLesson(UUID courseId, CreateLessonRequest request);
 
-    LessionResponse updateLession(UUID lessionId, UpdateLessionRequest request);
+    LessonResponse updateLesson(UUID LessonId, UpdateLessonRequest request);
 
-    void deleteLession(UUID lessionId);
+    void deleteLesson(UUID LessonId);
 }

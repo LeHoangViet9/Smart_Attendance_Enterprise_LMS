@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import axiosInstance from '../../api/axios';
 import './NotificationBell.css';
 
-import { Client } from '@stomp/stompjs';
+import {Client} from '@stomp/stompjs';
 import SockJS from 'sockjs-client/dist/sockjs';
 
 const NotificationBell = () => {

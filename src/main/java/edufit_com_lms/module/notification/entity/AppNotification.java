@@ -2,6 +2,7 @@ package edufit_com_lms.module.notification.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -29,8 +30,8 @@ public class AppNotification {
     @Column(name = "related_course_id")
     private UUID relatedCourseId;
 
-    @Column(name = "related_lession_id")
-    private UUID relatedLessionId;
+    @Column(name = "related_Lesson_id")
+    private UUID relatedLessonId;
 
     @Column(name = "sender_id")
     private Long senderId; // For student reporting

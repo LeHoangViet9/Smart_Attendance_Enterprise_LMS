@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateLessionRequest {
+public class UpdateLessonRequest {
     private String title;
     private String content;
     private String videoUrl;

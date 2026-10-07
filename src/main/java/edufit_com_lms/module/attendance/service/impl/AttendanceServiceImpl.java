@@ -1,5 +1,8 @@
 package edufit_com_lms.module.attendance.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edufit_com_lms.module.attendance.dto.request.AttendanceSubmitRequest;
 import edufit_com_lms.module.attendance.entity.AttendanceRecord;
 import edufit_com_lms.module.attendance.repository.AttendanceRepository;
@@ -9,27 +12,20 @@ import edufit_com_lms.module.lms.entity.SchoolClass;
 import edufit_com_lms.module.lms.repository.ClassEnrollmentRepository;
 import edufit_com_lms.module.lms.repository.SchoolClassRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.core.io.ByteArrayResource;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.core.type.TypeReference;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -44,9 +40,9 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Transactional
     public void submitAttendance(AttendanceSubmitRequest request) {
         SchoolClass schoolClass = schoolClassRepository.findById(request.getClassId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học phần"));
+                .orElseThrow(() -> new RuntimeException("KhÃ´ng tÃ¬m tháº¥y lá»›p há»c pháº§n"));
 
-        // Lấy danh sách sinh viên từ ClassEnrollment (BRD 8.3: Student enrolled in Class)
+        // Láº¥y danh sÃ¡ch sinh viÃªn tá»« ClassEnrollment (BRD 8.3: Student enrolled in Class)
         List<ClassEnrollment> enrollments = classEnrollmentRepository.findBySchoolClassId(request.getClassId());
 
         LocalDateTime now = LocalDateTime.now();

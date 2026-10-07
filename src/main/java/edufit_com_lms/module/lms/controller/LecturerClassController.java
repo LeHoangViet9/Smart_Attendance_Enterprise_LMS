@@ -1,21 +1,21 @@
 package edufit_com_lms.module.lms.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edufit_com_lms.common.response.ApiResponse;
 import edufit_com_lms.module.attendance.dto.response.EnrolledStudentResponse;
 import edufit_com_lms.module.attendance.dto.response.StudentFaceDTO;
+import edufit_com_lms.module.attendance.repository.AttendanceRepository;
 import edufit_com_lms.module.lms.dto.response.SchoolClassResponse;
+import edufit_com_lms.module.lms.entity.Assignment;
 import edufit_com_lms.module.lms.entity.ClassEnrollment;
 import edufit_com_lms.module.lms.entity.SchoolClass;
+import edufit_com_lms.module.lms.entity.Submission;
+import edufit_com_lms.module.lms.repository.AssignmentRepository;
 import edufit_com_lms.module.lms.repository.ClassEnrollmentRepository;
 import edufit_com_lms.module.lms.repository.SchoolClassRepository;
-import edufit_com_lms.security.CustomUserDetail;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import edufit_com_lms.module.attendance.repository.AttendanceRepository;
 import edufit_com_lms.module.lms.repository.SubmissionRepository;
-import edufit_com_lms.module.lms.repository.AssignmentRepository;
-import edufit_com_lms.module.lms.entity.Assignment;
-import edufit_com_lms.module.lms.entity.Submission;
+import edufit_com_lms.security.CustomUserDetail;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,16 +23,19 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * Controller quản lý Lớp học phần của Giảng viên.
- * BRD 6.2: Lecturer xem Class được phân công, xem danh sách Student, điểm danh.
- * BRD 8.3: Một Class thuộc một Course. Một Class có Lecturer phụ trách.
+ * Controller quáº£n lÃ½ Lá»›p há»c pháº§n cá»§a Giáº£ng viÃªn.
+ * BRD 6.2: Lecturer xem Class Ä‘Æ°á»£c phÃ¢n cÃ´ng, xem danh sÃ¡ch Student, Ä‘iá»ƒm danh.
+ * BRD 8.3: Má»™t Class thuá»™c má»™t Course. Má»™t Class cÃ³ Lecturer phá»¥ trÃ¡ch.
  */
 @RestController
 @RequestMapping("/api/v1/lecturer/classes")
@@ -49,7 +52,7 @@ public class LecturerClassController {
 
     /**
      * GET /v1/lecturer/classes
-     * Trả về danh sách Lớp học phần (Class) mà Giảng viên đang phụ trách.
+     * Tráº£ vá» danh sÃ¡ch Lá»›p há»c pháº§n (Class) mÃ  Giáº£ng viÃªn Ä‘ang phá»¥ trÃ¡ch.
      * BRD 8.3: Lecturer Assignment.
      */
     @Transactional(readOnly = true)
@@ -79,7 +82,7 @@ public class LecturerClassController {
 
     /**
      * GET /v1/lecturer/classes/{classId}
-     * Trả về thông tin cơ bản của một lớp học phần cụ thể.
+     * Tráº£ vá» thÃ´ng tin cÆ¡ báº£n cá»§a má»™t lá»›p há»c pháº§n cá»¥ thá»ƒ.
      */
     @Transactional(readOnly = true)
     @GetMapping("/{classId}")
@@ -89,10 +92,10 @@ public class LecturerClassController {
         Long lecturerId = userDetails.getId();
 
         SchoolClass cls = schoolClassRepository.findById(classId)
-                .orElseThrow(() -> new edufit_com_lms.common.exception.ResourceNotFound("Không tìm thấy lớp học phần"));
+                .orElseThrow(() -> new edufit_com_lms.common.exception.ResourceNotFound("KhÃ´ng tÃ¬m tháº¥y lá»›p há»c pháº§n"));
 
         if (cls.getLecturer() == null || !cls.getLecturer().getUserId().equals(lecturerId)) {
-            throw new edufit_com_lms.common.exception.ConflictException("Bạn không phải giảng viên của lớp này");
+            throw new edufit_com_lms.common.exception.ConflictException("Báº¡n khÃ´ng pháº£i giáº£ng viÃªn cá»§a lá»›p nÃ y");
         }
 
         SchoolClassResponse response = SchoolClassResponse.builder()
@@ -112,8 +115,8 @@ public class LecturerClassController {
 
     /**
      * GET /v1/lecturer/classes/{classId}/students
-     * Trả về danh sách Sinh viên trong một Lớp học phần.
-     * BRD 8.3: Student chỉ được truy cập Class mà mình được enrollment.
+     * Tráº£ vá» danh sÃ¡ch Sinh viÃªn trong má»™t Lá»›p há»c pháº§n.
+     * BRD 8.3: Student chá»‰ Ä‘Æ°á»£c truy cáº­p Class mÃ  mÃ¬nh Ä‘Æ°á»£c enrollment.
      */
     @Transactional(readOnly = true)
     @GetMapping("/{classId}/students")
@@ -133,7 +136,7 @@ public class LecturerClassController {
             long presentAttendance = attendanceRepository.countPresentAttendanceByClassAndStudent(classId, student.getUserId());
             double attendanceRate = totalAttendance == 0 ? 0.0 : ((double) presentAttendance / totalAttendance) * 100;
             
-            // Tính điểm trung bình qua Java để tránh bug Hibernate 7 UUID/bigint type mismatch
+            // TÃ­nh Ä‘iá»ƒm trung bÃ¬nh qua Java Ä‘á»ƒ trÃ¡nh bug Hibernate 7 UUID/bigint type mismatch
             List<UUID> assignmentIds = assignmentRepository.findByClassId(classId)
                     .stream().map(Assignment::getId).collect(Collectors.toList());
             List<Submission> studentSubmissions = submissionRepository
@@ -162,8 +165,8 @@ public class LecturerClassController {
 
     /**
      * GET /v1/lecturer/classes/{classId}/students/faces
-     * Trả về Face Descriptor của từng Sinh viên trong Lớp học phần để Smart Attendance.
-     * BRD OBJ-05: Face Recognition hỗ trợ điểm danh.
+     * Tráº£ vá» Face Descriptor cá»§a tá»«ng Sinh viÃªn trong Lá»›p há»c pháº§n Ä‘á»ƒ Smart Attendance.
+     * BRD OBJ-05: Face Recognition há»— trá»£ Ä‘iá»ƒm danh.
      */
     @Transactional(readOnly = true)
     @GetMapping("/{classId}/students/faces")

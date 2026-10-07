@@ -3,6 +3,7 @@ package edufit_com_lms.module.auth.service;
 import edufit_com_lms.module.auth.dto.request.AdminRegisterRequest;
 import edufit_com_lms.module.auth.dto.request.ChangePasswordRequest;
 import edufit_com_lms.module.auth.dto.request.LoginRequest;
+import edufit_com_lms.module.auth.dto.request.RefreshTokenRequest;
 import edufit_com_lms.module.auth.dto.response.UserResponse;
 
 public interface AuthService {
@@ -13,4 +14,6 @@ public interface AuthService {
     void changePassword(ChangePasswordRequest changePasswordRequest);
 
     void logout();
+
+    UserResponse refreshToken(RefreshTokenRequest request);
 }

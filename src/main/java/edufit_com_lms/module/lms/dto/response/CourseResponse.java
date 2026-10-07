@@ -23,5 +23,5 @@ public class CourseResponse {
     private Boolean isPublished;
     private Integer totalLessons;
     private LocalDateTime createdAt;
-    private List<LessionResponse> lessions;
+    private List<LessonResponse> lessons;
 }

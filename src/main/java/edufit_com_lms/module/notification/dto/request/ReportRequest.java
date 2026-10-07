@@ -12,5 +12,5 @@ public class ReportRequest {
     @NotBlank(message = "Reason is required")
     private String reason;
     private UUID relatedCourseId;
-    private UUID relatedLessionId;
+    private UUID relatedLessonId;
 }

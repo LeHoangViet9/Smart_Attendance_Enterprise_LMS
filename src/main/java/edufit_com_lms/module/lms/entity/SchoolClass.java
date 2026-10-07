@@ -3,6 +3,7 @@ package edufit_com_lms.module.lms.entity;
 import edufit_com_lms.module.auth.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.util.UUID;
 
 @Entity
@@ -28,14 +29,14 @@ public class SchoolClass {
     private Integer entryYear;
 
     /**
-     * Giảng viên phụ trách Lớp học phần này (BRD: Một Class có ít nhất một Lecturer phụ trách)
+     * Giáº£ng viÃªn phá»¥ trÃ¡ch Lá»›p há»c pháº§n nÃ y (BRD: Má»™t Class cÃ³ Ã­t nháº¥t má»™t Lecturer phá»¥ trÃ¡ch)
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lecturer_id")
     private User lecturer;
 
     /**
-     * Môn học mà Lớp học phần này thuộc về (BRD: Một Course có thể có nhiều Class)
+     * MÃ´n há»c mÃ  Lá»›p há»c pháº§n nÃ y thuá»™c vá» (BRD: Má»™t Course cÃ³ thá»ƒ cÃ³ nhiá»u Class)
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id")

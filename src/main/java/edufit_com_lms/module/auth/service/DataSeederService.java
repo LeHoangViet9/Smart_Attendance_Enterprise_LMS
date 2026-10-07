@@ -7,20 +7,8 @@ import edufit_com_lms.module.auth.entity.User;
 import edufit_com_lms.module.auth.repository.LecturerProfileRepository;
 import edufit_com_lms.module.auth.repository.StudentProfileRepository;
 import edufit_com_lms.module.auth.repository.UserRepository;
-import edufit_com_lms.module.lms.entity.CourseEnrollment;
-import edufit_com_lms.module.lms.entity.Courses;
-import edufit_com_lms.module.lms.entity.Major;
-import edufit_com_lms.module.lms.entity.SchoolClass;
-import edufit_com_lms.module.lms.repository.CourseEnrollmentRepository;
-import edufit_com_lms.module.lms.repository.MajorRepository;
-import edufit_com_lms.module.lms.repository.SchoolClassRepository;
-import edufit_com_lms.module.lms.repository.CourseRepository;
-import edufit_com_lms.module.lms.entity.Lesson;
-import edufit_com_lms.module.lms.repository.LessionRepository;
-import edufit_com_lms.module.lms.entity.ClassEnrollment;
-import edufit_com_lms.module.lms.repository.ClassEnrollmentRepository;
-import edufit_com_lms.module.lms.entity.Assignment;
-import edufit_com_lms.module.lms.repository.AssignmentRepository;
+import edufit_com_lms.module.lms.entity.*;
+import edufit_com_lms.module.lms.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -45,7 +33,7 @@ public class DataSeederService {
     private final CourseRepository courseRepository;
     private final CourseEnrollmentRepository enrollmentRepository;
     private final PasswordEncoder passwordEncoder;
-    private final LessionRepository lessionRepository;
+    private final LessonRepository lessonRepository;
     private final ClassEnrollmentRepository classEnrollmentRepository;
     private final AssignmentRepository assignmentRepository;
 
@@ -125,7 +113,7 @@ public class DataSeederService {
                     User lecturer = User.builder()
                             .email("lecturer" + i + "@edu.vn")
                             .password(defaultPassword)
-                            .fullName("Giảng viên " + i)
+                            .fullName("GiÃ¡ÂºÂ£ng viÃƒÂªn " + i)
                             .phone("09" + (90000000 + rand.nextInt(9000000)))
                             .code(code)
                             .role(Role.LECTURER)
@@ -226,9 +214,9 @@ public class DataSeederService {
                         .build();
                 course = courseRepository.save(course);
 
-                // Create 3 Lessions per Course
+                // Create 3 lessons per Course
                 for (int j = 1; j <= 3; j++) {
-                    Lesson lession = Lesson.builder()
+                    Lesson lesson = Lesson.builder()
                             .courseId(course.getId())
                             .title("Lesson " + j + ": " + course.getTitle() + " Fundamentals")
                             .content("This is the detailed content for " + course.getTitle() + " Lesson " + j
@@ -238,7 +226,7 @@ public class DataSeederService {
                             .orderIndex(j)
                             .isPublished(true)
                             .build();
-                    lessionRepository.save(lession);
+                    lessonRepository.save(lesson);
                 }
             }
         }

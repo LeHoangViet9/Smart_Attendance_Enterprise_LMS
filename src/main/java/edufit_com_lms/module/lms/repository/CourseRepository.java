@@ -9,8 +9,8 @@ import org.springframework.stereotype.Repository;
 import java.util.UUID;
 
 /**
- * Repository cho Course (Môn học - Danh mục).
- * BRD 8.3: Course là danh mục môn học. Lecturer được gán vào Class, không vào Course.
+ * Repository cho Course (MÃ´n há»c - Danh má»¥c).
+ * BRD 8.3: Course lÃ  danh má»¥c mÃ´n há»c. Lecturer Ä‘Æ°á»£c gÃ¡n vÃ o Class, khÃ´ng vÃ o Course.
  */
 @Repository
 public interface CourseRepository extends JpaRepository<Courses, UUID> {

@@ -33,7 +33,7 @@ public class AppNotificationServiceImpl implements AppNotificationService {
                 .message(notification.getMessage())
                 .type(notification.getType())
                 .relatedCourseId(notification.getRelatedCourseId())
-                .relatedLessionId(notification.getRelatedLessionId())
+                .relatedLessonId(notification.getRelatedLessonId())
                 .senderId(notification.getSenderId())
                 .isRead(notification.getIsRead())
                 .createdAt(notification.getCreatedAt())
@@ -42,13 +42,13 @@ public class AppNotificationServiceImpl implements AppNotificationService {
 
     @Override
     public AppNotification createNotification(String title, String message, String type, UUID relatedCourseId,
-            UUID relatedLessionId, Long senderId, Long recipientId) {
+            UUID relatedLessonId, Long senderId, Long recipientId) {
         AppNotification notification = AppNotification.builder()
                 .title(title)
                 .message(message)
                 .type(type)
                 .relatedCourseId(relatedCourseId)
-                .relatedLessionId(relatedLessionId)
+                .relatedLessonId(relatedLessonId)
                 .senderId(senderId)
                 .recipientId(recipientId)
                 .isRead(false)

@@ -1,23 +1,21 @@
 package edufit_com_lms.common.config;
 
+import edufit_com_lms.module.auth.entity.Role;
+import edufit_com_lms.module.auth.entity.User;
+import edufit_com_lms.module.auth.repository.UserRepository;
+import edufit_com_lms.module.quiz.entity.Question;
+import edufit_com_lms.module.quiz.entity.QuestionOption;
+import edufit_com_lms.module.quiz.entity.QuestionType;
+import edufit_com_lms.module.quiz.entity.Quiz;
+import edufit_com_lms.module.quiz.repository.QuestionOptionRepository;
+import edufit_com_lms.module.quiz.repository.QuestionRepository;
+import edufit_com_lms.module.quiz.repository.QuizRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
-import edufit_com_lms.module.auth.entity.Role;
-import edufit_com_lms.module.auth.entity.User;
-import edufit_com_lms.module.auth.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
-import edufit_com_lms.module.quiz.entity.Quiz;
-import edufit_com_lms.module.quiz.entity.Question;
-import edufit_com_lms.module.quiz.entity.QuestionOption;
-import edufit_com_lms.module.quiz.entity.QuestionType;
-import edufit_com_lms.module.quiz.repository.QuizRepository;
-import edufit_com_lms.module.quiz.repository.QuestionRepository;
-import edufit_com_lms.module.quiz.repository.QuestionOptionRepository;
 
 import java.time.LocalDateTime;
 
@@ -36,17 +34,17 @@ public class DataSeeder implements CommandLineRunner {
         @Transactional
         public void run(String... args) throws Exception {
                 if (!userRepository.existsByEmail("admin@edu.vn")) {
-                        log.info("Bắt đầu khởi tạo dữ liệu mẫu (Seeder)...");
+                        log.info("Báº¯t Ä‘áº§u khá»Ÿi táº¡o dá»¯ liá»‡u máº«u (Seeder)...");
 
-                        // 1. Tài khoản Admin
+                        // 1. TÃ i khoáº£n Admin
                         User admin = User.builder()
                                         .email("admin@edu.vn")
                                         .password(passwordEncoder.encode("123456"))
-                                        .fullName("Admin Quản Trị")
-                                        .phone("0988888888") // Thêm số điện thoại
+                                        .fullName("Admin Quáº£n Trá»‹")
+                                        .phone("0988888888") // ThÃªm sá»‘ Ä‘iá»‡n thoáº¡i
                                         .code("AD001")
                                         .role(Role.ADMIN)
-                                        .address("Phòng Hành Chính")
+                                        .address("PhÃ²ng HÃ nh ChÃ­nh")
                                         .isActive(true)
                                         .createdAt(LocalDateTime.now())
                                         .updatedAt(LocalDateTime.now())
@@ -55,15 +53,15 @@ public class DataSeeder implements CommandLineRunner {
                 }
 
                 if (!userRepository.existsByEmail("sinhvien@edu.vn")) {
-                        // 2. Tài khoản Sinh Viên (để test Face Onboarding)
+                        // 2. TÃ i khoáº£n Sinh ViÃªn (Ä‘á»ƒ test Face Onboarding)
                         User student = User.builder()
                                         .email("sinhvien@edu.vn")
                                         .password(passwordEncoder.encode("123456"))
-                                        .fullName("Nguyễn Khắc Phục")
-                                        .phone("0912345678") // Thêm số điện thoại
+                                        .fullName("Nguyá»…n Kháº¯c Phá»¥c")
+                                        .phone("0912345678") // ThÃªm sá»‘ Ä‘iá»‡n thoáº¡i
                                         .code("SV001")
                                         .role(Role.STUDENT)
-                                        .address("Ký túc xá A")
+                                        .address("KÃ½ tÃºc xÃ¡ A")
                                         .isActive(true)
                                         .createdAt(LocalDateTime.now())
                                         .updatedAt(LocalDateTime.now())
@@ -71,15 +69,15 @@ public class DataSeeder implements CommandLineRunner {
                         userRepository.save(student);
                 }
                 
-                log.info("Đã tạo xong dữ liệu mẫu! Mật khẩu chung là: 123456");
+                log.info("ÄÃ£ táº¡o xong dá»¯ liá»‡u máº«u! Máº­t kháº©u chung lÃ : 123456");
 
                 if (quizRepository.count() == 0) {
-                        log.info("Bắt đầu khởi tạo dữ liệu đề thi mẫu (Quiz Seeder)...");
+                        log.info("Báº¯t Ä‘áº§u khá»Ÿi táº¡o dá»¯ liá»‡u Ä‘á» thi máº«u (Quiz Seeder)...");
 
                         Quiz quiz = Quiz.builder()
-                                        .title("Bài kiểm tra JAVA Backend đầu vào")
+                                        .title("BÃ i kiá»ƒm tra JAVA Backend Ä‘áº§u vÃ o")
                                         .description(
-                                                        "Bài kiểm tra tự động đánh giá kiến thức cơ bản về Spring Boot và Java Core, dành cho khoá K18.")
+                                                        "BÃ i kiá»ƒm tra tá»± Ä‘á»™ng Ä‘Ã¡nh giÃ¡ kiáº¿n thá»©c cÆ¡ báº£n vá» Spring Boot vÃ  Java Core, dÃ nh cho khoÃ¡ K18.")
                                         .timeLimitMinutes(15)
                                         .startTime(LocalDateTime.now().minusDays(1))
                                         .endTime(LocalDateTime.now().plusMonths(1))
@@ -90,7 +88,7 @@ public class DataSeeder implements CommandLineRunner {
 
                         Question q1 = Question.builder()
                                         .quiz(quiz)
-                                        .content("Thành phần nào của Spring Boot được dùng để cấu hình tự động (Auto-configuration)?")
+                                        .content("ThÃ nh pháº§n nÃ o cá»§a Spring Boot Ä‘Æ°á»£c dÃ¹ng Ä‘á»ƒ cáº¥u hÃ¬nh tá»± Ä‘á»™ng (Auto-configuration)?")
                                         .questionType(QuestionType.SINGLE_CHOICE)
                                         .points(5.0)
                                         .build();
@@ -111,23 +109,23 @@ public class DataSeeder implements CommandLineRunner {
 
                         Question q2 = Question.builder()
                                         .quiz(quiz)
-                                        .content("Java là ngôn ngữ lập trình thuần hướng đối tượng 100%?")
+                                        .content("Java lÃ  ngÃ´n ngá»¯ láº­p trÃ¬nh thuáº§n hÆ°á»›ng Ä‘á»‘i tÆ°á»£ng 100%?")
                                         .questionType(QuestionType.TRUE_FALSE)
                                         .points(5.0)
                                         .build();
                         q2 = questionRepository.save(q2);
 
                         questionOptionRepository
-                                        .save(QuestionOption.builder().question(q2).content("Đúng").isCorrect(false)
+                                        .save(QuestionOption.builder().question(q2).content("ÄÃºng").isCorrect(false)
                                                         .build());
                         questionOptionRepository.save(QuestionOption.builder().question(q2)
-                                        .content("Sai (Vì vẫn hỗ trợ các kiểu nguyên thuỷ như int, char)")
+                                        .content("Sai (VÃ¬ váº«n há»— trá»£ cÃ¡c kiá»ƒu nguyÃªn thuá»· nhÆ° int, char)")
                                         .isCorrect(true).build());
 
                         // --- QUIZ 2: React JS ---
                         Quiz quiz2 = Quiz.builder()
                                         .title("React JS Mastery")
-                                        .description("Bài kiểm tra đánh giá kỹ năng xây dựng Component và Hooks trong React 18.")
+                                        .description("BÃ i kiá»ƒm tra Ä‘Ã¡nh giÃ¡ ká»¹ nÄƒng xÃ¢y dá»±ng Component vÃ  Hooks trong React 18.")
                                         .timeLimitMinutes(30)
                                         .startTime(LocalDateTime.now().minusDays(5))
                                         .endTime(LocalDateTime.now().plusMonths(2))
@@ -138,7 +136,7 @@ public class DataSeeder implements CommandLineRunner {
 
                         Question q3 = Question.builder()
                                         .quiz(quiz2)
-                                        .content("Hook nào được sử dụng để quản lý Side Effect trong Functional Component?")
+                                        .content("Hook nÃ o Ä‘Æ°á»£c sá»­ dá»¥ng Ä‘á»ƒ quáº£n lÃ½ Side Effect trong Functional Component?")
                                         .questionType(QuestionType.SINGLE_CHOICE)
                                         .points(5.0)
                                         .build();
@@ -155,22 +153,22 @@ public class DataSeeder implements CommandLineRunner {
 
                         Question q4 = Question.builder()
                                         .quiz(quiz2)
-                                        .content("Trong Redux, trạng thái (State) có thể bị thay đổi (mutate) trực tiếp không?")
+                                        .content("Trong Redux, tráº¡ng thÃ¡i (State) cÃ³ thá»ƒ bá»‹ thay Ä‘á»•i (mutate) trá»±c tiáº¿p khÃ´ng?")
                                         .questionType(QuestionType.TRUE_FALSE)
                                         .points(5.0)
                                         .build();
                         q4 = questionRepository.save(q4);
                         questionOptionRepository.save(
-                                        QuestionOption.builder().question(q4).content("Đúng (Có thể dùng assignment)")
+                                        QuestionOption.builder().question(q4).content("ÄÃºng (CÃ³ thá»ƒ dÃ¹ng assignment)")
                                                         .isCorrect(false).build());
                         questionOptionRepository.save(
-                                        QuestionOption.builder().question(q4).content("Sai (State là Immutable)")
+                                        QuestionOption.builder().question(q4).content("Sai (State lÃ  Immutable)")
                                                         .isCorrect(true).build());
 
                         // --- QUIZ 3: CSDL ---
                         Quiz quiz3 = Quiz.builder()
                                         .title("Database & SQL Performance")
-                                        .description("Bài kiểm tra về tối ưu hoá câu truy vấn và đánh Index trên CSDL Quan hệ.")
+                                        .description("BÃ i kiá»ƒm tra vá» tá»‘i Æ°u hoÃ¡ cÃ¢u truy váº¥n vÃ  Ä‘Ã¡nh Index trÃªn CSDL Quan há»‡.")
                                         .timeLimitMinutes(45)
                                         .startTime(LocalDateTime.now().minusDays(10))
                                         .endTime(LocalDateTime.now().plusMonths(3))
@@ -181,7 +179,7 @@ public class DataSeeder implements CommandLineRunner {
 
                         Question q5 = Question.builder()
                                         .quiz(quiz3)
-                                        .content("Lệnh SQL nào làm sạch toàn bộ dữ liệu bảng cực kỳ nhanh và giải phóng dung lượng đĩa?")
+                                        .content("Lá»‡nh SQL nÃ o lÃ m sáº¡ch toÃ n bá»™ dá»¯ liá»‡u báº£ng cá»±c ká»³ nhanh vÃ  giáº£i phÃ³ng dung lÆ°á»£ng Ä‘Ä©a?")
                                         .questionType(QuestionType.SINGLE_CHOICE)
                                         .points(5.0)
                                         .build();
@@ -195,24 +193,24 @@ public class DataSeeder implements CommandLineRunner {
 
                         Question q6 = Question.builder()
                                         .quiz(quiz3)
-                                        .content("Index B-Tree hoạt động hiệu quả cho loại truy vấn nào? (Chọn nhiều đáp án)")
+                                        .content("Index B-Tree hoáº¡t Ä‘á»™ng hiá»‡u quáº£ cho loáº¡i truy váº¥n nÃ o? (Chá»n nhiá»u Ä‘Ã¡p Ã¡n)")
                                         .questionType(QuestionType.MULTIPLE_CHOICE)
                                         .points(5.0)
                                         .build();
                         q6 = questionRepository.save(q6);
                         questionOptionRepository.save(
-                                        QuestionOption.builder().question(q6).content("Tìm kiếm chính xác (=)")
+                                        QuestionOption.builder().question(q6).content("TÃ¬m kiáº¿m chÃ­nh xÃ¡c (=)")
                                                         .isCorrect(true).build());
                         questionOptionRepository.save(
-                                        QuestionOption.builder().question(q6).content("Tìm khoảng (<, >, BETWEEN)")
+                                        QuestionOption.builder().question(q6).content("TÃ¬m khoáº£ng (<, >, BETWEEN)")
                                                         .isCorrect(true).build());
                         questionOptionRepository.save(QuestionOption.builder().question(q6)
-                                        .content("Tìm kiếm theo chuỗi (LIKE '%abc%')").isCorrect(false).build());
+                                        .content("TÃ¬m kiáº¿m theo chuá»—i (LIKE '%abc%')").isCorrect(false).build());
 
                         Question q7 = Question.builder()
                                         .quiz(quiz3)
                                         .content(
-                                                        "Từ khoá SQL để nối hai bảng, chỉ lấy các dòng khớp (matchs) ở cả 2 bên (Điền vào chỗ trống)")
+                                                        "Tá»« khoÃ¡ SQL Ä‘á»ƒ ná»‘i hai báº£ng, chá»‰ láº¥y cÃ¡c dÃ²ng khá»›p (matchs) á»Ÿ cáº£ 2 bÃªn (Äiá»n vÃ o chá»— trá»‘ng)")
                                         .questionType(QuestionType.FILL_BLANK)
                                         .points(5.0)
                                         .build();
@@ -224,7 +222,7 @@ public class DataSeeder implements CommandLineRunner {
                                         .save(QuestionOption.builder().question(q7).content("JOIN").isCorrect(true)
                                                         .build());
 
-                        log.info("Khởi tạo đề thi mẫu hoàn tất!");
+                        log.info("Khá»Ÿi táº¡o Ä‘á» thi máº«u hoÃ n táº¥t!");
                 }
 
                 // Generate 10 extra generic quizzes to fill up the table

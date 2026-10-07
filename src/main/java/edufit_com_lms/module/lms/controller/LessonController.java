@@ -1,9 +1,9 @@
 package edufit_com_lms.module.lms.controller;
 
 import edufit_com_lms.common.response.ApiResponse;
-import edufit_com_lms.module.lms.dto.request.CreateLessionRequest;
-import edufit_com_lms.module.lms.dto.request.UpdateLessionRequest;
-import edufit_com_lms.module.lms.dto.response.LessionResponse;
+import edufit_com_lms.module.lms.dto.request.CreateLessonRequest;
+import edufit_com_lms.module.lms.dto.request.UpdateLessonRequest;
+import edufit_com_lms.module.lms.dto.response.LessonResponse;
 import edufit_com_lms.module.lms.service.CourseService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,41 +24,41 @@ public class LessonController {
 
     private final CourseService courseService;
 
-    // 6. Lấy danh sách bài giảng của một khóa học (có phân trang)
-    @GetMapping("/{id}/lessions")
-    public ResponseEntity<ApiResponse<Page<LessionResponse>>> getLessonsByCourseId(
+    // 6. LÃ¡ÂºÂ¥y danh sÃƒÂ¡ch bÃƒÂ i giÃ¡ÂºÂ£ng cÃ¡Â»Â§a mÃ¡Â»â„¢t khÃƒÂ³a hÃ¡Â»Âc (cÃƒÂ³ phÃƒÂ¢n trang)
+    @GetMapping("/{id}/lessons")
+    public ResponseEntity<ApiResponse<Page<LessonResponse>>> getLessonsByCourseId(
             @PathVariable("id") UUID courseId,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<LessionResponse> responses = courseService.getPaginatedLessionsByCourseId(courseId, pageable);
+        Page<LessonResponse> responses = courseService.getPaginatedLessonsByCourseId(courseId, pageable);
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
-    // 7. Giảng viên / Admin: Thêm bài giảng vào khóa học
-    @PostMapping("/{id}/lessions")
+    // 7. GiÃ¡ÂºÂ£ng viÃƒÂªn / Admin: ThÃƒÂªm bÃƒÂ i giÃ¡ÂºÂ£ng vÃƒÂ o khÃƒÂ³a hÃ¡Â»Âc
+    @PostMapping("/{id}/lessons")
     @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
-    public ResponseEntity<ApiResponse<LessionResponse>> addLesson(
+    public ResponseEntity<ApiResponse<LessonResponse>> addLesson(
             @PathVariable("id") UUID courseId,
-            @Valid @RequestBody CreateLessionRequest request) {
-        LessionResponse response = courseService.addLession(courseId, request);
+            @Valid @RequestBody CreateLessonRequest request) {
+        LessonResponse response = courseService.addLesson(courseId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Lession added successfully", response));
+                .body(ApiResponse.success("Lesson added successfully", response));
     }
 
-    // 8. Giảng viên / Admin: Cập nhật bài giảng
-    @PutMapping("/lessions/{lessionId}")
+    // 8. GiÃ¡ÂºÂ£ng viÃƒÂªn / Admin: CÃ¡ÂºÂ­p nhÃ¡ÂºÂ­t bÃƒÂ i giÃ¡ÂºÂ£ng
+    @PutMapping("/lessons/{LessonId}")
     @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
-    public ResponseEntity<ApiResponse<LessionResponse>> updateLesson(
-            @PathVariable UUID lessionId,
-            @Valid @RequestBody UpdateLessionRequest request) {
-        LessionResponse response = courseService.updateLession(lessionId, request);
-        return ResponseEntity.ok(ApiResponse.success("Lession updated successfully", response));
+    public ResponseEntity<ApiResponse<LessonResponse>> updateLesson(
+            @PathVariable UUID LessonId,
+            @Valid @RequestBody UpdateLessonRequest request) {
+        LessonResponse response = courseService.updateLesson(LessonId, request);
+        return ResponseEntity.ok(ApiResponse.success("Lesson updated successfully", response));
     }
 
-    // 9. Giảng viên / Admin: Xóa bài giảng
-    @DeleteMapping("/lessions/{lessionId}")
+    // 9. GiÃ¡ÂºÂ£ng viÃƒÂªn / Admin: XÃƒÂ³a bÃƒÂ i giÃ¡ÂºÂ£ng
+    @DeleteMapping("/lessons/{LessonId}")
     @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> deleteLesson(@PathVariable UUID lessionId) {
-        courseService.deleteLession(lessionId);
-        return ResponseEntity.ok(ApiResponse.success("Lession deleted successfully", null));
+    public ResponseEntity<ApiResponse<Void>> deleteLesson(@PathVariable UUID LessonId) {
+        courseService.deleteLesson(LessonId);
+        return ResponseEntity.ok(ApiResponse.success("Lesson deleted successfully", null));
     }
 }

@@ -1,27 +1,25 @@
-package edufit_com_lms.module.lms.dto.request;
+package edufit_com_lms.module.lms.dto.response;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateLessionRequest {
-    @NotBlank(message = "Title must not be blank")
+public class LessonResponse {
+    private UUID id;
+    private UUID courseId;
     private String title;
-
     private String content;
-
     private String videoUrl;
-
     private String documentUrl;
-
     private Integer orderIndex;
-
-    @Builder.Default
-    private Boolean isPublished = true;
+    private Boolean isPublished;
+    private LocalDateTime createdAt;
 }

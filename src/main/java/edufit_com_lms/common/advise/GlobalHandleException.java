@@ -48,7 +48,7 @@ public class GlobalHandleException {
 
         ApiResponse<Map<String, String>> response = ApiResponse.<Map<String, String>>builder()
                 .success(false)
-                .message("Dữ liệu đầu vào không hợp lệ! Vui lòng kiểm tra lại.")
+                .message("Dá»¯ liá»‡u Ä‘áº§u vÃ o khÃ´ng há»£p lá»‡! Vui lÃ²ng kiá»ƒm tra láº¡i.")
                 .data(null)
                 .error(errors)
                 .status(HttpStatus.BAD_REQUEST)
@@ -74,7 +74,7 @@ public class GlobalHandleException {
 
         ApiResponse<Object> response = ApiResponse.builder()
                 .success(false)
-                .message("Hệ thống đã xảy ra sự cố bí ẩn. Vui lòng liên hệ Admin!")
+                .message("Há»‡ thá»‘ng Ä‘Ã£ xáº£y ra sá»± cá»‘ bÃ­ áº©n. Vui lÃ²ng liÃªn há»‡ Admin!")
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .build();
 
@@ -88,7 +88,7 @@ public class GlobalHandleException {
 
         ApiResponse<Object> response = ApiResponse.builder()
                 .success(false)
-                .message("Định dạng dữ liệu JSON gửi lên không hợp lệ hoặc sai kiểu dữ liệu!")
+                .message("Äá»‹nh dáº¡ng dá»¯ liá»‡u JSON gá»­i lÃªn khÃ´ng há»£p lá»‡ hoáº·c sai kiá»ƒu dá»¯ liá»‡u!")
                 .status(HttpStatus.BAD_REQUEST)
                 .build();
 

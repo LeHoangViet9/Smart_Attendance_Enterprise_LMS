@@ -25,7 +25,7 @@ public class MajorController {
     public ResponseEntity<ApiResponse<List<Major>>> getAllMajors() {
         return new ResponseEntity<>(new ApiResponse<>(
                 true,
-                "Lấy danh sách chuyên ngành thành công",
+                "Láº¥y danh sÃ¡ch chuyÃªn ngÃ nh thÃ nh cÃ´ng",
                 null,
                 majorRepository.findAll(),
                 HttpStatus.OK), HttpStatus.OK);

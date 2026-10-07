@@ -22,9 +22,9 @@ public class QuizAnalyticsResponse {
     private int passedCount;
     private int failedCount;
 
-    // Phân bổ phổ điểm, ví dụ: "0-2": 5, "2-4": 15, "4-6": 30...
+    // PhÃ¢n bá»• phá»• Ä‘iá»ƒm, vÃ­ dá»¥: "0-2": 5, "2-4": 15, "4-6": 30...
     private Map<String, Integer> scoreDistribution;
 
-    // Top 3 câu hỏi sinh viên sai nhiều nhất (Lưu id và nội dung câu hỏi)
+    // Top 3 cÃ¢u há»i sinh viÃªn sai nhiá»u nháº¥t (LÆ°u id vÃ  ná»™i dung cÃ¢u há»i)
     private Map<String, Integer> hardestQuestions; 
 }

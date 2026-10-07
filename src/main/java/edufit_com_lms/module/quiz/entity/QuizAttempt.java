@@ -21,12 +21,12 @@ public class QuizAttempt {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Bài được làm cho đề thi nào
+    // BÃ i Ä‘Æ°á»£c lÃ m cho Ä‘á» thi nÃ o
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "quiz_id", nullable = false)
     private Quiz quiz;
 
-    // Ai là người làm
+    // Ai lÃ  ngÆ°á»i lÃ m
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
     private User student;
@@ -37,7 +37,7 @@ public class QuizAttempt {
     @Column(name = "end_time")
     private LocalDateTime endTime;
 
-    // Điểm số nhận được lưu cứng vào đây
+    // Äiá»ƒm sá»‘ nháº­n Ä‘Æ°á»£c lÆ°u cá»©ng vÃ o Ä‘Ã¢y
     private Double score;
 
     @Enumerated(EnumType.STRING)
@@ -47,7 +47,7 @@ public class QuizAttempt {
     @Column(name = "proctoring_image_url")
     private String proctoringImageUrl;
 
-    // Chi tiết từng câu hỏi sinh viên đã check
+    // Chi tiáº¿t tá»«ng cÃ¢u há»i sinh viÃªn Ä‘Ã£ check
     @OneToMany(mappedBy = "attempt", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<StudentAnswer> studentAnswers;
 }

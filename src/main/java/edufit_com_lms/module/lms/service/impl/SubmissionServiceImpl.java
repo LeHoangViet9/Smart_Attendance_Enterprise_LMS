@@ -1,12 +1,12 @@
 package edufit_com_lms.module.lms.service.impl;
 
+import edufit_com_lms.common.exception.BadRequestException;
+import edufit_com_lms.common.exception.ResourceNotFound;
 import edufit_com_lms.module.lms.dto.request.GradeSubmissionRequest;
 import edufit_com_lms.module.lms.dto.request.SubmitAssignmentRequest;
 import edufit_com_lms.module.lms.dto.response.SubmissionResponse;
 import edufit_com_lms.module.lms.entity.Assignment;
 import edufit_com_lms.module.lms.entity.Submission;
-import edufit_com_lms.common.exception.BadRequestException;
-import edufit_com_lms.common.exception.ResourceNotFound;
 import edufit_com_lms.module.lms.repository.AssignmentRepository;
 import edufit_com_lms.module.lms.repository.SubmissionRepository;
 import edufit_com_lms.module.lms.service.SubmissionService;
@@ -69,8 +69,8 @@ public class SubmissionServiceImpl implements SubmissionService {
                 schoolClassRepository.findById(assignment.getClassId()).ifPresent(schoolClass -> {
                         if (schoolClass.getLecturer() != null) {
                                 eventPublisher.publishEvent(edufit_com_lms.module.notification.event.NotificationEvent.builder()
-                                                .title("Có sinh viên nộp bài")
-                                                .message("Sinh viên vừa nộp bài cho bài tập: " + assignment.getTitle())
+                                                .title("CÃ³ sinh viÃªn ná»™p bÃ i")
+                                                .message("Sinh viÃªn vá»«a ná»™p bÃ i cho bÃ i táº­p: " + assignment.getTitle())
                                                 .type("SYSTEM_LOG")
                                                 .recipientId(schoolClass.getLecturer().getUserId())
                                                 .build());
@@ -103,8 +103,8 @@ public class SubmissionServiceImpl implements SubmissionService {
 
                 // Notify Student that their assignment was graded
                 eventPublisher.publishEvent(edufit_com_lms.module.notification.event.NotificationEvent.builder()
-                        .title("Đã có điểm bài tập!")
-                        .message("Bài tập '" + assignment.getTitle() + "' của bạn đã được chấm điểm: " + request.getScore() + " / " + maxScore)
+                        .title("ÄÃ£ cÃ³ Ä‘iá»ƒm bÃ i táº­p!")
+                        .message("BÃ i táº­p '" + assignment.getTitle() + "' cá»§a báº¡n Ä‘Ã£ Ä‘Æ°á»£c cháº¥m Ä‘iá»ƒm: " + request.getScore() + " / " + maxScore)
                         .type("SYSTEM_LOG")
                         .recipientId(submission.getStudentId())
                         .build());

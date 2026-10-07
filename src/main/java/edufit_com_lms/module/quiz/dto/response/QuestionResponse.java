@@ -17,5 +17,5 @@ public class QuestionResponse {
     private String content;
     private Double points;
     private QuestionType questionType;
-    private List<OptionResponse> options; // Danh sách Câu C Trắc Nghiệm sẽ được nhét vào đây
+    private List<OptionResponse> options; // Danh sÃ¡ch CÃ¢u C Tráº¯c Nghiá»‡m sáº½ Ä‘Æ°á»£c nhÃ©t vÃ o Ä‘Ã¢y
 }

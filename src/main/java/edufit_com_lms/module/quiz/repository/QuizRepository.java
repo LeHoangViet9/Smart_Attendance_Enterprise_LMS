@@ -13,10 +13,10 @@ import java.util.List;
 
 @Repository
 public interface QuizRepository extends JpaRepository<Quiz, Long> {
-        // Tìm các bài quiz chưa tới giờ khóa
+        // TÃ¬m cÃ¡c bÃ i quiz chÆ°a tá»›i giá» khÃ³a
         List<Quiz> findByEndTimeAfterOrEndTimeIsNull(LocalDateTime now);
 
-        // Dùng cho tìm kiếm nhiều trường (title, description, hoặc thời gian)
+        // DÃ¹ng cho tÃ¬m kiáº¿m nhiá»u trÆ°á»ng (title, description, hoáº·c thá»i gian)
         @Query("SELECT q FROM Quiz q WHERE " +
                         "(:majorId IS NULL OR q.major.id = :majorId) AND " +
                         "(:keyword IS NULL OR LOWER(q.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +

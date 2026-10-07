@@ -2,6 +2,7 @@ package edufit_com_lms.module.lms.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 

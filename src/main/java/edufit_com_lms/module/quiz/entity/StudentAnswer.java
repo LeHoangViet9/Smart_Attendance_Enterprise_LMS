@@ -21,12 +21,12 @@ public class StudentAnswer {
     @JoinColumn(name = "attempt_id", nullable = false)
     private QuizAttempt attempt;
 
-    // Sinh viên trả lời cho câu hỏi nào
+    // Sinh viÃªn tráº£ lá»i cho cÃ¢u há»i nÃ o
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id", nullable = false)
     private Question question;
 
-    // NẾU LÀ TRẮC NGHIỆM: Sinh viên chọn Option nào (Thằng này null nếu là fill in
+    // Náº¾U LÃ€ TRáº®C NGHIá»†M: Sinh viÃªn chá»n Option nÃ o (Tháº±ng nÃ y null náº¿u lÃ  fill in
     // the blank)
     // For SINGLE_CHOICE / TRUE_FALSE: the selected option entity
     @ManyToOne(fetch = FetchType.LAZY)
@@ -40,19 +40,19 @@ public class StudentAnswer {
     private java.util.Set<Long> selectedOptionIds;
 
 
-    // NẾU LÀ ĐIỀN VÀO CHỖ TRỐNG: Lưu thẳng câu chữ sinh viên tự gõ vào đây
+    // Náº¾U LÃ€ ÄIá»€N VÃ€O CHá»– TRá»NG: LÆ°u tháº³ng cÃ¢u chá»¯ sinh viÃªn tá»± gÃµ vÃ o Ä‘Ã¢y
     @Column(name = "answer_text", columnDefinition = "TEXT")
     private String answerText; // Used for FILL_BLANK or can store JSON of MULTIPLE_CHOICE ids if needed
 
-    // Câu này được hệ thống quy kết là Đúng hay Sai để tính điểm?
+    // CÃ¢u nÃ y Ä‘Æ°á»£c há»‡ thá»‘ng quy káº¿t lÃ  ÄÃºng hay Sai Ä‘á»ƒ tÃ­nh Ä‘iá»ƒm?
     @Column(name = "is_awarded")
     private Boolean isAwarded;
 
-    // Điểm thực tế đạt được (dùng cho câu Tự luận chấm từng phần)
+    // Äiá»ƒm thá»±c táº¿ Ä‘áº¡t Ä‘Æ°á»£c (dÃ¹ng cho cÃ¢u Tá»± luáº­n cháº¥m tá»«ng pháº§n)
     @Column(name = "earned_points")
     private Double earnedPoints;
 
-    // Nhận xét của giảng viên (dành riêng cho câu Tự luận)
+    // Nháº­n xÃ©t cá»§a giáº£ng viÃªn (dÃ nh riÃªng cho cÃ¢u Tá»± luáº­n)
     @Column(columnDefinition = "TEXT")
     private String feedback;
 }

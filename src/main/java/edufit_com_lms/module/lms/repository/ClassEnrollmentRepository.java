@@ -9,7 +9,7 @@ import java.util.UUID;
 
 /**
  * Repository cho ClassEnrollment.
- * BRD 8.3: Sinh viên đăng ký vào Lớp học phần (Class), không phải Course.
+ * BRD 8.3: Sinh viÃªn Ä‘Äƒng kÃ½ vÃ o Lá»›p há»c pháº§n (Class), khÃ´ng pháº£i Course.
  */
 @Repository
 public interface ClassEnrollmentRepository extends JpaRepository<ClassEnrollment, UUID> {

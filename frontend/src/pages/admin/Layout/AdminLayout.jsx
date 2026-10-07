@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import {Link, Outlet, useLocation, useNavigate} from 'react-router-dom';
 import './AdminLayout.css';
 import NotificationBell from '../../../components/NotificationBell/NotificationBell';
 

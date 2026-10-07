@@ -13,10 +13,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ChangePasswordRequest {
-    @NotBlank(message = "Mật khẩu cũ không được để trống")
+    @NotBlank(message = "Máº­t kháº©u cÅ© khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
     private String oldPassword;
-    @NotBlank(message = "Mật khẩu mới không được để trống")
-    @Size( min = 8, message = "Mật khẩu mới phải dài ít nhất 6 ký tự")
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",message = "Mật khẩu không hợp lệ")
+    @NotBlank(message = "Máº­t kháº©u má»›i khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
+    @Size( min = 8, message = "Máº­t kháº©u má»›i pháº£i dÃ i Ã­t nháº¥t 6 kÃ½ tá»±")
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",message = "Máº­t kháº©u khÃ´ng há»£p lá»‡")
     private String newPassword;
 }

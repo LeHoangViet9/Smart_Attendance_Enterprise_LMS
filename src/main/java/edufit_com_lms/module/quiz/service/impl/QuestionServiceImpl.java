@@ -1,6 +1,8 @@
 package edufit_com_lms.module.quiz.service.impl;
 
+import edufit_com_lms.common.exception.ConflictException;
 import edufit_com_lms.common.exception.ResourceNotFound;
+import edufit_com_lms.module.quiz.dto.request.GenerateQuizAiRequest;
 import edufit_com_lms.module.quiz.dto.request.QuestionRequest;
 import edufit_com_lms.module.quiz.dto.response.QuestionResponse;
 import edufit_com_lms.module.quiz.entity.Question;
@@ -10,6 +12,7 @@ import edufit_com_lms.module.quiz.mapper.QuizMapper;
 import edufit_com_lms.module.quiz.repository.QuestionRepository;
 import edufit_com_lms.module.quiz.repository.QuizRepository;
 import edufit_com_lms.module.quiz.service.QuestionService;
+import edufit_com_lms.module.quiz.service.AIQuizGenerationService;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.data.domain.Page;
@@ -30,6 +33,7 @@ public class QuestionServiceImpl implements QuestionService {
     private final QuestionRepository questionRepository;
     private final QuizRepository quizRepository;
     private final QuizMapper quizMapper;
+    private final AIQuizGenerationService aiQuizGenerationService;
 
     private void checkQuizOwnership(Quiz quiz, Long lecturerId) {
         if (lecturerId != null) {
@@ -222,6 +226,20 @@ public class QuestionServiceImpl implements QuestionService {
             }
         } catch (Exception e) {
             throw new RuntimeException("Fail to parse Excel file: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    @Transactional
+    public void generateQuestionsFromAI(Long quizId, edufit_com_lms.module.quiz.dto.request.GenerateQuizAiRequest request, Long lecturerId) {
+        Quiz quiz = quizRepository.findById(quizId).orElseThrow(() -> new ResourceNotFound("Quiz not found"));
+        
+        checkQuizOwnership(quiz, lecturerId);
+        
+        List<QuestionRequest> aiGeneratedQuestions = aiQuizGenerationService.generateQuestions(request.getDocumentText(), request.getNumberOfQuestions());
+        
+        for (QuestionRequest qReq : aiGeneratedQuestions) {
+            createQuestion(quizId, qReq, lecturerId);
         }
     }
 }

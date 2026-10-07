@@ -28,5 +28,14 @@ public interface QuizMapper {
         } else {
             response.setRequiresAccessCode(false);
         }
+
+        if (quiz.getClasses() != null) {
+            response.setClassIds(quiz.getClasses().stream()
+                .map(edufit_com_lms.module.lms.entity.SchoolClass::getId)
+                .collect(java.util.stream.Collectors.toList()));
+            response.setClassNames(quiz.getClasses().stream()
+                .map(edufit_com_lms.module.lms.entity.SchoolClass::getClassName)
+                .collect(java.util.stream.Collectors.toList()));
+        }
     }
 }

@@ -25,6 +25,11 @@ const QuizManagement = () => {
     
     const [deleteConfirmModal, setDeleteConfirmModal] = useState({ show: false, questionId: null });
 
+    const [showAiModal, setShowAiModal] = useState(false);
+    const [generatingAi, setGeneratingAi] = useState(false);
+    const [aiDocumentText, setAiDocumentText] = useState('');
+    const [aiNumQuestions, setAiNumQuestions] = useState(10);
+
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
     const showToast = (message, type = 'success') => {
         setToast({ show: true, message, type });
@@ -266,6 +271,34 @@ const QuizManagement = () => {
         }
     };
 
+    const handleGenerateAI = async () => {
+        if (!aiDocumentText.trim()) {
+            showToast('Vui lòng nhập nội dung tài liệu!', 'error');
+            return;
+        }
+        setGeneratingAi(true);
+        try {
+            const res = await axiosInstance.post(`/v1/quizzes/${quizId}/questions/generate-ai`, {
+                documentText: aiDocumentText,
+                numberOfQuestions: parseInt(aiNumQuestions)
+            });
+            if (res.data.success) {
+                showToast('Tạo câu hỏi bằng AI thành công!', 'success');
+                setShowAiModal(false);
+                setAiDocumentText('');
+                fetchData();
+            } else {
+                showToast(res.data.message || 'Lỗi khi tạo đề', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            const backendMsg = err.response?.data?.message || err.message;
+            showToast('Lỗi kết nối tới AI: ' + backendMsg, 'error');
+        } finally {
+            setGeneratingAi(false);
+        }
+    };
+
     if (loading) {
         return <div className="loader-container"><div className="spinner"></div><p>Loading data...</p></div>;
     }
@@ -337,6 +370,13 @@ const QuizManagement = () => {
                             disabled={importing}
                         >
                             {importing ? '⏳ Đang nhập...' : '📄 Nhập từ Excel'}
+                        </button>
+                        <button
+                            className="btn-card-action primary"
+                            style={{ width: 'auto', padding: '0.75rem 1.5rem', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                            onClick={() => setShowAiModal(true)}
+                        >
+                            ✨ Tạo bằng AI
                         </button>
                         <button
                             className="btn-primary"
@@ -676,6 +716,49 @@ const QuizManagement = () => {
                                 style={{ padding: '0.6rem 1.2rem', borderRadius: '6px', border: 'none', backgroundColor: '#ef4444', color: 'white', cursor: 'pointer', fontWeight: 500 }}
                             >
                                 Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            )}
+
+            {/* AI Generation Modal */}
+            {showAiModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '600px' }}>
+                        <div className="modal-header">
+                            <h2>✨ Tạo Câu Hỏi Bằng AI (Gemini)</h2>
+                            <button className="btn-close" onClick={() => !generatingAi && setShowAiModal(false)}>×</button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="form-group">
+                                <label>Nội dung tài liệu / Bài giảng:</label>
+                                <textarea
+                                    className="form-control"
+                                    rows={8}
+                                    placeholder="Paste nội dung tài liệu văn bản vào đây, AI sẽ tự động đọc hiểu và sinh ra câu hỏi trắc nghiệm bám sát nội dung này..."
+                                    value={aiDocumentText}
+                                    onChange={(e) => setAiDocumentText(e.target.value)}
+                                    disabled={generatingAi}
+                                ></textarea>
+                            </div>
+                            <div className="form-group" style={{ marginTop: '1rem' }}>
+                                <label>Số lượng câu hỏi (Tối đa 20):</label>
+                                <input
+                                    type="number"
+                                    className="form-control"
+                                    min="1" max="20"
+                                    value={aiNumQuestions}
+                                    onChange={(e) => setAiNumQuestions(e.target.value)}
+                                    disabled={generatingAi}
+                                />
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn-secondary" onClick={() => setShowAiModal(false)} disabled={generatingAi}>Hủy</button>
+                            <button className="btn-primary" onClick={handleGenerateAI} disabled={generatingAi || !aiDocumentText.trim()} style={{ backgroundColor: '#8b5cf6', borderColor: '#8b5cf6' }}>
+                                {generatingAi ? '⏳ Đang phân tích & tạo đề...' : '🚀 Bắt đầu tạo'}
                             </button>
                         </div>
                     </div>

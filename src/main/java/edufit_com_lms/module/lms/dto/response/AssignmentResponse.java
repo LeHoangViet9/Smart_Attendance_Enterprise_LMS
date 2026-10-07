@@ -14,7 +14,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class AssignmentResponse {
     private UUID id;
-    private UUID classId;
+    private java.util.List<UUID> classIds;
     private String title;
     private String description;
     private LocalDateTime dueDate;
@@ -24,5 +24,5 @@ public class AssignmentResponse {
     private Boolean isPublished;
     private LocalDateTime createdAt;
     private Boolean isExpired;
-    private String className;
+    private java.util.List<String> classNames;
 }

@@ -1,0 +1,63 @@
+61:         // Kiá»ƒm tra thá»i gian cá»§a bÃ i thi trÆ°á»›c tiÃªn
+78:             // Khôi phục dữ liệu nháp từ Redis và nhả về cho sinh viên thi
+79:             // tiếp tục
+91:                 log.error("Lỗi khi đọc dữ liệu nháp từ Redis cho bài thi: " + existingAttempt.getId(), e);
+93:             return res; // Trả về attempt cũ thay vì quăng lỗi
+96:         // Kiểm tra mật khẩu (nếu đề thi yêu cầu)
+99:                 throw new ConflictException("Mật khẩu bài thi không chính xác");
+103:         // Kiểm tra số lần làm tối đa (nếu có)
+109:                 throw new ConflictException("Báº¡n Ä‘Ã£ vÆ°á»£t quÃ¡ sá»‘ láº§n lÃ m tá»‘i Ä‘a cho bÃ i thi nÃ y!");
+113:         // Cháº·n thi láº¡i Ä‘á»‘i vá»›i nhá»¯ng bÃ i thi yÃªu cáº§u quÃ©t máº·t (chá»‰
+114:         // cho phÃ©p thi 1 láº§n)
+120:                         "BÃ i thi nÃ y yÃªu cáº§u giÃ¡m sÃ¡t (quÃ©t máº·t) nÃªn báº¡n chá»‰ Ä‘Æ°á»£c phÃ©p thi 1 láº§n duy nháº¥t!");
+147:         // Kiá»ƒm tra xem bÃ i thi Ä‘Ã£ qua thá»i gian tuyá»‡t Ä‘á»‘i cá»§a há»‡
+148:         // thá»‘ng chÆ°a
+150:             log.warn("Ná»™p bÃ i trá»… (quÃ¡ thá»i gian káº¿t thÃºc) - BÃ i thi ID: {}", attemptId);
+153:         // Náº¿u quiz cÃ³ giá»›i háº¡n thá»i gian, check xem ná»™p muá»™n khÃ´ng
+157:                 throw new ConflictException("Ná»™p bÃ i quÃ¡ háº¡n lÃ m bÃ i (vÆ°á»£t quÃ¡ thá»i gian quy Ä‘á»‹nh).");
+166:                         "BÃ i thi nÃ y yÃªu cáº§u xÃ¡c thá»±c khuÃ´n máº·t! Vui lÃ²ng cung cáº¥p áº£nh Ä‘Ã­nh kÃ¨m.");
+177:                 // TrÃ¡nh tÃ¬nh tráº¡ng spam 1 cÃ¢u tráº£ lá»i nhiá»u láº§n Ä‘á»ƒ buff Ä‘iá»ƒm
+178:                 // áº£o
+188:                     log.warn("CÃ¢u há»i {} khÃ´ng cÃ²n tá»“n táº¡i, bá» qua.", answerReq.getQuestionId());
+192:                 // Cháº·n Ä‘Ã¡nh trÃ¡o cÃ¢u há»i tá»« bÃ i thi khÃ¡c
+194:                     log.warn("Cáº£nh bÃ¡o: CÃ¢u há»i {} khÃ´ng thuá»™c vá» bÃ i thi hiá»‡n táº¡i!", question.getId());
+195:                     continue; // Bá» qua thay vÃ¬ lÃ m há»ng toÃ n bá»™ request
+254:                     // CÃ¢u tá»± luáº­n sáº½ Ä‘Æ°á»£c giáº£ng viÃªn cháº¥m thá»§ cÃ´ng sau
+273:         // Auto-fill cÃ¡c cÃ¢u há»i bá»‹ sinh viÃªn bá» trá»‘ng Ä‘á»ƒ cÃ³ record
+274:         // cháº¥m Ä‘iá»ƒm (nháº¥t lÃ  cÃ¢u ESSAY)
+306:         // XÃ³a hoÃ n toÃ n báº£n nhÃ¡p trÃªn Redis Ä‘á»ƒ dá»n bá» máº·t RAM
+311:         // Báº¯n thÃ´ng bÃ¡o cho ngÆ°á»i táº¡o Ä‘á» (Giáº£ng viÃªn / Admin)
+314:                     .title("CÃ³ sinh viÃªn ná»™p bÃ i thi")
+315:                     .message("Sinh viÃªn " + savedAttempt.getStudent().getFullName() + " vá»«a hoÃ n thÃ nh bÃ i thi: "
+322:         // Tá»± Ä‘á»™ng Gá»­i Cáº£nh BÃ¡o cho sinh viÃªn náº¿u Ä‘iá»ƒm thi dÆ°á»›i 5.0
+326:                     .title("Cáº£nh bÃ¡o há»c vá»¥: Äiá»ƒm thi tháº¥p")
+327:                     .message("Báº¡n vá»«a Ä‘áº¡t " + finalScore + " Ä‘iá»ƒm trong bÃ i thi "
+328:                             + savedAttempt.getQuiz().getTitle() + ". Vui lÃ²ng Ã´n táº­p láº¡i kiáº¿n thá»©c!")
+358:             // LÆ°u vÃ  set háº¡n tá»± sÃ¡t sau 1 ngÃ y náº¿u khÃ´ng xáº£ bá»›t bá»™ nhá»›
+361:             log.error("Lá»—i khi serialize cÃ¢u tráº£ lá»i Ä‘á»ƒ lÆ°u nhÃ¡p Redis cho bÃ i thi: " + attemptId, e);
+377:             // Há»c sinh chá»‰ Ä‘Æ°á»£c xem láº¡i khi Ä‘Ã£ ná»™p bÃ i (COMPLETED)
+382:             // Giáº£ng viÃªn khÃ´ng Ä‘Æ°á»£c cháº¥m bÃ i thi Ä‘ang lÃ m (IN_PROGRESS)
+385:                         "BÃ i thi nÃ y sinh viÃªn váº«n Ä‘ang lÃ m (In Progress). ChÆ°a thá»ƒ cháº¥m Ä‘iá»ƒm.");
+393:                 throw new ConflictException("GiÃ¡o viÃªn khÃ´ng cho phÃ©p xem láº¡i bÃ i thi nÃ y.");
+398:                             "ChÆ°a Ä‘áº¿n thá»i gian xem láº¡i bÃ i (Pháº£i chá» qua háº¡n káº¿t thÃºc).");
+417:                 // XÃ¡o trá»™n vá»‹ trÃ­ Ä‘Ã¡p Ã¡n (options) theo cÃ¹ng má»™t seed
+449:         // XÃ¡o trá»™n vá»‹ trÃ­ cÃ¢u há»i theo cÃ¹ng má»™t seed Ä‘á»ƒ khá»›p vá»›i
+450:         // lÃºc thi
+501:                     throw new ConflictException("Äiá»ƒm cháº¥m (" + qg.getPoints()
+502:                             + ") khÃ´ng Ä‘Æ°á»£c vÆ°á»£t quÃ¡ Ä‘iá»ƒm tá»‘i Ä‘a cá»§a cÃ¢u há»i (" + maxPoints + ")");
+505:                     throw new ConflictException("Äiá»ƒm cháº¥m khÃ´ng Ä‘Æ°á»£c phÃ©p Ã¢m");
+534:         // Báº¯n thÃ´ng bÃ¡o cáº£nh bÃ¡o há»c vá»¥ náº¿u Ä‘iá»ƒm tháº¥p sau khi GV
+535:         // cháº¥m tá»± luáº­n
+538:                     .title("Cáº£nh bÃ¡o há»c vá»¥: Äiá»ƒm thi tháº¥p")
+539:                     .message("Giáº£ng viÃªn vá»«a cháº¥m Ä‘iá»ƒm bÃ i thi " + savedAttempt.getQuiz().getTitle()
+540:                             + ". Báº¡n chá»‰ Ä‘áº¡t " + finalScore
+541:                             + " Ä‘iá»ƒm. Vui lÃ²ng Ã´n táº­p láº¡i kiáº¿n thá»©c!")
+589:                     // Gá»i hÃ m submitAttempt Ä‘á»ƒ tá»± Ä‘á»™ng ná»™p bÃ i vÃ  cháº¥m Ä‘iá»ƒm
+595:                                 .title("Há»‡ thá»‘ng tá»± Ä‘á»™ng thu bÃ i")
+597:                                         + " Ä‘Ã£ tá»± Ä‘á»™ng ná»™p do háº¿t thá»i gian lÃ m bÃ i.")
+603:                     log.error("Lá»—i khi auto-submit attempt {}. ÄÃ¡nh dáº¥u ABANDONED.", attempt.getId(), e);
+698:                     // Giá»¯ nguyÃªn Ä‘iá»ƒm cÅ© vÃ¬ Ä‘Ã£ Ä‘Æ°á»£c giáº£ng viÃªn cháº¥m thá»§ cÃ´ng
+856:             String[] columns = { "STT", "Há» vÃ  TÃªn", "Email", "Thá»i gian báº¯t Ä‘áº§u", "Thá»i gian ná»™p",
+857:                     "Tráº¡ng thÃ¡i", "Äiá»ƒm sá»‘" };
+896:             log.error("Lá»—i khi táº¡o file Excel báº£ng Ä‘iá»ƒm bÃ i thi {}", quizId, e);
+897:             throw new RuntimeException("Lá»—i há»‡ thá»‘ng khi xuáº¥t file Excel");

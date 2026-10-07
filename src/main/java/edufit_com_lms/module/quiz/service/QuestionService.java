@@ -17,4 +17,6 @@ public interface QuestionService {
     Page<QuestionResponse> findAllQuestions(Long quizId, String keyword, Pageable pageable);
 
     void importQuestionsFromExcel(Long quizId, org.springframework.web.multipart.MultipartFile file, Long lecturerId);
+    
+    void generateQuestionsFromAI(Long quizId, edufit_com_lms.module.quiz.dto.request.GenerateQuizAiRequest request, Long lecturerId);
 }

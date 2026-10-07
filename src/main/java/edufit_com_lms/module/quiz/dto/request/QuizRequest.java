@@ -21,4 +21,5 @@ public class QuizRequest {
     private Boolean requiresProctoring;
     private UUID majorId;
     private String accessCode;
+    private java.util.List<UUID> classIds;
 }

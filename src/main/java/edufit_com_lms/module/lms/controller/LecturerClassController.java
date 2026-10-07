@@ -137,7 +137,7 @@ public class LecturerClassController {
             double attendanceRate = totalAttendance == 0 ? 0.0 : ((double) presentAttendance / totalAttendance) * 100;
             
             // TÃ­nh Ä‘iá»ƒm trung bÃ¬nh qua Java Ä‘á»ƒ trÃ¡nh bug Hibernate 7 UUID/bigint type mismatch
-            List<UUID> assignmentIds = assignmentRepository.findByClassId(classId)
+            List<UUID> assignmentIds = assignmentRepository.findByClasses_Id(classId)
                     .stream().map(Assignment::getId).collect(Collectors.toList());
             List<Submission> studentSubmissions = submissionRepository
                     .findByStudentIdAndAssignmentIdIn(student.getUserId(), assignmentIds);

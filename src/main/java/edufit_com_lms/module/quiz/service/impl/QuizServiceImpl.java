@@ -26,6 +26,7 @@ public class QuizServiceImpl implements QuizService {
     private final QuizMapper quizMapper;
     private final UserRepository userRepository;
     private final MajorRepository majorRepository;
+    private final edufit_com_lms.module.lms.repository.SchoolClassRepository schoolClassRepository;
 
     @Override
     public QuizResponse createQuiz(QuizRequest request, Long creatorId) {
@@ -54,6 +55,11 @@ public class QuizServiceImpl implements QuizService {
                 .major(major)
                 .build();
 
+        if (request.getClassIds() != null && !request.getClassIds().isEmpty()) {
+            java.util.List<edufit_com_lms.module.lms.entity.SchoolClass> classes = schoolClassRepository.findAllById(request.getClassIds());
+            quiz.setClasses(classes);
+        }
+
         Quiz savedQuiz = quizRepository.save(quiz);
         return quizMapper.toResponse(savedQuiz);
     }
@@ -79,6 +85,11 @@ public class QuizServiceImpl implements QuizService {
             Major major = majorRepository.findById(request.getMajorId())
                     .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "NgÃ nh há»c khÃ´ng tá»“n táº¡i vá»›i id: " + request.getMajorId()));
             quiz.setMajor(major);
+        }
+
+        if (request.getClassIds() != null) {
+            java.util.List<edufit_com_lms.module.lms.entity.SchoolClass> classes = schoolClassRepository.findAllById(request.getClassIds());
+            quiz.setClasses(classes);
         }
 
         Quiz updatedQuiz = quizRepository.save(quiz);

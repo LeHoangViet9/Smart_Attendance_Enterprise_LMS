@@ -58,7 +58,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         Quiz quiz = quizRepository.findById(quizId).orElseThrow(() -> new ResourceNotFound("Can not found quiz"));
         User student = userRepository.findById(studentId).orElseThrow(() -> new ResourceNotFound("Can not found user"));
 
-        // Kiá»ƒm tra thá»i gian cá»§a bÃ i thi trÆ°á»›c tiÃªn
+        // Check quiz time first
         LocalDateTime now = LocalDateTime.now();
         if (quiz.getStartTime() != null && now.isBefore(quiz.getStartTime())) {
             throw new ConflictException("The test has not yet started!");
@@ -75,8 +75,8 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
 
         if (inProgressAttempt.isPresent()) {
             QuizAttempt existingAttempt = inProgressAttempt.get();
-            // KhÃ´i phá»¥c dá»¯ liá»‡u nhÃ¡p tá»« Redis vÃ  nháº£ vá» cho sinh viÃªn thi
-            // tiáº¿p tá»¥c
+            // Restore draft data from Redis and return it to the student
+            // to continue
             QuizAttemptResponse res = quizAttemptMapper.toResponse(existingAttempt);
             try {
                 String cachedData = stringRedisTemplate.opsForValue()
@@ -88,36 +88,36 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                     res.setCachedAnswers(cachedAnswers);
                 }
             } catch (Exception e) {
-                log.error("Lá»—i khi Ä‘á»c dá»¯ liá»‡u nhÃ¡p tá»« Redis cho bÃ i thi: " + existingAttempt.getId(), e);
+                log.error("Error reading draft data from Redis for quiz attempt: " + existingAttempt.getId(), e);
             }
-            return res; // Tráº£ vá» attempt cÅ© thay vÃ¬ quÄƒng lá»—i
+            return res; // Return existing attempt instead of throwing an error
         }
 
-        // Kiá»ƒm tra máº­t kháº©u (náº¿u Ä‘á» thi yÃªu cáº§u)
+        // Check password (if the quiz requires one)
         if (quiz.getAccessCode() != null && !quiz.getAccessCode().trim().isEmpty()) {
             if (accessCode == null || !accessCode.equals(quiz.getAccessCode())) {
-                throw new ConflictException("Máº­t kháº©u bÃ i thi khÃ´ng chÃ­nh xÃ¡c");
+                throw new ConflictException("Incorrect quiz password");
             }
         }
 
-        // Kiá»ƒm tra sá»‘ láº§n lÃ m tá»‘i Ä‘a (náº¿u cÃ³)
+        // Check max attempts (if any)
         if (quiz.getMaxAttempts() != null) {
             long attemptsCount = existingAttempts.stream()
                     .filter(a -> a.getStatus() == QuizStatus.COMPLETED)
                     .count();
             if (attemptsCount >= quiz.getMaxAttempts()) {
-                throw new ConflictException("Báº¡n Ä‘Ã£ vÆ°á»£t quÃ¡ sá»‘ láº§n lÃ m tá»‘i Ä‘a cho bÃ i thi nÃ y!");
+                throw new ConflictException("You have exceeded the maximum number of attempts for this quiz!");
             }
         }
 
-        // Cháº·n thi láº¡i Ä‘á»‘i vá»›i nhá»¯ng bÃ i thi yÃªu cáº§u quÃ©t máº·t (chá»‰
-        // cho phÃ©p thi 1 láº§n)
+        // Block retrying for exams that require face scanning
+        // (only allow 1 attempt)
         if (Boolean.TRUE.equals(quiz.getRequiresProctoring())) {
             boolean hasCompleted = existingAttempts.stream()
                     .anyMatch(a -> a.getStatus() == edufit_com_lms.module.quiz.entity.QuizStatus.COMPLETED);
             if (hasCompleted) {
                 throw new ConflictException(
-                        "BÃ i thi nÃ y yÃªu cáº§u giÃ¡m sÃ¡t (quÃ©t máº·t) nÃªn báº¡n chá»‰ Ä‘Æ°á»£c phÃ©p thi 1 láº§n duy nháº¥t!");
+                        "This exam requires proctoring (face scanning) so you are only allowed to take it once!");
             }
         }
 
@@ -144,17 +144,17 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         Integer timeLimit = quizAttempt.getQuiz().getTimeLimitMinutes();
         LocalDateTime submitTime = LocalDateTime.now();
 
-        // Kiá»ƒm tra xem bÃ i thi Ä‘Ã£ qua thá»i gian tuyá»‡t Ä‘á»‘i cá»§a há»‡
-        // thá»‘ng chÆ°a
+        // Check if the exam has passed the absolute system time limit
+        // 
         if (quizAttempt.getQuiz().getEndTime() != null && submitTime.isAfter(quizAttempt.getQuiz().getEndTime())) {
-            log.warn("Ná»™p bÃ i trá»… (quÃ¡ thá»i gian káº¿t thÃºc) - BÃ i thi ID: {}", attemptId);
+            log.warn("Late submission (passed end time) - Quiz Attempt ID: {}", attemptId);
         }
 
-        // Náº¿u quiz cÃ³ giá»›i háº¡n thá»i gian, check xem ná»™p muá»™n khÃ´ng
+        // If quiz has a time limit, check if submitted late
         if (timeLimit != null) {
             LocalDateTime deadline = startTime.plusMinutes(timeLimit);
             if (submitTime.isAfter(deadline)) {
-                throw new ConflictException("Ná»™p bÃ i quÃ¡ háº¡n lÃ m bÃ i (vÆ°á»£t quÃ¡ thá»i gian quy Ä‘á»‹nh).");
+                throw new ConflictException("Submission past the deadline (exceeded the time limit).");
             }
         }
 
@@ -163,7 +163,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
             if (submitRequest.getProctoringImageUrl() == null
                     || submitRequest.getProctoringImageUrl().trim().isEmpty()) {
                 throw new ConflictException(
-                        "BÃ i thi nÃ y yÃªu cáº§u xÃ¡c thá»±c khuÃ´n máº·t! Vui lÃ²ng cung cáº¥p áº£nh Ä‘Ã­nh kÃ¨m.");
+                        "This exam requires face verification! Please provide an attached photo.");
             }
             quizAttempt.setProctoringImageUrl(submitRequest.getProctoringImageUrl());
         }
@@ -174,8 +174,8 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
 
         if (submitRequest.getAnswers() != null && !submitRequest.getAnswers().isEmpty()) {
             for (StudentAnswerRequest answerReq : submitRequest.getAnswers()) {
-                // TrÃ¡nh tÃ¬nh tráº¡ng spam 1 cÃ¢u tráº£ lá»i nhiá»u láº§n Ä‘á»ƒ buff Ä‘iá»ƒm
-                // áº£o
+                // Prevent spamming the same answer multiple times to exploit points
+                // 
                 if (processedQuestionIds.contains(answerReq.getQuestionId())) {
                     continue;
                 }
@@ -185,14 +185,14 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                         .orElse(null);
 
                 if (question == null) {
-                    log.warn("CÃ¢u há»i {} khÃ´ng cÃ²n tá»“n táº¡i, bá» qua.", answerReq.getQuestionId());
+                    log.warn("Question {} no longer exists, skipping.", answerReq.getQuestionId());
                     continue;
                 }
 
-                // Cháº·n Ä‘Ã¡nh trÃ¡o cÃ¢u há»i tá»« bÃ i thi khÃ¡c
+                // Prevent swapping questions from another exam
                 if (!question.getQuiz().getId().equals(quizAttempt.getQuiz().getId())) {
-                    log.warn("Cáº£nh bÃ¡o: CÃ¢u há»i {} khÃ´ng thuá»™c vá» bÃ i thi hiá»‡n táº¡i!", question.getId());
-                    continue; // Bá» qua thay vÃ¬ lÃ m há»ng toÃ n bá»™ request
+                    log.warn("Warning: Question {} does not belong to the current exam!", question.getId());
+                    continue; // Skip instead of failing the entire request
                 }
 
                 boolean isAwarded = false;
@@ -251,7 +251,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                         }
                     }
                 } else if (question.getQuestionType() == QuestionType.ESSAY) {
-                    // CÃ¢u tá»± luáº­n sáº½ Ä‘Æ°á»£c giáº£ng viÃªn cháº¥m thá»§ cÃ´ng sau
+                    // Essay questions will be manually graded by the lecturer later
                     isAwarded = false;
                 }
 
@@ -270,8 +270,8 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
             }
         }
 
-        // Auto-fill cÃ¡c cÃ¢u há»i bá»‹ sinh viÃªn bá» trá»‘ng Ä‘á»ƒ cÃ³ record
-        // cháº¥m Ä‘iá»ƒm (nháº¥t lÃ  cÃ¢u ESSAY)
+        // Auto-fill questions left blank by the student to have a grading record
+        // (especially for ESSAY questions)
         if (quizAttempt.getQuiz().getQuestions() != null) {
             for (Question question : quizAttempt.getQuiz().getQuestions()) {
                 if (!processedQuestionIds.contains(question.getId())) {
@@ -303,29 +303,29 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         quizAttempt.setEndTime(submitTime);
         quizAttempt.setStatus(QuizStatus.COMPLETED);
 
-        // XÃ³a hoÃ n toÃ n báº£n nhÃ¡p trÃªn Redis Ä‘á»ƒ dá»n bá» máº·t RAM
+        // Completely delete the draft on Redis to free up memory
         stringRedisTemplate.delete("quiz:attempt:" + attemptId);
 
         QuizAttempt savedAttempt = quizAttemptRepository.save(quizAttempt);
 
-        // Báº¯n thÃ´ng bÃ¡o cho ngÆ°á»i táº¡o Ä‘á» (Giáº£ng viÃªn / Admin)
+        // Send notification to the quiz creator (Lecturer / Admin)
         if (savedAttempt.getQuiz() != null && savedAttempt.getQuiz().getCreatedBy() != null) {
             eventPublisher.publishEvent(edufit_com_lms.module.notification.event.NotificationEvent.builder()
-                    .title("CÃ³ sinh viÃªn ná»™p bÃ i thi")
-                    .message("Sinh viÃªn " + savedAttempt.getStudent().getFullName() + " vá»«a hoÃ n thÃ nh bÃ i thi: "
+                    .title("Student submitted an exam")
+                    .message("Student " + savedAttempt.getStudent().getFullName() + " just completed the exam: "
                             + savedAttempt.getQuiz().getTitle())
                     .type("SYSTEM_LOG")
                     .recipientId(savedAttempt.getQuiz().getCreatedBy().getUserId())
                     .build());
         }
 
-        // Tá»± Ä‘á»™ng Gá»­i Cáº£nh BÃ¡o cho sinh viÃªn náº¿u Ä‘iá»ƒm thi dÆ°á»›i 5.0
+        // Automatically send an academic warning to the student if the score is below 5.0
         // (Automated Warning Alert)
         if (finalScore < 5.0) {
             eventPublisher.publishEvent(edufit_com_lms.module.notification.event.NotificationEvent.builder()
-                    .title("Cáº£nh bÃ¡o há»c vá»¥: Äiá»ƒm thi tháº¥p")
-                    .message("Báº¡n vá»«a Ä‘áº¡t " + finalScore + " Ä‘iá»ƒm trong bÃ i thi "
-                            + savedAttempt.getQuiz().getTitle() + ". Vui lÃ²ng Ã´n táº­p láº¡i kiáº¿n thá»©c!")
+                    .title("Academic Warning: Low Score")
+                    .message("You just scored " + finalScore + " points in the exam "
+                            + savedAttempt.getQuiz().getTitle() + ". Please review your knowledge!")
                     .type("WARNING")
                     .recipientId(savedAttempt.getStudent().getUserId())
                     .build());
@@ -355,10 +355,10 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         try {
             String key = "quiz:attempt:" + attemptId;
             String json = objectMapper.writeValueAsString(submitRequest.getAnswers());
-            // LÆ°u vÃ  set háº¡n tá»± sÃ¡t sau 1 ngÃ y náº¿u khÃ´ng xáº£ bá»›t bá»™ nhá»›
+            // Save and set TTL to 1 day to free up memory
             stringRedisTemplate.opsForValue().set(key, json, 1, TimeUnit.DAYS);
         } catch (JsonProcessingException e) {
-            log.error("Lá»—i khi serialize cÃ¢u tráº£ lá»i Ä‘á»ƒ lÆ°u nhÃ¡p Redis cho bÃ i thi: " + attemptId, e);
+            log.error("Error serializing answers to save draft in Redis for attempt: " + attemptId, e);
         }
     }
 
@@ -374,15 +374,15 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         }
 
         if (studentId != null) {
-            // Há»c sinh chá»‰ Ä‘Æ°á»£c xem láº¡i khi Ä‘Ã£ ná»™p bÃ i (COMPLETED)
+            // Students can only review when the attempt is COMPLETED
             if (quizAttempt.getStatus() != QuizStatus.COMPLETED) {
                 throw new ConflictException("You can only review completed attempts");
             }
         } else {
-            // Giáº£ng viÃªn khÃ´ng Ä‘Æ°á»£c cháº¥m bÃ i thi Ä‘ang lÃ m (IN_PROGRESS)
+            // Lecturers cannot grade an IN_PROGRESS exam
             if (quizAttempt.getStatus() == QuizStatus.IN_PROGRESS) {
                 throw new ConflictException(
-                        "BÃ i thi nÃ y sinh viÃªn váº«n Ä‘ang lÃ m (In Progress). ChÆ°a thá»ƒ cháº¥m Ä‘iá»ƒm.");
+                        "This exam is still in progress by the student. Cannot grade yet.");
             }
         }
 
@@ -390,12 +390,12 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
 
         if (studentId != null && quiz.getReviewType() != null) {
             if (quiz.getReviewType() == ReviewType.NEVER) {
-                throw new ConflictException("GiÃ¡o viÃªn khÃ´ng cho phÃ©p xem láº¡i bÃ i thi nÃ y.");
+                throw new ConflictException("The lecturer does not allow reviewing this exam.");
             }
             if (quiz.getReviewType() == ReviewType.AFTER_DEADLINE) {
                 if (quiz.getEndTime() != null && LocalDateTime.now().isBefore(quiz.getEndTime())) {
                     throw new ConflictException(
-                            "ChÆ°a Ä‘áº¿n thá»i gian xem láº¡i bÃ i (Pháº£i chá» qua háº¡n káº¿t thÃºc).");
+                            "Not yet time to review the exam (Must wait until the end time passes).");
                 }
             }
         }
@@ -414,7 +414,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                             .isCorrect(opt.getIsCorrect())
                             .build());
                 }
-                // XÃ¡o trá»™n vá»‹ trÃ­ Ä‘Ã¡p Ã¡n (options) theo cÃ¹ng má»™t seed
+                // Shuffle options using the same seed
                 java.util.Collections.shuffle(optionDtos,
                         new java.util.Random(quizAttempt.getStudent().getUserId() + quiz.getId()));
             }
@@ -446,8 +446,8 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                     .build());
         }
 
-        // XÃ¡o trá»™n vá»‹ trÃ­ cÃ¢u há»i theo cÃ¹ng má»™t seed Ä‘á»ƒ khá»›p vá»›i
-        // lÃºc thi
+        // Shuffle questions using the same seed to match
+        // the exam time
         java.util.Collections.shuffle(questionDtos,
                 new java.util.Random(quizAttempt.getStudent().getUserId() + quiz.getId()));
 
@@ -498,11 +498,11 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                 // Validate points do not exceed max points for the question
                 double maxPoints = answer.getQuestion().getPoints() != null ? answer.getQuestion().getPoints() : 0.0;
                 if (qg.getPoints() > maxPoints) {
-                    throw new ConflictException("Äiá»ƒm cháº¥m (" + qg.getPoints()
-                            + ") khÃ´ng Ä‘Æ°á»£c vÆ°á»£t quÃ¡ Ä‘iá»ƒm tá»‘i Ä‘a cá»§a cÃ¢u há»i (" + maxPoints + ")");
+                    throw new ConflictException("Graded points (" + qg.getPoints()
+                            + ") cannot exceed the maximum points of the question (" + maxPoints + ")");
                 }
                 if (qg.getPoints() < 0) {
-                    throw new ConflictException("Äiá»ƒm cháº¥m khÃ´ng Ä‘Æ°á»£c phÃ©p Ã¢m");
+                    throw new ConflictException("Graded points cannot be negative");
                 }
 
                 answer.setEarnedPoints(qg.getPoints());
@@ -531,14 +531,14 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
 
         QuizAttempt savedAttempt = quizAttemptRepository.save(quizAttempt);
 
-        // Báº¯n thÃ´ng bÃ¡o cáº£nh bÃ¡o há»c vá»¥ náº¿u Ä‘iá»ƒm tháº¥p sau khi GV
-        // cháº¥m tá»± luáº­n
+        // Send academic warning notification if score is low after lecturer
+        // manual grading
         if (finalScore < 5.0) {
             eventPublisher.publishEvent(edufit_com_lms.module.notification.event.NotificationEvent.builder()
-                    .title("Cáº£nh bÃ¡o há»c vá»¥: Äiá»ƒm thi tháº¥p")
-                    .message("Giáº£ng viÃªn vá»«a cháº¥m Ä‘iá»ƒm bÃ i thi " + savedAttempt.getQuiz().getTitle()
-                            + ". Báº¡n chá»‰ Ä‘áº¡t " + finalScore
-                            + " Ä‘iá»ƒm. Vui lÃ²ng Ã´n táº­p láº¡i kiáº¿n thá»©c!")
+                    .title("Academic Warning: Low Score")
+                    .message("The lecturer has graded the exam " + savedAttempt.getQuiz().getTitle()
+                            + ". You only scored " + finalScore
+                            + " points. Please review your knowledge!")
                     .type("WARNING")
                     .recipientId(savedAttempt.getStudent().getUserId())
                     .build());
@@ -586,21 +586,21 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                                         : "TIMEOUT_NO_IMAGE");
                     }
 
-                    // Gá»i hÃ m submitAttempt Ä‘á»ƒ tá»± Ä‘á»™ng ná»™p bÃ i vÃ  cháº¥m Ä‘iá»ƒm
+                    // Call submitAttempt to automatically submit and grade the exam
                     quizAttemptService.submitAttempt(attempt.getId(), autoSubmitReq);
                     log.info("Attempt id {} auto-submitted successfully.", attempt.getId());
 
                     if (attempt.getQuiz() != null && attempt.getQuiz().getCreatedBy() != null) {
                         eventPublisher.publishEvent(edufit_com_lms.module.notification.event.NotificationEvent.builder()
-                                .title("Há»‡ thá»‘ng tá»± Ä‘á»™ng thu bÃ i")
+                                .title("System auto-submission")
                                 .message("Attempt id " + attempt.getId()
-                                        + " Ä‘Ã£ tá»± Ä‘á»™ng ná»™p do háº¿t thá»i gian lÃ m bÃ i.")
+                                        + " was automatically submitted due to time limit.")
                                 .type("SYSTEM_LOG")
                                 .recipientId(attempt.getQuiz().getCreatedBy().getUserId())
                                 .build());
                     }
                 } catch (Exception e) {
-                    log.error("Lá»—i khi auto-submit attempt {}. ÄÃ¡nh dáº¥u ABANDONED.", attempt.getId(), e);
+                    log.error("Error auto-submitting attempt {}. Marked as ABANDONED.", attempt.getId(), e);
                     attempt.setStatus(QuizStatus.ABANDONED);
                     attempt.setEndTime(now);
                     quizAttemptRepository.save(attempt);
@@ -695,7 +695,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                         }
                     }
                 } else if (question.getQuestionType() == QuestionType.ESSAY) {
-                    // Giá»¯ nguyÃªn Ä‘iá»ƒm cÅ© vÃ¬ Ä‘Ã£ Ä‘Æ°á»£c giáº£ng viÃªn cháº¥m thá»§ cÃ´ng
+                    // Keep the old score because it was manually graded by the lecturer
                     isAwarded = ans.getIsAwarded() != null ? ans.getIsAwarded() : false;
                     earnedPoints += ans.getEarnedPoints() != null ? ans.getEarnedPoints() : 0.0;
                     continue;
@@ -853,8 +853,8 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
             org.apache.poi.ss.usermodel.Row headerRow = sheet.createRow(0);
 
             // Header labels
-            String[] columns = { "STT", "Há» vÃ  TÃªn", "Email", "Thá»i gian báº¯t Ä‘áº§u", "Thá»i gian ná»™p",
-                    "Tráº¡ng thÃ¡i", "Äiá»ƒm sá»‘" };
+            String[] columns = { "No.", "Full Name", "Email", "Start Time", "Submit Time",
+                    "Status", "Score" };
             for (int i = 0; i < columns.length; i++) {
                 org.apache.poi.ss.usermodel.Cell cell = headerRow.createCell(i);
                 cell.setCellValue(columns[i]);
@@ -893,8 +893,69 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
             workbook.write(out);
             return out.toByteArray();
         } catch (java.io.IOException e) {
-            log.error("Lá»—i khi táº¡o file Excel báº£ng Ä‘iá»ƒm bÃ i thi {}", quizId, e);
-            throw new RuntimeException("Lá»—i há»‡ thá»‘ng khi xuáº¥t file Excel");
+            log.error("Error generating Excel file for quiz scores {}", quizId, e);
+            throw new RuntimeException("System error when exporting Excel file");
+        }
+    }
+    
+    @org.springframework.scheduling.annotation.Async
+    @Override
+    public void batchGradeQuizWithAIAsync(Long quizId, Long lecturerId) {
+        edufit_com_lms.module.quiz.entity.Quiz quiz = quizRepository.findById(quizId).orElseThrow(() -> new edufit_com_lms.common.exception.ResourceNotFound("Can not found quiz"));
+        
+        // Find all completed attempts for this quiz
+        java.util.List<edufit_com_lms.module.quiz.entity.QuizAttempt> attempts = quizAttemptRepository.findByQuizId(quizId);
+        
+        int gradedAttempts = 0;
+        
+        for (edufit_com_lms.module.quiz.entity.QuizAttempt attempt : attempts) {
+            if (attempt.getStatus() != edufit_com_lms.module.quiz.entity.QuizStatus.COMPLETED) {
+                continue;
+            }
+            
+            boolean updated = false;
+            double totalScore = attempt.getScore() != null ? attempt.getScore() : 0.0;
+            
+            for (edufit_com_lms.module.quiz.entity.StudentAnswer answer : attempt.getStudentAnswers()) {
+                if (answer.getQuestion().getQuestionType() == edufit_com_lms.module.quiz.entity.QuestionType.ESSAY) {
+                    if (answer.getEarnedPoints() == null) {
+                        try {
+                            String qContent = answer.getQuestion().getContent();
+                            String aText = answer.getAnswerText();
+                            double maxPts = answer.getQuestion().getPoints() != null ? answer.getQuestion().getPoints() : 0.0;
+                            
+                            edufit_com_lms.module.quiz.dto.response.AIGradeSuggestionResponse aiRes = aiGradingService.suggestGrade(qContent, aText, maxPts);
+                            
+                            answer.setEarnedPoints(aiRes.getPoints());
+                            answer.setFeedback(aiRes.getFeedback());
+                            studentAnswerRepository.save(answer);
+                            
+                            totalScore += aiRes.getPoints();
+                            updated = true;
+                        } catch (Exception e) {
+                            log.error("Error batch grading answer " + answer.getId(), e);
+                        }
+                    }
+                }
+            }
+            
+            if (updated) {
+                attempt.setScore(totalScore);
+                quizAttemptRepository.save(attempt);
+                gradedAttempts++;
+            }
+        }
+        
+        // Send notification to lecturer
+        if (lecturerId != null && eventPublisher != null) {
+            String message = String.format("Hệ thống đã hoàn tất chấm điểm tự động AI cho bài thi '%s'. Đã chấm %d bài nộp.", quiz.getTitle(), gradedAttempts);
+            edufit_com_lms.module.notification.event.NotificationEvent event = edufit_com_lms.module.notification.event.NotificationEvent.builder()
+                .title("Chấm điểm AI hoàn tất")
+                .message(message)
+                .type("SYSTEM_LOG")
+                .recipientId(lecturerId)
+                .build();
+            eventPublisher.publishEvent(event);
         }
     }
 }

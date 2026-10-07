@@ -33,20 +33,22 @@ public class AssignmentServiceImpl implements AssignmentService {
     private final edufit_com_lms.module.lms.repository.ClassEnrollmentRepository classEnrollmentRepository;
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
-    private void validateLecturerOwnership(UUID classId, Long lecturerId) {
+    private void validateLecturerOwnership(List<UUID> classIds, Long lecturerId) {
         if (lecturerId == null) return; // Admin skips validation
-        SchoolClass schoolClass = schoolClassRepository.findById(classId)
-                .orElseThrow(() -> new ResourceNotFound("Class not found with ID: " + classId));
-        if (schoolClass.getLecturer() == null || !schoolClass.getLecturer().getUserId().equals(lecturerId)) {
-            throw new RuntimeException("Báº¡n khÃ´ng cÃ³ quyá»n quáº£n lÃ½ Assignment cá»§a lá»›p há»c nÃ y.");
+        for (UUID classId : classIds) {
+            SchoolClass schoolClass = schoolClassRepository.findById(classId)
+                    .orElseThrow(() -> new ResourceNotFound("Class not found with ID: " + classId));
+            if (schoolClass.getLecturer() == null || !schoolClass.getLecturer().getUserId().equals(lecturerId)) {
+                throw new RuntimeException("Bạn không có quyền quản lý Assignment của lớp học này.");
+            }
         }
     }
 
     @Override
     public AssignmentResponse createAssignment(CreateAssignmentRequest request, Long lecturerId) {
-        validateLecturerOwnership(request.getClassId(), lecturerId);
+        validateLecturerOwnership(request.getClassIds(), lecturerId);
         Assignment assignment = Assignment.builder()
-                .classId(request.getClassId())
+                .classes(schoolClassRepository.findAllById(request.getClassIds()))
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .dueDate(request.getDueDate())
@@ -59,8 +61,9 @@ public class AssignmentServiceImpl implements AssignmentService {
         Assignment saved = assignmentRepository.save(assignment);
         
         // Notify all enrolled students
-        List<edufit_com_lms.module.lms.entity.ClassEnrollment> enrollments = classEnrollmentRepository.findBySchoolClassId(request.getClassId());
-        for (edufit_com_lms.module.lms.entity.ClassEnrollment enrollment : enrollments) {
+        for (UUID classId : request.getClassIds()) {
+            List<edufit_com_lms.module.lms.entity.ClassEnrollment> enrollments = classEnrollmentRepository.findBySchoolClassId(classId);
+            for (edufit_com_lms.module.lms.entity.ClassEnrollment enrollment : enrollments) {
             eventPublisher.publishEvent(edufit_com_lms.module.notification.event.NotificationEvent.builder()
                     .title("BÃ i táº­p má»›i: " + saved.getTitle())
                     .message("Giáº£ng viÃªn vá»«a giao bÃ i táº­p má»›i. Háº¡n ná»™p: " + (saved.getDueDate() != null ? saved.getDueDate() : "KhÃ´ng cÃ³ háº¡n"))
@@ -68,6 +71,8 @@ public class AssignmentServiceImpl implements AssignmentService {
                     .recipientId(enrollment.getStudent().getUserId())
                     .build());
         }
+
+                }
 
         return mapToResponse(saved);
     }
@@ -101,7 +106,7 @@ public class AssignmentServiceImpl implements AssignmentService {
     @Override
     @Transactional(readOnly = true)
     public List<AssignmentResponse> getAssignmentsByClassId(UUID classId) {
-        return assignmentRepository.findByClassId(classId).stream()
+        return assignmentRepository.findByClasses_Id(classId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -109,7 +114,7 @@ public class AssignmentServiceImpl implements AssignmentService {
     @Override
     @Transactional(readOnly = true)
     public Page<AssignmentResponse> getPaginatedAssignmentsByClassId(UUID classId, Pageable pageable) {
-        Page<Assignment> pageResult = assignmentRepository.findByClassId(classId, pageable);
+        Page<Assignment> pageResult = assignmentRepository.findByClasses_Id(classId, pageable);
         List<AssignmentResponse> content = pageResult.getContent().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -119,7 +124,7 @@ public class AssignmentServiceImpl implements AssignmentService {
     @Override
     @Transactional(readOnly = true)
     public Page<AssignmentResponse> getPaginatedAssignmentsByClassIdIn(List<UUID> classIds, Pageable pageable) {
-        Page<Assignment> pageResult = assignmentRepository.findByClassIdIn(classIds, pageable);
+        Page<Assignment> pageResult = assignmentRepository.findDistinctByClasses_IdIn(classIds, pageable);
         List<AssignmentResponse> content = pageResult.getContent().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -131,7 +136,7 @@ public class AssignmentServiceImpl implements AssignmentService {
         Assignment assignment = assignmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFound("Assignment not found with ID: " + id));
 
-        validateLecturerOwnership(assignment.getClassId(), lecturerId);
+        validateLecturerOwnership(assignment.getClasses().stream().map(SchoolClass::getId).collect(Collectors.toList()), lecturerId);
 
         if (request.getTitle() != null && !request.getTitle().isBlank()) {
             assignment.setTitle(request.getTitle());
@@ -164,24 +169,20 @@ public class AssignmentServiceImpl implements AssignmentService {
         Assignment assignment = assignmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFound("Assignment not found with ID: " + id));
 
-        validateLecturerOwnership(assignment.getClassId(), lecturerId);
+        validateLecturerOwnership(assignment.getClasses().stream().map(SchoolClass::getId).collect(Collectors.toList()), lecturerId);
         submissionRepository.deleteByAssignmentId(id);
         assignmentRepository.deleteById(id);
     }
 
     private AssignmentResponse mapToResponse(Assignment assignment) {
         boolean isExpired = assignment.getDueDate() != null && LocalDateTime.now().isAfter(assignment.getDueDate());
-        String className = "Unknown Class";
-        if (assignment.getClassId() != null) {
-            className = schoolClassRepository.findById(assignment.getClassId())
-                    .map(SchoolClass::getClassName)
-                    .orElse("Unknown Class");
-        }
+        List<String> classNames = assignment.getClasses().stream().map(SchoolClass::getClassName).collect(Collectors.toList());
+        List<UUID> classIds = assignment.getClasses().stream().map(SchoolClass::getId).collect(Collectors.toList());
 
         return AssignmentResponse.builder()
                 .id(assignment.getId())
-                .classId(assignment.getClassId())
-                .className(className)
+                .classIds(classIds)
+                .classNames(classNames)
                 .title(assignment.getTitle())
                 .description(assignment.getDescription())
                 .dueDate(assignment.getDueDate())

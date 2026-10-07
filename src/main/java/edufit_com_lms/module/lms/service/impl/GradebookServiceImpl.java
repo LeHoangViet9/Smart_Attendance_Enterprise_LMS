@@ -78,7 +78,7 @@ public class GradebookServiceImpl implements GradebookService {
 
         long totalAttendanceSessions = attendanceRepository.countDistinctCheckInTimeBySchoolClassId(classId);
 
-        List<Assignment> assignments = assignmentRepository.findByClassId(classId);
+        List<Assignment> assignments = assignmentRepository.findByClasses_Id(classId);
         assignments.sort(Comparator.comparing(Assignment::getDueDate));
 
         List<Assignment> exams = assignments.stream().filter(Assignment::getIsExam).collect(Collectors.toList());

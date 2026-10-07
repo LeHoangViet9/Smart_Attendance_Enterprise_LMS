@@ -27,4 +27,6 @@ public class QuizResponse {
     private Long createdBy;
     private String accessCode;
     private Boolean requiresAccessCode;
+    private List<UUID> classIds;
+    private List<String> classNames;
 }

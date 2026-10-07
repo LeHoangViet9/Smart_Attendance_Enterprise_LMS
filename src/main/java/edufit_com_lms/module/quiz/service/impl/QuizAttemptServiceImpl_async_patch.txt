@@ -1,0 +1,11 @@
+import edufit_com_lms.module.quiz.entity.QuizAttempt;
+import edufit_com_lms.module.quiz.entity.QuizStatus;
+import edufit_com_lms.module.quiz.entity.StudentAnswer;
+import edufit_com_lms.module.quiz.entity.QuestionType;
+import edufit_com_lms.module.quiz.dto.response.AIGradeSuggestionResponse;
+import edufit_com_lms.module.notification.event.AppNotificationEvent;
+import org.springframework.scheduling.annotation.Async;
+
+import java.util.List;
+
+// Add this into QuizAttemptServiceImpl

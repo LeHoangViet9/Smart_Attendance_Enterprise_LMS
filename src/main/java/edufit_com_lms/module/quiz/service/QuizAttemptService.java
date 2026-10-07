@@ -28,4 +28,6 @@ public interface QuizAttemptService {
     byte[] exportQuizScoresToExcel(Long quizId, Long lecturerId);
 
     void regradeQuiz(Long quizId, Long lecturerId);
+
+    void batchGradeQuizWithAIAsync(Long quizId, Long lecturerId);
 }

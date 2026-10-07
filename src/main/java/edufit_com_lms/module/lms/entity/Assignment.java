@@ -18,8 +18,14 @@ public class Assignment {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "class_id", nullable = false)
-    private UUID classId;
+    @Builder.Default
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "assignment_classes",
+        joinColumns = @JoinColumn(name = "assignment_id"),
+        inverseJoinColumns = @JoinColumn(name = "class_id")
+    )
+    private java.util.List<SchoolClass> classes = new java.util.ArrayList<>();
 
     @Column(nullable = false)
     private String title;

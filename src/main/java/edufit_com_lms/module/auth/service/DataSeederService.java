@@ -274,7 +274,7 @@ public class DataSeederService {
             for (SchoolClass sc : allAdminClasses) {
                 for (int i = 1; i <= 3; i++) {
                     Assignment assignment = Assignment.builder()
-                            .classId(sc.getId())
+                            .classes(java.util.List.of(sc))
                             .title("Assignment " + i + " for " + sc.getClassName())
                             .description("Please complete the exercises for Chapter " + i + ". Upload your work as a PDF.")
                             .dueDate(LocalDateTime.now().plusDays(i * 7))

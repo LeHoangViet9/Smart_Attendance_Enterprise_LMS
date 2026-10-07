@@ -52,6 +52,15 @@ public class Quiz {
     @JoinColumn(name = "major_id")
     private edufit_com_lms.module.lms.entity.Major major;
 
+    @Builder.Default
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "quiz_classes",
+        joinColumns = @JoinColumn(name = "quiz_id"),
+        inverseJoinColumns = @JoinColumn(name = "class_id")
+    )
+    private java.util.List<edufit_com_lms.module.lms.entity.SchoolClass> classes = new java.util.ArrayList<>();
+
     // Danh sÃ¡ch CÃ¢u há»i (XÃ³a quiz thÃ¬ xÃ³a luÃ´n dÃ n cÃ¢u há»i)
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Question> questions;

@@ -11,9 +11,9 @@ import java.util.UUID;
 
 @Repository
 public interface AssignmentRepository extends JpaRepository<Assignment, UUID> {
-    List<Assignment> findByClassId(UUID classId);
+    List<Assignment> findByClasses_Id(UUID classId);
 
-    Page<Assignment> findByClassId(UUID classId, Pageable pageable);
+    Page<Assignment> findByClasses_Id(UUID classId, Pageable pageable);
 
-    Page<Assignment> findByClassIdIn(List<UUID> classIds, Pageable pageable);
+    Page<Assignment> findDistinctByClasses_IdIn(List<UUID> classIds, Pageable pageable);
 }

@@ -16,8 +16,8 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateAssignmentRequest {
-    @NotNull(message = "classId must not be null")
-    private UUID classId;
+    @NotNull(message = "classIds must not be null")
+    private java.util.List<UUID> classIds;
 
     @NotBlank(message = "Title must not be blank")
     private String title;

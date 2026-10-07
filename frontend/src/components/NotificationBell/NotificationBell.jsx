@@ -9,7 +9,13 @@ const NotificationBell = () => {
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
+    const [toast, setToast] = useState({ show: false, title: '', message: '' });
     const dropdownRef = useRef(null);
+
+    const showToast = (title, message) => {
+        setToast({ show: true, title, message });
+        setTimeout(() => setToast({ show: false, title: '', message: '' }), 5000);
+    };
 
     const fetchData = async () => {
         try {
@@ -51,7 +57,7 @@ const NotificationBell = () => {
                         const newNotif = JSON.parse(message.body);
                         setNotifications(prev => [newNotif, ...prev]);
                         setUnreadCount(prev => prev + 1);
-                        alert(`Có thông báo mới: ${newNotif.title}`); // Simple popup for demo
+                        showToast("Thông báo mới", newNotif.title);
                     }
                 });
                 
@@ -166,6 +172,34 @@ const NotificationBell = () => {
                                 </div>
                             ))
                         )}
+                    </div>
+                </div>
+            )}
+            
+            {/* Custom Global WebSocket Toast Notification */}
+            {toast.show && (
+                <div style={{
+                    position: 'fixed',
+                    top: '20px',
+                    right: '20px',
+                    backgroundColor: '#ffffff',
+                    borderLeft: '4px solid #3b82f6',
+                    color: '#1e293b',
+                    padding: '16px 24px',
+                    borderRadius: '8px',
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                    zIndex: 9999,
+                    animation: 'slideInRight 0.3s ease-out',
+                    minWidth: '250px'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                        <span>🔔</span> {toast.title}
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: '#64748b', marginLeft: '26px' }}>
+                        {toast.message}
                     </div>
                 </div>
             )}

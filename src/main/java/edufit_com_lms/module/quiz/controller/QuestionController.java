@@ -104,6 +104,20 @@ public class QuestionController {
                                 HttpStatus.OK), HttpStatus.OK);
         }
 
+        @PostMapping("/generate-ai")
+        public ResponseEntity<ApiResponse<Void>> generateQuestionsFromAI(
+                        @PathVariable Long quizId,
+                        @RequestBody edufit_com_lms.module.quiz.dto.request.GenerateQuizAiRequest request) {
+                Long lecturerId = getLecturerIdOrNull();
+                questionService.generateQuestionsFromAI(quizId, request, lecturerId);
+                return new ResponseEntity<>(new ApiResponse<>(
+                                true,
+                                "AI generated questions successfully",
+                                null,
+                                null,
+                                HttpStatus.OK), HttpStatus.OK);
+        }
+
         private Long getLecturerIdOrNull() {
                 Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
                 if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetail userDetails) {

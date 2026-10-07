@@ -184,4 +184,12 @@ public class QuizController {
 
         return new ResponseEntity<>(data, headers, HttpStatus.OK);
     }
+    @PostMapping("/{id}/batch-grade-async")
+    public ResponseEntity<ApiResponse<String>> batchGradeQuizWithAIAsync(@PathVariable Long id) {
+        Long lecturerId = getLecturerIdOrNull();
+        quizAttemptService.batchGradeQuizWithAIAsync(id, lecturerId);
+        return ResponseEntity.ok(ApiResponse.success(
+                "Đã bắt đầu chấm điểm tự luận tự động bằng AI trong nền. Hệ thống sẽ thông báo khi hoàn tất.",
+                null));
+    }
 }

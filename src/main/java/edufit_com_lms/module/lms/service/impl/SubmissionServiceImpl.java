@@ -65,17 +65,17 @@ public class SubmissionServiceImpl implements SubmissionService {
 
                 Submission saved = submissionRepository.save(submission);
 
-                // Notify Lecturer
-                schoolClassRepository.findById(assignment.getClassId()).ifPresent(schoolClass -> {
+                // Notify Lecturers
+                for (edufit_com_lms.module.lms.entity.SchoolClass schoolClass : assignment.getClasses()) {
                         if (schoolClass.getLecturer() != null) {
                                 eventPublisher.publishEvent(edufit_com_lms.module.notification.event.NotificationEvent.builder()
-                                                .title("CÃ³ sinh viÃªn ná»™p bÃ i")
-                                                .message("Sinh viÃªn vá»«a ná»™p bÃ i cho bÃ i táº­p: " + assignment.getTitle())
+                                                .title("Có sinh viên nộp bài")
+                                                .message("Sinh viên vừa nộp bài cho bài tập: " + assignment.getTitle())
                                                 .type("SYSTEM_LOG")
                                                 .recipientId(schoolClass.getLecturer().getUserId())
                                                 .build());
                         }
-                });
+                }
 
                 return mapToResponse(saved, assignment);
         }

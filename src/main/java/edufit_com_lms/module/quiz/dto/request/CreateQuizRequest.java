@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -23,4 +24,6 @@ public class CreateQuizRequest {
     
     private Boolean requiresProctoring;
     private String accessCode;
+    
+    private List<UUID> classIds;
 }

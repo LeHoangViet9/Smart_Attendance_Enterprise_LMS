@@ -32,17 +32,24 @@ public class LecturerServiceImpl implements LecturerService {
         long totalClasses = classes.size();
 
         List<SchoolClassResponse> activeClasses = classes.stream()
-                .map(cls -> SchoolClassResponse.builder()
-                        .id(cls.getId())
-                        .className(cls.getClassName())
-                        .majorName(cls.getMajor() != null ? cls.getMajor().getName() : null)
-                        .entryYear(cls.getEntryYear())
-                        .lecturerId(cls.getLecturer() != null ? cls.getLecturer().getUserId() : null)
-                        .lecturerName(cls.getLecturer() != null ? cls.getLecturer().getFullName() : null)
-                        .courseId(cls.getCourse() != null ? cls.getCourse().getId() : null)
-                        .courseName(cls.getCourse() != null ? cls.getCourse().getTitle() : null)
-                        .studentCount(classEnrollmentRepository.findBySchoolClassId(cls.getId()).size())
-                        .build())
+                .map(cls -> {
+                    long totalAtt = attendanceRepository.countTotalAttendanceByClassId(cls.getId());
+                    long presentAtt = attendanceRepository.countPresentAttendanceByClassId(cls.getId());
+                    double classRate = totalAtt > 0 ? ((double) presentAtt / totalAtt) * 100 : 0.0;
+                    
+                    return SchoolClassResponse.builder()
+                            .id(cls.getId())
+                            .className(cls.getClassName())
+                            .majorName(cls.getMajor() != null ? cls.getMajor().getName() : null)
+                            .entryYear(cls.getEntryYear())
+                            .lecturerId(cls.getLecturer() != null ? cls.getLecturer().getUserId() : null)
+                            .lecturerName(cls.getLecturer() != null ? cls.getLecturer().getFullName() : null)
+                            .courseId(cls.getCourse() != null ? cls.getCourse().getId() : null)
+                            .courseName(cls.getCourse() != null ? cls.getCourse().getTitle() : null)
+                            .studentCount(classEnrollmentRepository.findBySchoolClassId(cls.getId()).size())
+                            .averageAttendanceRate(classRate)
+                            .build();
+                })
                 .collect(Collectors.toList());
 
         // BRD OBJ-03: Pending grading submissions

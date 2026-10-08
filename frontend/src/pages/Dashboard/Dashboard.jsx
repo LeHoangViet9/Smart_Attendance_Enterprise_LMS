@@ -357,7 +357,7 @@ const Dashboard = () => {
                             <LineChart
                                 data={(lecturerStats.activeClasses || []).map((c, index) => ({
                                     name: c.className || `Class ${index + 1}`,
-                                    attendance: Math.floor(Math.random() * 20) + 75 // Mock data until backend provides history per class
+                                    attendance: Math.round(c.averageAttendanceRate || 0)
                                 }))}
                                 margin={{ top: 5, right: 30, left: -10, bottom: 5 }}
                             >

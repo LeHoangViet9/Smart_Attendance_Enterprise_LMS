@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import {Link, NavLink, Outlet, useNavigate} from 'react-router-dom';
 import axiosInstance from '../../../api/axios';
 import NotificationBell from '../../../components/NotificationBell/NotificationBell';
+import AITutor from '../../../components/AITutor/AITutor';
 import './Layout.css';
 
 const Layout = () => {
@@ -128,6 +129,9 @@ const Layout = () => {
                     </div>
                 </div>
             )}
+
+            {/* AI Tutor Widget */}
+            <AITutor />
         </div>
     );
 };

@@ -30,4 +30,5 @@ public class SchoolClassResponse {
     private String courseName;
 
     private Integer studentCount;
+    private Double averageAttendanceRate;
 }

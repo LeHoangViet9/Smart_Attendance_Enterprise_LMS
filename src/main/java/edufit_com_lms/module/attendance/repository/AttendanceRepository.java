@@ -25,6 +25,12 @@ public interface AttendanceRepository extends JpaRepository<AttendanceRecord, UU
     @Query("SELECT COUNT(a) FROM AttendanceRecord a WHERE a.schoolClass.lecturer.userId = :lecturerId AND a.status = 'PRESENT'")
     long countPresentAttendanceByLecturer(@Param("lecturerId") Long lecturerId);
 
+    @Query("SELECT COUNT(a) FROM AttendanceRecord a WHERE a.schoolClass.id = :classId")
+    long countTotalAttendanceByClassId(@Param("classId") UUID classId);
+
+    @Query("SELECT COUNT(a) FROM AttendanceRecord a WHERE a.schoolClass.id = :classId AND a.status = 'PRESENT'")
+    long countPresentAttendanceByClassId(@Param("classId") UUID classId);
+
     @Query("SELECT COUNT(a) FROM AttendanceRecord a WHERE a.schoolClass.id = :classId AND a.student.userId = :studentId")
     long countTotalAttendanceByClassAndStudent(@Param("classId") UUID classId, @Param("studentId") Long studentId);
 

@@ -2,6 +2,7 @@ import React from 'react';
 import {Link, Outlet, useLocation, useNavigate} from 'react-router-dom';
 import './AdminLayout.css';
 import NotificationBell from '../../../components/NotificationBell/NotificationBell';
+import AITutor from '../../../components/AITutor/AITutor';
 
 const AdminLayout = () => {
     const navigate = useNavigate();
@@ -117,6 +118,7 @@ const AdminLayout = () => {
                     <Outlet />
                 </div>
             </main>
+            {user && user.role === 'STUDENT' && <AITutor />}
         </div>
     );
 };

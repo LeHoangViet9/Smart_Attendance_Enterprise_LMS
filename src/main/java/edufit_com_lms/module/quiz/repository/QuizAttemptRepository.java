@@ -19,7 +19,9 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Long> 
     // Láº¥y danh sÃ¡ch bÃ i lÃ m cá»§a má»™t Quiz (cho giáº£ng viÃªn cháº¥m bÃ i)
     Page<QuizAttempt> findAllByQuizIdOrderByStartTimeDesc(Long quizId, Pageable pageable);
     List<QuizAttempt> findByQuizId(Long quizId);
+    boolean existsByQuizIdAndStatus(Long quizId, QuizStatus status);
     
     // Láº¥y cÃ¡c attempt Ä‘ang IN_PROGRESS Ä‘á»ƒ kiá»ƒm tra timeout
     List<QuizAttempt> findByStatus(QuizStatus status);
+    Page<QuizAttempt> findByStatus(QuizStatus status, Pageable pageable);
 }

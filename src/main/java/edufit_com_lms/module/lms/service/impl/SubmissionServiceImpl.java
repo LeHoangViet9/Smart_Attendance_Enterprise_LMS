@@ -33,6 +33,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         private final SubmissionRepository submissionRepository;
         private final AssignmentRepository assignmentRepository;
         private final edufit_com_lms.module.lms.repository.SchoolClassRepository schoolClassRepository;
+        private final edufit_com_lms.module.lms.repository.ClassEnrollmentRepository classEnrollmentRepository;
         private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
         @Override
@@ -40,6 +41,14 @@ public class SubmissionServiceImpl implements SubmissionService {
                 Assignment assignment = assignmentRepository.findById(assignmentId)
                                 .orElseThrow(() -> new ResourceNotFound(
                                                 "Assignment not found with ID: " + assignmentId));
+
+                boolean enrolledInAssignedClass = assignment.getClasses() != null && assignment.getClasses().stream()
+                                .anyMatch(schoolClass -> classEnrollmentRepository
+                                                .existsBySchoolClassIdAndStudentUserId(schoolClass.getId(),
+                                                                request.getStudentId()));
+                if (!enrolledInAssignedClass) {
+                        throw new BadRequestException("Student is not enrolled in any class assigned to this assignment.");
+                }
 
                 Optional<Submission> existingSubmission = submissionRepository
                                 .findByAssignmentIdAndStudentId(assignmentId, request.getStudentId());

@@ -8,6 +8,8 @@ const QuizList = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [currentPage, setCurrentPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
     const navigate = useNavigate();
 
     const [userRole, setUserRole] = useState('STUDENT');
@@ -52,19 +54,37 @@ const QuizList = () => {
         }
         fetchMajors();
         const delayDebounceFn = setTimeout(() => {
-            fetchQuizzes(searchQuery, currentRole);
+            fetchQuizzes(searchQuery, currentRole, currentPage);
         }, 500);
         return () => clearTimeout(delayDebounceFn);
-    }, [searchQuery]);
+    }, [searchQuery, currentPage]);
 
-    const fetchQuizzes = async (query = '', role = userRole) => {
+    const fetchQuizzes = async (query = '', role = userRole, page = 0) => {
         try {
+            setLoading(true);
             // Admin/Lecturer fetches all quizzes for management, Student fetches available quizzes via student endpoint
             const baseEndpoint = (role === 'ADMIN' || role === 'LECTURER') ? '/v1/quizzes' : '/v1/student/quizzes';
-            const url = query ? `${baseEndpoint}?keyword=${encodeURIComponent(query)}` : baseEndpoint;
+            const url = query ? `${baseEndpoint}?keyword=${encodeURIComponent(query)}&page=${page}&size=10` : `${baseEndpoint}?page=${page}&size=10`;
             const response = await axiosInstance.get(url);
-            if (response.data && response.data.data && response.data.data.content) {
-                setQuizzes(response.data.data.content);
+            if (response.data && response.data.data) {
+                const responseData = response.data.data;
+                if (responseData.content) {
+                    setQuizzes(responseData.content);
+                } else if (Array.isArray(responseData)) {
+                    setQuizzes(responseData); // Just in case it's an array
+                }
+                
+                let total = 1;
+                if (responseData.totalPages !== undefined) {
+                    total = responseData.totalPages;
+                } else if (responseData.page && responseData.page.totalPages !== undefined) {
+                    total = responseData.page.totalPages;
+                } else if (responseData.totalElements !== undefined) {
+                    total = Math.ceil(responseData.totalElements / 10);
+                } else if (responseData.content && responseData.content.length === 10) {
+                    total = page + 2; // Guess there is a next page
+                }
+                setTotalPages(total);
             }
         } catch (err) {
             console.error('Error fetching quizzes:', err);
@@ -140,7 +160,10 @@ const QuizList = () => {
                     type="text"
                     placeholder="🔍 Search for exams, quizzes..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setCurrentPage(0); // Reset page on new search
+                    }}
                     style={{
                         padding: '14px 24px',
                         width: '100%',
@@ -227,6 +250,28 @@ const QuizList = () => {
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {!loading && totalPages > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', marginTop: '30px', marginBottom: '20px' }}>
+                    <button
+                        style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #d1d5db', backgroundColor: currentPage === 0 ? '#f3f4f6' : 'white', cursor: currentPage === 0 ? 'not-allowed' : 'pointer', fontWeight: 600, color: currentPage === 0 ? '#9ca3af' : '#374151', transition: 'all 0.2s' }}
+                        disabled={currentPage === 0}
+                        onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                    >
+                        ← Previous
+                    </button>
+                    <span style={{ fontWeight: 500, color: '#4b5563', backgroundColor: '#f3f4f6', padding: '6px 12px', borderRadius: '20px', fontSize: '0.9rem' }}>
+                        Page {currentPage + 1} of {totalPages}
+                    </span>
+                    <button
+                        style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #d1d5db', backgroundColor: currentPage >= totalPages - 1 ? '#f3f4f6' : 'white', cursor: currentPage >= totalPages - 1 ? 'not-allowed' : 'pointer', fontWeight: 600, color: currentPage >= totalPages - 1 ? '#9ca3af' : '#374151', transition: 'all 0.2s' }}
+                        disabled={currentPage >= totalPages - 1}
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+                    >
+                        Next →
+                    </button>
                 </div>
             )}
 

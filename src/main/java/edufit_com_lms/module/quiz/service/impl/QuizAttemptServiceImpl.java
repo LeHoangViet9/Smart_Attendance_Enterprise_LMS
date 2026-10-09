@@ -7,6 +7,7 @@ import edufit_com_lms.common.exception.ConflictException;
 import edufit_com_lms.common.exception.ResourceNotFound;
 import edufit_com_lms.module.auth.entity.User;
 import edufit_com_lms.module.auth.repository.UserRepository;
+import edufit_com_lms.module.lms.repository.ClassEnrollmentRepository;
 import edufit_com_lms.module.quiz.dto.request.StudentAnswerRequest;
 import edufit_com_lms.module.quiz.dto.request.SubmitQuizRequest;
 import edufit_com_lms.module.quiz.dto.response.AIGradeSuggestionResponse;
@@ -23,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -48,6 +50,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
     private final ObjectMapper objectMapper;
     private final ApplicationEventPublisher eventPublisher;
     private final AIGradingService aiGradingService;
+    private final ClassEnrollmentRepository classEnrollmentRepository;
     @Autowired
     @Lazy
     private QuizAttemptService quizAttemptService;
@@ -65,6 +68,15 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         }
         if (quiz.getEndTime() != null && now.isAfter(quiz.getEndTime())) {
             throw new ConflictException("This test has expired!");
+        }
+
+        if (quiz.getClasses() != null && !quiz.getClasses().isEmpty()) {
+            boolean enrolled = quiz.getClasses().stream()
+                    .anyMatch(schoolClass -> classEnrollmentRepository
+                            .existsBySchoolClassIdAndStudentUserId(schoolClass.getId(), studentId));
+            if (!enrolled) {
+                throw new ConflictException("You are not enrolled in a class assigned to this quiz.");
+            }
         }
 
         List<QuizAttempt> existingAttempts = quizAttemptRepository.findByQuizIdAndStudentUserId(quizId, studentId);
@@ -147,7 +159,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         // Check if the exam has passed the absolute system time limit
         // 
         if (quizAttempt.getQuiz().getEndTime() != null && submitTime.isAfter(quizAttempt.getQuiz().getEndTime())) {
-            log.warn("Late submission (passed end time) - Quiz Attempt ID: {}", attemptId);
+            throw new ConflictException("Submission past the deadline (quiz has ended).");
         }
 
         // If quiz has a time limit, check if submitted late
@@ -553,7 +565,9 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
     @Scheduled(cron = "0 * * * * *")
     @Transactional
     public void abandonStaleAttempts() {
-        List<QuizAttempt> inProgressAttempts = quizAttemptRepository.findByStatus(QuizStatus.IN_PROGRESS);
+        List<QuizAttempt> inProgressAttempts = quizAttemptRepository
+                .findByStatus(QuizStatus.IN_PROGRESS, PageRequest.of(0, 100))
+                .getContent();
         if (inProgressAttempts == null || inProgressAttempts.isEmpty()) {
             return;
         }
@@ -914,11 +928,10 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
             }
             
             boolean updated = false;
-            double totalScore = attempt.getScore() != null ? attempt.getScore() : 0.0;
             
             for (edufit_com_lms.module.quiz.entity.StudentAnswer answer : attempt.getStudentAnswers()) {
                 if (answer.getQuestion().getQuestionType() == edufit_com_lms.module.quiz.entity.QuestionType.ESSAY) {
-                    if (answer.getEarnedPoints() == null) {
+                    if (answer.getFeedback() == null || answer.getFeedback().isBlank()) {
                         try {
                             String qContent = answer.getQuestion().getContent();
                             String aText = answer.getAnswerText();
@@ -928,9 +941,9 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                             
                             answer.setEarnedPoints(aiRes.getPoints());
                             answer.setFeedback(aiRes.getFeedback());
+                            answer.setIsAwarded(aiRes.getPoints() > 0);
                             studentAnswerRepository.save(answer);
                             
-                            totalScore += aiRes.getPoints();
                             updated = true;
                         } catch (Exception e) {
                             log.error("Error batch grading answer " + answer.getId(), e);
@@ -940,7 +953,14 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
             }
             
             if (updated) {
-                attempt.setScore(totalScore);
+                double totalEarned = attempt.getStudentAnswers().stream()
+                        .mapToDouble(answer -> answer.getEarnedPoints() != null ? answer.getEarnedPoints() : 0.0)
+                        .sum();
+                double totalMaxPoints = attempt.getQuiz().getQuestions().stream()
+                        .mapToDouble(question -> question.getPoints() != null ? question.getPoints() : 0.0)
+                        .sum();
+                double finalScore = totalMaxPoints > 0 ? (totalEarned / totalMaxPoints) * 10.0 : 0.0;
+                attempt.setScore(Math.round(finalScore * 100.0) / 100.0);
                 quizAttemptRepository.save(attempt);
                 gradedAttempts++;
             }

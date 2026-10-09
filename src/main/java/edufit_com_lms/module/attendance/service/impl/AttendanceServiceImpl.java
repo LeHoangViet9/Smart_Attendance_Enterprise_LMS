@@ -12,6 +12,7 @@ import edufit_com_lms.module.lms.entity.SchoolClass;
 import edufit_com_lms.module.lms.repository.ClassEnrollmentRepository;
 import edufit_com_lms.module.lms.repository.SchoolClassRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -34,7 +35,11 @@ public class AttendanceServiceImpl implements AttendanceService {
     private final AttendanceRepository attendanceRepository;
     private final ClassEnrollmentRepository classEnrollmentRepository;
     private final SchoolClassRepository schoolClassRepository;
+    private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Value("${ai.service.url}")
+    private String aiServiceUrl;
 
     @Override
     @Transactional
@@ -98,8 +103,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         try {
             String descriptorsJson = objectMapper.writeValueAsString(registeredDescriptors);
 
-            RestTemplate restTemplate = new RestTemplate();
-            String aiServiceUrl = "http://localhost:8000/api/v1/ai/verify-face";
+            String verifyFaceUrl = aiServiceUrl + "/api/v1/ai/verify-face";
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
@@ -114,7 +118,7 @@ public class AttendanceServiceImpl implements AttendanceService {
             body.add("registered_descriptors", descriptorsJson);
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-            ResponseEntity<JsonNode> aiResponse = restTemplate.postForEntity(aiServiceUrl, requestEntity, JsonNode.class);
+            ResponseEntity<JsonNode> aiResponse = restTemplate.postForEntity(verifyFaceUrl, requestEntity, JsonNode.class);
 
             if (!aiResponse.getStatusCode().is2xxSuccessful() || aiResponse.getBody() == null) {
                 throw new RuntimeException("AI Service connection error");

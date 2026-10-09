@@ -15,6 +15,7 @@ import edufit_com_lms.module.quiz.service.QuizService;
 import edufit_com_lms.security.CustomUserDetail;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/student/quizzes")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('STUDENT')")
+@Slf4j
 public class StudentQuizController {
         private final QuizAttemptService quizAttemptService;
         private final QuizService quizService;
@@ -74,10 +76,10 @@ public class StudentQuizController {
                                         page,
                                         HttpStatus.OK), HttpStatus.OK);
                 } catch (Exception e) {
-                        e.printStackTrace();
+                        log.error("Failed to fetch available quizzes for student", e);
                         return new ResponseEntity<>(new ApiResponse<>(
                                         false,
-                                        "HTTP 500 Debug: " + e.getMessage(),
+                                        "Unable to fetch available quizzes",
                                         null,
                                         null,
                                         HttpStatus.INTERNAL_SERVER_ERROR), HttpStatus.INTERNAL_SERVER_ERROR);

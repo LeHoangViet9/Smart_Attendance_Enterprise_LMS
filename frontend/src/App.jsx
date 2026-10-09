@@ -85,6 +85,8 @@ const App = () => {
           <Route path="courses/:id" element={<CourseDetails />} />
           <Route path="quizzes" element={<QuizList />} />
           <Route path="quizzes/manage/:quizId" element={<QuizManagement />} />
+          <Route path="quizzes/:quizId/grading" element={<QuizGradingList />} />
+          <Route path="quizzes/attempts/:attemptId/grading" element={<QuizGradingDetail />} />
           <Route path="assignments" element={<AssignmentList />} />
           <Route path="assignments/manage" element={<AssignmentManagement />} />
           {/* Default fallback */}

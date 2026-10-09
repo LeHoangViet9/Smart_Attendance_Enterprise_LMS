@@ -8,7 +8,9 @@ import edufit_com_lms.module.lms.repository.MajorRepository;
 import edufit_com_lms.module.quiz.dto.request.QuizRequest;
 import edufit_com_lms.module.quiz.dto.response.QuizResponse;
 import edufit_com_lms.module.quiz.entity.Quiz;
+import edufit_com_lms.module.quiz.entity.QuizStatus;
 import edufit_com_lms.module.quiz.mapper.QuizMapper;
+import edufit_com_lms.module.quiz.repository.QuizAttemptRepository;
 import edufit_com_lms.module.quiz.repository.QuizRepository;
 import edufit_com_lms.module.quiz.service.QuizService;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ public class QuizServiceImpl implements QuizService {
     private final UserRepository userRepository;
     private final MajorRepository majorRepository;
     private final edufit_com_lms.module.lms.repository.SchoolClassRepository schoolClassRepository;
+    private final QuizAttemptRepository quizAttemptRepository;
 
     @Override
     public QuizResponse createQuiz(QuizRequest request, Long creatorId) {
@@ -71,6 +74,10 @@ public class QuizServiceImpl implements QuizService {
 
         if (lecturerId != null && (quiz.getCreatedBy() == null || !quiz.getCreatedBy().getUserId().equals(lecturerId))) {
             throw new AppException(HttpStatus.FORBIDDEN, "Báº¡n khÃ´ng cÃ³ quyá»n sá»­a Quiz nÃ y vÃ¬ khÃ´ng pháº£i lÃ  ngÆ°á»i táº¡o.");
+        }
+
+        if (quizAttemptRepository.existsByQuizIdAndStatus(quizId, QuizStatus.IN_PROGRESS)) {
+            throw new AppException(HttpStatus.CONFLICT, "Cannot update quiz while students are taking it.");
         }
 
         quiz.setTitle(request.getTitle());

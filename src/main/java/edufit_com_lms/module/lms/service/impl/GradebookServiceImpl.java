@@ -53,7 +53,7 @@ public class GradebookServiceImpl implements GradebookService {
         SchoolClass schoolClass = schoolClassRepository.findById(classId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Lá»›p há»c khÃ´ng tá»“n táº¡i"));
 
-        if (!schoolClass.getLecturer().getUserId().equals(lecturerId)) {
+        if (schoolClass.getLecturer() == null || !schoolClass.getLecturer().getUserId().equals(lecturerId)) {
             throw new AppException(HttpStatus.FORBIDDEN, "Báº¡n khÃ´ng cÃ³ quyá»n xem sá»• Ä‘iá»ƒm cá»§a lá»›p nÃ y");
         }
 
@@ -72,7 +72,7 @@ public class GradebookServiceImpl implements GradebookService {
         SchoolClass schoolClass = schoolClassRepository.findById(classId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Lá»›p há»c khÃ´ng tá»“n táº¡i"));
 
-        if (!schoolClass.getLecturer().getUserId().equals(lecturerId)) {
+        if (schoolClass.getLecturer() == null || !schoolClass.getLecturer().getUserId().equals(lecturerId)) {
             throw new AppException(HttpStatus.FORBIDDEN, "Báº¡n khÃ´ng cÃ³ quyá»n xem sá»• Ä‘iá»ƒm cá»§a lá»›p nÃ y");
         }
 
@@ -167,7 +167,8 @@ public class GradebookServiceImpl implements GradebookService {
         Gradebook gradebook = gradebookRepository.findById(gradebookId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Báº£n ghi sá»• Ä‘iá»ƒm khÃ´ng tá»“n táº¡i"));
 
-        if (!gradebook.getEnrollment().getSchoolClass().getLecturer().getUserId().equals(lecturerId)) {
+        User lecturer = gradebook.getEnrollment().getSchoolClass().getLecturer();
+        if (lecturer == null || !lecturer.getUserId().equals(lecturerId)) {
             throw new AppException(HttpStatus.FORBIDDEN, "Báº¡n khÃ´ng cÃ³ quyá»n sá»­a sá»• Ä‘iá»ƒm nÃ y");
         }
 

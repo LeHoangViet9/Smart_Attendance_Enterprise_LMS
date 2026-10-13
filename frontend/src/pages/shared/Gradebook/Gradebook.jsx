@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 import axiosInstance from '../../../api/axios';
 import './Gradebook.css';
@@ -15,11 +15,7 @@ const Gradebook = () => {
     const userString = localStorage.getItem('user');
     const userRole = userString ? JSON.parse(userString).role : 'STUDENT';
 
-    useEffect(() => {
-        fetchGrades();
-    }, [classId]);
-
-    const fetchGrades = async () => {
+    const fetchGrades = useCallback(async () => {
         setLoading(true);
         try {
             let res;
@@ -39,8 +35,11 @@ const Gradebook = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [classId, userRole]);
 
+    useEffect(() => {
+        fetchGrades();
+    }, [fetchGrades]);
 
 
     const showStatus = (text, type) => {
@@ -68,7 +67,6 @@ const Gradebook = () => {
                 finalScore: editValues.finalScore !== '' ? parseFloat(editValues.finalScore) : null,
                 teacherComment: editValues.teacherComment
             };
-            console.log("Sending payload:", payload);
             await axiosInstance.put(`/v1/gradebooks/${gradebookId}`, payload);
             showStatus("Lưu điểm thành công!", "success");
             setEditingRow(null);
@@ -76,6 +74,25 @@ const Gradebook = () => {
         } catch (error) {
             console.error(error);
             showStatus("Lỗi khi lưu điểm!", "error");
+        }
+    };
+
+    const handleExport = async () => {
+        try {
+            const res = await axiosInstance.get(`/v1/gradebooks/classes/${classId}/export`, {
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `gradebook-${classId}.xlsx`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error(error);
+            showStatus("Loi khi export bang diem!", "error");
         }
     };
 
@@ -120,6 +137,16 @@ const Gradebook = () => {
                     )}
 
                     {userRole === 'LECTURER' && classId && (
+                        <button
+                            onClick={handleExport}
+                            className="gradebook-btn-save"
+                            style={{ background: '#059669', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.375rem', cursor: 'pointer' }}
+                        >
+                            Export Excel
+                        </button>
+                    )}
+
+                    {userRole === 'LECTURER' && classId && (
                         <button 
                             onClick={async () => {
                                 try {
@@ -127,7 +154,7 @@ const Gradebook = () => {
                                     const res = await axiosInstance.post(`/v1/gradebooks/classes/${classId}/sync`);
                                     setGrades(res.data.data);
                                     showStatus("Đồng bộ điểm thành công!", "success");
-                                } catch(e) {
+                                } catch {
                                     showStatus("Lỗi đồng bộ điểm!", "error");
                                 } finally { setLoading(false); }
                             }}

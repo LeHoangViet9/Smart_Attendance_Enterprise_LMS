@@ -23,7 +23,7 @@ const FaceOnboarding = () => {
             if (videoRef.current) {
                 videoRef.current.srcObject = mediaStream;
             }
-        } catch (err) {
+        } catch {
             setError('Cannot access camera. Please grant permission to continue.');
             setStep(0);
         }

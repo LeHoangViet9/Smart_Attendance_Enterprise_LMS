@@ -25,6 +25,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Collections;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -42,8 +44,10 @@ public class CourseServiceImpl implements CourseService {
     @Override
     @Transactional(readOnly = true)
     public List<CourseResponse> getAllCourses() {
-        return courseRepository.findAll().stream()
-                .map(this::mapToCourseSummaryResponse)
+        List<Courses> courses = courseRepository.findAll();
+        Map<UUID, Long> lessonCounts = getLessonCounts(courses);
+        return courses.stream()
+                .map(course -> mapToCourseSummaryResponse(course, lessonCounts.getOrDefault(course.getId(), 0L)))
                 .collect(Collectors.toList());
     }
 
@@ -57,8 +61,9 @@ public class CourseServiceImpl implements CourseService {
             pageResult = courseRepository.findAll(pageable);
         }
 
+        Map<UUID, Long> lessonCounts = getLessonCounts(pageResult.getContent());
         List<CourseResponse> content = pageResult.getContent().stream()
-                .map(this::mapToCourseSummaryResponse)
+                .map(course -> mapToCourseSummaryResponse(course, lessonCounts.getOrDefault(course.getId(), 0L)))
                 .collect(Collectors.toList());
         return new PageImpl<>(content, pageable, pageResult.getTotalElements());
     }
@@ -74,8 +79,9 @@ public class CourseServiceImpl implements CourseService {
             pageResult = courseRepository.findByMajorId(majorId, pageable);
         }
 
+        Map<UUID, Long> lessonCounts = getLessonCounts(pageResult.getContent());
         List<CourseResponse> content = pageResult.getContent().stream()
-                .map(this::mapToCourseSummaryResponse)
+                .map(course -> mapToCourseSummaryResponse(course, lessonCounts.getOrDefault(course.getId(), 0L)))
                 .collect(Collectors.toList());
         return new PageImpl<>(content, pageable, pageResult.getTotalElements());
     }
@@ -90,8 +96,9 @@ public class CourseServiceImpl implements CourseService {
             pageResult = courseRepository.findByIdIn(ids, pageable);
         }
 
+        Map<UUID, Long> lessonCounts = getLessonCounts(pageResult.getContent());
         List<CourseResponse> content = pageResult.getContent().stream()
-                .map(this::mapToCourseSummaryResponse)
+                .map(course -> mapToCourseSummaryResponse(course, lessonCounts.getOrDefault(course.getId(), 0L)))
                 .collect(Collectors.toList());
         return new PageImpl<>(content, pageable, pageResult.getTotalElements());
     }
@@ -285,17 +292,28 @@ public class CourseServiceImpl implements CourseService {
     }
 
     private CourseResponse mapToCourseSummaryResponse(Courses course) {
-        List<Lesson> lessons = lessonRepository.findByCourseIdOrderByOrderIndexAsc(course.getId());
+        return mapToCourseSummaryResponse(course, lessonRepository.countByCourseId(course.getId()));
+    }
 
+    private CourseResponse mapToCourseSummaryResponse(Courses course, long totalLessons) {
         return CourseResponse.builder()
                 .id(course.getId())
                 .title(course.getTitle())
                 .description(course.getDescription())
                 .thumbnailUrl(course.getThumbnailUrl())
                 .isPublished(course.getIsPublished())
-                .totalLessons(lessons.size())
+                .totalLessons(Math.toIntExact(totalLessons))
                 .createdAt(course.getCreatedAt())
                 .build();
+    }
+
+    private Map<UUID, Long> getLessonCounts(List<Courses> courses) {
+        if (courses.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<UUID> courseIds = courses.stream().map(Courses::getId).toList();
+        return lessonRepository.countByCourseIds(courseIds).stream()
+                .collect(Collectors.toMap(row -> (UUID) row[0], row -> ((Number) row[1]).longValue()));
     }
 
     private LessonResponse mapToLessonResponse(Lesson lesson) {

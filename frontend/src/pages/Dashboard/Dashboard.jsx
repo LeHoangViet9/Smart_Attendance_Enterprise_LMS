@@ -18,9 +18,6 @@ import './Dashboard.css';
 const Dashboard = () => {
     const [user, setUser] = useState(null);
     const navigate = useNavigate();
-    
-    const [currentTime, setCurrentTime] = useState(new Date());
-
     // Lecturer Stats State
     const [lecturerStats, setLecturerStats] = useState({
         totalClasses: 0,
@@ -41,7 +38,8 @@ const Dashboard = () => {
     const [adminStats, setAdminStats] = useState({
         totalUsers: 0,
         totalQuizzes: 0,
-        totalCourses: 0
+        totalCourses: 0,
+        totalSubmissions: 0
     });
     const [adminNotifications, setAdminNotifications] = useState([]);
 
@@ -193,7 +191,7 @@ const Dashboard = () => {
 
     const renderAdminDashboard = () => (
         <div className="dashboard-content admin-dashboard">
-            <div className="stat-cards" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+            <div className="stat-cards" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
                 <div className="stat-card glass-panel">
                     <div className="stat-icon blue">👥</div>
                     <div className="stat-info">
@@ -213,6 +211,13 @@ const Dashboard = () => {
                     <div className="stat-info">
                         <h3>Total Courses</h3>
                         <p className="stat-value">{adminStats.totalCourses}</p>
+                    </div>
+                </div>
+                <div className="stat-card glass-panel">
+                    <div className="stat-icon green">📤</div>
+                    <div className="stat-info">
+                        <h3>Total Submissions</h3>
+                        <p className="stat-value">{adminStats.totalSubmissions}</p>
                     </div>
                 </div>
             </div>
@@ -269,7 +274,8 @@ const Dashboard = () => {
                                 data={[
                                     { name: 'Users', count: adminStats.totalUsers || 0 },
                                     { name: 'Courses', count: adminStats.totalCourses || 0 },
-                                    { name: 'Quizzes', count: adminStats.totalQuizzes || 0 }
+                                    { name: 'Quizzes', count: adminStats.totalQuizzes || 0 },
+                                    { name: 'Submissions', count: adminStats.totalSubmissions || 0 }
                                 ]}
                                 margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                             >

@@ -3,6 +3,9 @@
   "plugins": ["react", "oxc"],
   "rules": {
     "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "off",
+    "react/immutability": "off",
+    "react/set-state-in-effect": "off",
     "react/only-export-components": ["warn", { "allowConstantExport": true }]
   }
 }

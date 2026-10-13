@@ -5,6 +5,7 @@ import edufit_com_lms.module.auth.mapper.UserMapper;
 import edufit_com_lms.module.auth.repository.UserRepository;
 import edufit_com_lms.module.auth.service.AdminService;
 import edufit_com_lms.module.lms.repository.CourseRepository;
+import edufit_com_lms.module.lms.repository.SubmissionRepository;
 import edufit_com_lms.module.quiz.repository.QuizRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,7 +17,7 @@ public class AdminServiceImpl implements AdminService {
     private final UserRepository userRepository;
     private final QuizRepository quizRepository;
     private final CourseRepository courseRepository;
-    private final UserMapper userMapper;
+    private final SubmissionRepository submissionRepository;
 
     @Override
     public AdminStatsResponse getDashboardStats() {
@@ -24,7 +25,7 @@ public class AdminServiceImpl implements AdminService {
                 .totalUsers(userRepository.count())
                 .totalQuizzes(quizRepository.count())
                 .totalCourses(courseRepository.count())
-                .totalSubmissions(0) // omitted from requested 3 fields
+                .totalSubmissions(submissionRepository.count())
                 .build();
     }
 

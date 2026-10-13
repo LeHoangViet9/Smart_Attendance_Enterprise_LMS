@@ -29,7 +29,8 @@ public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
             "WHERE sc.lecturer_id = :lecturerId AND s.score IS NULL", nativeQuery = true)
     long countPendingGradingByLecturer(@Param("lecturerId") Long lecturerId);
 
-    List<Submission> findByStudentIdAndAssignmentIdIn(@Param("studentId") Long studentId, List<UUID> assignmentIds);
-
     List<Submission> findByAssignmentIdIn(List<UUID> assignmentIds);
+
+    @Query("SELECT s.studentId, AVG(s.score) FROM Submission s WHERE s.assignmentId IN :assignmentIds AND s.score IS NOT NULL GROUP BY s.studentId")
+    List<Object[]> averageScoreByStudentForAssignments(@Param("assignmentIds") List<UUID> assignmentIds);
 }

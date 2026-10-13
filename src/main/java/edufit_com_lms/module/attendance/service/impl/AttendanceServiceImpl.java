@@ -3,6 +3,8 @@ package edufit_com_lms.module.attendance.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edufit_com_lms.common.exception.ConflictException;
+import edufit_com_lms.common.exception.ResourceNotFound;
 import edufit_com_lms.module.attendance.dto.request.AttendanceSubmitRequest;
 import edufit_com_lms.module.attendance.entity.AttendanceRecord;
 import edufit_com_lms.module.attendance.repository.AttendanceRepository;
@@ -45,24 +47,31 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Transactional
     public void submitAttendance(AttendanceSubmitRequest request) {
         SchoolClass schoolClass = schoolClassRepository.findById(request.getClassId())
-                .orElseThrow(() -> new RuntimeException("KhÃ´ng tÃ¬m tháº¥y lá»›p há»c pháº§n"));
+                .orElseThrow(() -> new ResourceNotFound("Khong tim thay lop hoc phan"));
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfDay = now.toLocalDate().atStartOfDay();
+        LocalDateTime endOfDay = startOfDay.plusDays(1);
+        if (attendanceRepository.existsBySchoolClassIdAndCheckInTimeBetween(request.getClassId(), startOfDay, endOfDay)) {
+            throw new ConflictException("Lop nay da duoc diem danh hom nay");
+        }
 
         // Láº¥y danh sÃ¡ch sinh viÃªn tá»« ClassEnrollment (BRD 8.3: Student enrolled in Class)
         List<ClassEnrollment> enrollments = classEnrollmentRepository.findBySchoolClassId(request.getClassId());
-
-        LocalDateTime now = LocalDateTime.now();
 
         List<AttendanceRecord> records = enrollments.stream()
                 .filter(enrollment -> enrollment.getStudent() != null)
                 .map(enrollment -> {
                     boolean isPresent = request.getPresentStudentIds() != null &&
                             request.getPresentStudentIds().contains(enrollment.getStudent().getUserId());
+                    boolean isLate = request.getLateStudentIds() != null &&
+                            request.getLateStudentIds().contains(enrollment.getStudent().getUserId());
 
                     return AttendanceRecord.builder()
                             .student(enrollment.getStudent())
                             .schoolClass(schoolClass)
                             .checkInTime(now)
-                            .status(isPresent ? "PRESENT" : "ABSENT")
+                            .status(isLate ? "LATE" : (isPresent ? "PRESENT" : "ABSENT"))
                             .build();
                 }).toList();
 

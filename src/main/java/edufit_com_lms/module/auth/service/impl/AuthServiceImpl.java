@@ -5,8 +5,10 @@ import edufit_com_lms.common.exception.ResourceNotFound;
 import edufit_com_lms.common.exception.UnauthorizedException;
 import edufit_com_lms.module.auth.dto.request.AdminRegisterRequest;
 import edufit_com_lms.module.auth.dto.request.ChangePasswordRequest;
+import edufit_com_lms.module.auth.dto.request.ForgotPasswordRequest;
 import edufit_com_lms.module.auth.dto.request.LoginRequest;
 import edufit_com_lms.module.auth.dto.request.RefreshTokenRequest;
+import edufit_com_lms.module.auth.dto.request.ResetPasswordRequest;
 import edufit_com_lms.module.auth.dto.response.UserResponse;
 import edufit_com_lms.module.auth.entity.LecturerProfile;
 import edufit_com_lms.module.auth.entity.Role;
@@ -27,9 +29,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.Base64;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +48,8 @@ public class AuthServiceImpl implements AuthService {
     private final LecturerProfileRepository lecturerProfileRepository;
     private final SchoolClassRepository schoolClassRepository;
     private final MajorRepository majorRepository;
+    private final StringRedisTemplate stringRedisTemplate;
+    private final SecureRandom secureRandom = new SecureRandom();
 
     @Override
     public UserResponse register(AdminRegisterRequest registerRequest) {
@@ -56,7 +64,7 @@ public class AuthServiceImpl implements AuthService {
                 throw new ConflictException("Parent phone already exists");
             }
         }
-        String password = registerRequest.getEmail(); // Äáº·t máº­t kháº©u máº·c Ä‘á»‹nh lÃ  email
+        String password = registerRequest.getEmail();
         User user = new User();
         user.setEmail(registerRequest.getEmail());
         user.setCode(registerRequest.getCode());
@@ -115,12 +123,12 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public UserResponse login(LoginRequest loginRequest) {
         User user = userRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new ResourceNotFound("Email khÃ´ng tá»“n tai"));
+                .orElseThrow(() -> new ResourceNotFound("Email does not exist"));
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            throw new UnauthorizedException("Sai máº­t kháº©u hoáº·c email");
+            throw new UnauthorizedException("Incorrect email or password");
         }
         if (!user.getIsActive()) {
-            throw new UnauthorizedException("TÃ i khoáº£n khÃ´ng há»£p lá»‡");
+            throw new UnauthorizedException("Account is inactive");
         }
         String accessToken = jwtTokenProvider.generateToken(user.getEmail(), user.getRole().toString());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getEmail());
@@ -153,6 +161,37 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    public String forgotPassword(ForgotPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFound("Can not found email"));
+        byte[] randomBytes = new byte[32];
+        secureRandom.nextBytes(randomBytes);
+        String resetToken = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+        stringRedisTemplate.opsForValue().set(passwordResetKey(resetToken), user.getEmail(), 15, TimeUnit.MINUTES);
+        return resetToken;
+    }
+
+    @Override
+    public void resetPassword(ResetPasswordRequest request) {
+        String email = stringRedisTemplate.opsForValue().get(passwordResetKey(request.getToken()));
+        if (email == null) {
+            throw new UnauthorizedException("Password reset token is invalid or expired");
+        }
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFound("Can not found email"));
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new ConflictException("New password must be different from old password");
+        }
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+        stringRedisTemplate.delete(passwordResetKey(request.getToken()));
+    }
+
+    private String passwordResetKey(String token) {
+        return "PWD_RESET:" + token;
+    }
+
+    @Override
     public void logout() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetail) {
@@ -168,17 +207,17 @@ public class AuthServiceImpl implements AuthService {
         // Validate token structure and ensure it's a refresh token
         if (!jwtTokenProvider.validateToken(refreshToken) ||
                 !"refresh".equals(jwtTokenProvider.getTokenType(refreshToken))) {
-            throw new ConflictException("Refresh token khÃ´ng há»£p lá»‡");
+            throw new ConflictException("Refresh token is invalid");
         }
         // Extract email (subject) from token
         String email = jwtTokenProvider.getEmailFromToken(refreshToken);
         // Verify token is stored and not revoked
         if (!tokenService.isValidRefreshToken(email, refreshToken)) {
-            throw new ConflictException("Refresh token Ä‘Ã£ bá»‹ thu há»“i hoáº·c khÃ´ng tá»“n táº¡i");
+            throw new ConflictException("Refresh token was revoked or does not exist");
         }
         // Load user
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFound("KhÃ´ng tÃ¬m tháº¥y ngÆ°á»i dÃ¹ng"));
+                .orElseThrow(() -> new ResourceNotFound("User not found"));
         // Generate new tokens (rotate)
         String newAccess = jwtTokenProvider.generateToken(email, user.getRole().toString());
         String newRefresh = jwtTokenProvider.generateRefreshToken(email);

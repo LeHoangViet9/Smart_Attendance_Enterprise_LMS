@@ -1,6 +1,7 @@
 package edufit_com_lms.security;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,6 +27,9 @@ import java.util.Arrays;
 @EnableMethodSecurity
 public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:3000}")
+    private String allowedOrigins;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -66,7 +70,10 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         // Cáº¥p phÃ©p cho tÃªn miá»n cá»§a React (Vite)
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:3000"));
+        configuration.setAllowedOrigins(Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .toList());
         // Cáº¥p phÃ©p táº¥t cáº£ cÃ¡c loáº¡i method (GET, POST, PUT, DELETE...)
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         // Cáº¥p phÃ©p táº¥t cáº£ cÃ¡c Headers

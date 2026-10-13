@@ -9,21 +9,25 @@ const StudentAttendanceHistory = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [filterDate, setFilterDate] = useState('');
+    const [page, setPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
 
     useEffect(() => {
-        fetchHistory(filterDate);
-    }, [filterDate]);
+        fetchHistory(filterDate, page);
+    }, [filterDate, page]);
 
-    const fetchHistory = async (dateStr) => {
+    const fetchHistory = async (dateStr, pageNumber = 0) => {
         setLoading(true);
         try {
-            let url = '/v1/attendance/my-history';
+            let url = `/v1/attendance/my-history?page=${pageNumber}&size=20`;
             if (dateStr) {
-                url += `?date=${dateStr}`;
+                url += `&date=${dateStr}`;
             }
             const res = await axiosInstance.get(url);
             if (res.data && res.data.success) {
-                setHistory(res.data.data || []);
+                const payload = res.data.data;
+                setHistory(payload?.content || payload || []);
+                setTotalPages(payload?.totalPages || 1);
             }
         } catch (err) {
             console.error('Error fetching attendance history:', err);
@@ -58,12 +62,12 @@ const StudentAttendanceHistory = () => {
                     <input 
                         type="date" 
                         value={filterDate}
-                        onChange={(e) => setFilterDate(e.target.value)}
+                        onChange={(e) => { setFilterDate(e.target.value); setPage(0); }}
                         style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }}
                     />
                     {filterDate && (
                         <button 
-                            onClick={() => setFilterDate('')}
+                            onClick={() => { setFilterDate(''); setPage(0); }}
                             style={{ padding: '8px 12px', background: '#fef2f2', color: '#dc2626', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
                         >
                             Clear Filter
@@ -104,7 +108,7 @@ const StudentAttendanceHistory = () => {
                                         {new Date(record.checkInTime).toLocaleString()}
                                     </td>
                                     <td style={{ padding: '1rem', color: '#4b5563' }}>
-                                        {record.schoolClass?.className || 'N/A'}
+                                        {record.className || 'N/A'}
                                     </td>
                                     <td style={{ padding: '1rem' }}>
                                         <span style={{ 
@@ -122,6 +126,13 @@ const StudentAttendanceHistory = () => {
                             ))}
                         </tbody>
                     </table>
+                    {totalPages > 1 && (
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', padding: '1rem' }}>
+                            <button disabled={page === 0} onClick={() => setPage(p => p - 1)}>Prev</button>
+                            <span>Page {page + 1} of {totalPages}</span>
+                            <button disabled={page + 1 >= totalPages} onClick={() => setPage(p => p + 1)}>Next</button>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

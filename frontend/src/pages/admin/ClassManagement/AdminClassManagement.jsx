@@ -130,7 +130,7 @@ const AdminClassManagement = () => {
                         setAlertMsg({ type: 'success', text: response.data.message });
                         loadClasses();
                     }
-                } catch (error) {
+                } catch {
                     setAlertMsg({ type: 'error', text: 'Failed to auto-assign students.' });
                 } finally {
                     setAutoAssignLoading(false);
@@ -154,7 +154,7 @@ const AdminClassManagement = () => {
                         setAlertMsg({ type: 'success', text: response.data.message });
                         loadClasses();
                     }
-                } catch (error) {
+                } catch {
                     setAlertMsg({ type: 'error', text: 'Thất bại khi gán giảng viên.' });
                 } finally {
                     setAutoAssignLoading(false);

@@ -14,7 +14,7 @@ const AssignmentList = () => {
     const [newAssignment, setNewAssignment] = useState({
         title: '',
         description: '',
-        classId: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+        classIds: [],
         dueDate: '',
         maxScore: 10,
         attachmentUrl: '',
@@ -23,6 +23,9 @@ const AssignmentList = () => {
     });
     const [creating, setCreating] = useState(false);
     const [createError, setCreateError] = useState(null);
+    const [classOptions, setClassOptions] = useState([]);
+    const [attachmentFile, setAttachmentFile] = useState(null);
+    const [uploadingAttachment, setUploadingAttachment] = useState(false);
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(0);
@@ -41,7 +44,52 @@ const AssignmentList = () => {
             }
         }
         fetchAssignments(0);
+        fetchClassOptions();
     }, []);
+
+    const fetchClassOptions = async () => {
+        try {
+            const storedUser = localStorage.getItem('user');
+            const role = storedUser ? JSON.parse(storedUser).role : null;
+            if (role === 'LECTURER') {
+                const res = await axiosInstance.get('/v1/lecturer/classes');
+                const classes = res.data?.data || [];
+                setClassOptions(classes);
+                if (classes.length > 0) {
+                    setNewAssignment(prev => ({ ...prev, classIds: [classes[0].id] }));
+                }
+            } else if (role === 'ADMIN') {
+                const res = await axiosInstance.get('/v1/admin/classes', { params: { page: 0, size: 100 } });
+                const classes = res.data?.data?.content || [];
+                setClassOptions(classes);
+                if (classes.length > 0) {
+                    setNewAssignment(prev => ({ ...prev, classIds: [classes[0].id] }));
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching class options:', err);
+        }
+    };
+
+    const uploadAttachmentFile = async () => {
+        if (!attachmentFile) return newAssignment.attachmentUrl;
+        setUploadingAttachment(true);
+        try {
+            const presignedRes = await axiosInstance.post('/v1/assignments/upload-url', {
+                fileName: attachmentFile.name,
+                contentType: attachmentFile.type || 'application/octet-stream'
+            });
+            const { uploadUrl, objectKey } = presignedRes.data.data;
+            await fetch(uploadUrl, {
+                method: 'PUT',
+                body: attachmentFile,
+                headers: { 'Content-Type': attachmentFile.type || 'application/octet-stream' }
+            });
+            return objectKey || uploadUrl;
+        } finally {
+            setUploadingAttachment(false);
+        }
+    };
 
     const fetchAssignments = async (page = currentPage) => {
         setLoading(true);
@@ -80,8 +128,10 @@ const AssignmentList = () => {
         setCreating(true);
         setCreateError(null);
         try {
+            const attachmentUrl = await uploadAttachmentFile();
             await axiosInstance.post('/v1/assignments', {
                 ...newAssignment,
+                attachmentUrl,
                 dueDate: newAssignment.dueDate ? new Date(newAssignment.dueDate).toISOString() : new Date().toISOString(),
                 maxScore: Number(newAssignment.maxScore) || 10
             });
@@ -89,13 +139,14 @@ const AssignmentList = () => {
             setNewAssignment({
                 title: '',
                 description: '',
-                classId: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+                classIds: classOptions.length > 0 ? [classOptions[0].id] : [],
                 dueDate: '',
                 maxScore: 10,
                 attachmentUrl: '',
                 isExam: false,
                 isPublished: true
             });
+            setAttachmentFile(null);
             fetchAssignments();
         } catch (err) {
             console.error('Error creating assignment:', err);
@@ -420,6 +471,21 @@ const AssignmentList = () => {
                             </div>
 
                             <div className="modal-form-group">
+                                <label>Class *</label>
+                                <select
+                                    required
+                                    className="modal-form-control"
+                                    value={newAssignment.classIds[0] || ''}
+                                    onChange={(e) => setNewAssignment({ ...newAssignment, classIds: e.target.value ? [e.target.value] : [] })}
+                                >
+                                    <option value="">Select class</option>
+                                    {classOptions.map(cls => (
+                                        <option key={cls.id} value={cls.id}>{cls.className}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="modal-form-group">
                                 <label>Attachment URL</label>
                                 <input
                                     type="url"
@@ -428,6 +494,18 @@ const AssignmentList = () => {
                                     value={newAssignment.attachmentUrl}
                                     onChange={(e) => setNewAssignment({ ...newAssignment, attachmentUrl: e.target.value })}
                                 />
+                            </div>
+
+                            <div className="modal-form-group">
+                                <label>Upload Attachment File</label>
+                                <input
+                                    type="file"
+                                    className="modal-form-control"
+                                    onChange={(e) => setAttachmentFile(e.target.files?.[0] || null)}
+                                />
+                                {attachmentFile && (
+                                    <small style={{ color: '#4b5563' }}>Selected: {attachmentFile.name}</small>
+                                )}
                             </div>
 
                             <div className="modal-form-row">
@@ -469,7 +547,7 @@ const AssignmentList = () => {
                                     className="btn-confirm"
                                     disabled={creating}
                                 >
-                                    {creating ? 'Creating...' : 'Create Assignment'}
+                                    {creating || uploadingAttachment ? 'Creating...' : 'Create Assignment'}
                                 </button>
                             </div>
                         </form>

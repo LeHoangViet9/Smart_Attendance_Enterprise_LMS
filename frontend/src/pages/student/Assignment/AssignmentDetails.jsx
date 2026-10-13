@@ -24,7 +24,7 @@ const AssignmentDetails = () => {
 
     const fileInputRef = useRef(null);
 
-    const [userRole, setUserRole] = useState(() => {
+    const [userRole] = useState(() => {
         const stored = localStorage.getItem('user');
         if (stored) {
             try {
@@ -75,7 +75,7 @@ const AssignmentDetails = () => {
                 if (subRes.data && subRes.data.data) {
                     setSubmission(subRes.data.data);
                 }
-            } catch (subErr) {
+            } catch {
                 // Not submitted yet is normal (404)
                 setSubmission(null);
             }

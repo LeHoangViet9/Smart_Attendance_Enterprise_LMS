@@ -2,6 +2,8 @@ package edufit_com_lms.module.lms.repository;
 
 import edufit_com_lms.module.lms.entity.ClassEnrollment;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -19,4 +21,7 @@ public interface ClassEnrollmentRepository extends JpaRepository<ClassEnrollment
     boolean existsBySchoolClassIdAndStudentUserId(UUID classId, Long studentUserId);
 
     List<ClassEnrollment> findByStudentUserId(Long studentUserId);
+
+    @Query("SELECT ce.schoolClass.id, COUNT(ce.id) FROM ClassEnrollment ce WHERE ce.schoolClass.id IN :classIds GROUP BY ce.schoolClass.id")
+    List<Object[]> countBySchoolClassIds(@Param("classIds") List<UUID> classIds);
 }

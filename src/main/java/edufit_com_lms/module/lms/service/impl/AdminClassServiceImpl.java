@@ -31,17 +31,15 @@ public class AdminClassServiceImpl implements AdminClassService {
 
     @Transactional(readOnly = true)
     public Page<SchoolClassResponse> getAllClasses(Pageable pageable) {
-        return schoolClassRepository.findAll(pageable).map(c -> {
-            return SchoolClassResponse.builder()
-                    .id(c.getId())
-                    .className(c.getClassName())
-                    .majorName(c.getMajor() != null ? c.getMajor().getName() : "N/A")
-                    .entryYear(c.getEntryYear())
-                    .lecturerId(c.getLecturer() != null ? c.getLecturer().getUserId() : null)
-                    .lecturerName(c.getLecturer() != null ? c.getLecturer().getFullName() : null)
-                    .studentCount(studentProfileRepository.countBySchoolClass(c))
-                    .build();
-        });
+        return schoolClassRepository.findAll(pageable).map(c -> SchoolClassResponse.builder()
+                .id(c.getId())
+                .className(c.getClassName())
+                .majorName(c.getMajor() != null ? c.getMajor().getName() : "N/A")
+                .entryYear(c.getEntryYear())
+                .lecturerId(c.getLecturer() != null ? c.getLecturer().getUserId() : null)
+                .lecturerName(c.getLecturer() != null ? c.getLecturer().getFullName() : null)
+                .studentCount(studentProfileRepository.countBySchoolClass(c))
+                .build());
     }
 
     @Transactional
@@ -130,6 +128,8 @@ public class AdminClassServiceImpl implements AdminClassService {
                 .filter(u -> u.getRole() == Role.LECTURER && u.getLecturerProfile() != null)
                 .collect(Collectors.toList());
 
+        Map<Long, Long> assignedClassCounts = schoolClassRepository.countClassesGroupedByLecturer().stream()
+                .collect(Collectors.toMap(row -> ((Number) row[0]).longValue(), row -> ((Number) row[1]).longValue()));
         List<SchoolClass> classesToUpdate = new ArrayList<>();
 
         for (SchoolClass c : classesWithoutLecturer) {
@@ -137,19 +137,23 @@ public class AdminClassServiceImpl implements AdminClassService {
             Optional<User> match = lecturers.stream()
                     .filter(l -> l.getLecturerProfile().getMajor() != null &&
                             c.getMajor().getId().equals(l.getLecturerProfile().getMajor().getId()))
-                    .filter(l -> schoolClassRepository.countByLecturer(l) < 3)
+                    .filter(l -> assignedClassCounts.getOrDefault(l.getUserId(), 0L) < 3)
                     .findFirst();
 
             if (match.isPresent()) {
-                c.setLecturer(match.get());
+                User lecturer = match.get();
+                c.setLecturer(lecturer);
+                assignedClassCounts.merge(lecturer.getUserId(), 1L, Long::sum);
                 classesToUpdate.add(c);
             } else {
                 // If no exact match, pick any lecturer with < 3 classes
                 Optional<User> fallback = lecturers.stream()
-                        .filter(l -> schoolClassRepository.countByLecturer(l) < 3)
+                        .filter(l -> assignedClassCounts.getOrDefault(l.getUserId(), 0L) < 3)
                         .findFirst();
                 if (fallback.isPresent()) {
-                    c.setLecturer(fallback.get());
+                    User lecturer = fallback.get();
+                    c.setLecturer(lecturer);
+                    assignedClassCounts.merge(lecturer.getUserId(), 1L, Long::sum);
                     classesToUpdate.add(c);
                 }
             }

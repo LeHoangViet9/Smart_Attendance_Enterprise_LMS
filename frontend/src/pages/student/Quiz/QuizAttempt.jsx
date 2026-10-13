@@ -190,7 +190,7 @@ const QuizAttempt = () => {
             if (videoRef.current) {
                 videoRef.current.srcObject = mediaStream;
             }
-        } catch (err) {
+        } catch {
             setSubmitError('Cannot access camera. Please grant permission to continue.');
             setCameraStep(0);
         }

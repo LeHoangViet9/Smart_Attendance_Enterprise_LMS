@@ -31,16 +31,25 @@ import LecturerCourseDetails from './pages/lecturer/CourseManagement/LecturerCou
 import Profile from './pages/Profile/Profile';
 import Gradebook from './pages/shared/Gradebook/Gradebook';
 
-const RoleBasedLayout = () => {
+const ProtectedRoute = ({allowedRoles}) => {
+  const token = localStorage.getItem('accessToken');
   const userString = localStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : null;
 
-  if (user && user.role === 'ADMIN') {
-    return <Navigate to="/admin/dashboard" replace />;
+  if (!token || !user) {
+    return <Navigate to="/login" replace />;
   }
-  if (user && user.role === 'LECTURER') {
-    return <Navigate to="/lecturer/dashboard" replace />;
+
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    if (user.role === 'ADMIN') {
+      return <Navigate to="/admin/dashboard" replace />;
+    }
+    if (user.role === 'LECTURER') {
+      return <Navigate to="/lecturer/dashboard" replace />;
+    }
+    return <Navigate to="/student/student-home" replace />;
   }
+
   return <AdminLayout />;
 };
 
@@ -52,7 +61,7 @@ const App = () => {
         <Route path="/login" element={<Login />} />
 
         {/* Shared Routes (Student/Lecturer defaults to Top Nav, Admin defaults to Side Nav) */}
-        <Route path="/student" element={<RoleBasedLayout />}>
+        <Route path="/student" element={<ProtectedRoute allowedRoles={['STUDENT']} />}>
           <Route path="student-home" element={<Dashboard />} />
           <Route path="profile" element={<Profile />} />
           <Route path="gradebook" element={<Gradebook />} />
@@ -71,9 +80,11 @@ const App = () => {
           <Route path="assignments/:id" element={<AssignmentDetails />} />
         </Route>
 
-        <Route path="/face-onboarding" element={<FaceOnboarding />} />
+        <Route path="/face-onboarding" element={<ProtectedRoute allowedRoles={['STUDENT']} />}>
+          <Route index element={<FaceOnboarding />} />
+        </Route>
 
-        <Route path="/admin" element={<AdminLayout />}>
+        <Route path="/admin" element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="profile" element={<Profile />} />
           <Route path="users" element={<UserManagement />} />
@@ -93,7 +104,7 @@ const App = () => {
           <Route index element={<Navigate to="dashboard" replace />} />
         </Route>
 
-        <Route path="/lecturer" element={<AdminLayout />}>
+        <Route path="/lecturer" element={<ProtectedRoute allowedRoles={['LECTURER']} />}>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="profile" element={<Profile />} />
           <Route path="classes" element={<LecturerClassManagement />} />

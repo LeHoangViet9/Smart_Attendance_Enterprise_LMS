@@ -9,12 +9,16 @@ import edufit_com_lms.module.lms.entity.*;
 import edufit_com_lms.module.lms.repository.*;
 import edufit_com_lms.module.lms.service.GradebookService;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.io.ByteArrayOutputStream;
 
 @Service
 @Transactional
@@ -85,10 +89,10 @@ public class GradebookServiceImpl implements GradebookService {
         Assignment midtermExam = null;
         Assignment finalExam = null;
         if (exams.size() >= 2) {
-            midtermExam = exams.get(0);
-            finalExam = exams.get(exams.size() - 1);
+            midtermExam = exams.getFirst();
+            finalExam = exams.getLast();
         } else if (exams.size() == 1) {
-            finalExam = exams.get(0);
+            finalExam = exams.getFirst();
         }
 
         List<ClassEnrollment> enrollments = classEnrollmentRepository.findBySchoolClassId(classId);
@@ -193,5 +197,40 @@ public class GradebookServiceImpl implements GradebookService {
     public List<GradebookItemResponse> getMyGrades(Long studentId) {
         List<Gradebook> gradebooks = gradebookRepository.findByStudentId(studentId);
         return gradebooks.stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+
+    @Override
+    public byte[] exportGradebookForClass(UUID classId, Long lecturerId) {
+        List<GradebookItemResponse> rows = getGradebookForClass(classId, lecturerId);
+        try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Gradebook");
+            Row header = sheet.createRow(0);
+            String[] columns = {"Student ID", "Student Name", "Email", "Class", "Course", "Attendance", "Assignment", "Midterm", "Final", "Average", "Comment"};
+            for (int i = 0; i < columns.length; i++) {
+                header.createCell(i).setCellValue(columns[i]);
+            }
+            for (int i = 0; i < rows.size(); i++) {
+                GradebookItemResponse item = rows.get(i);
+                Row row = sheet.createRow(i + 1);
+                row.createCell(0).setCellValue(item.getStudentId() != null ? item.getStudentId() : 0);
+                row.createCell(1).setCellValue(item.getStudentName() != null ? item.getStudentName() : "");
+                row.createCell(2).setCellValue(item.getStudentEmail() != null ? item.getStudentEmail() : "");
+                row.createCell(3).setCellValue(item.getClassName() != null ? item.getClassName() : "");
+                row.createCell(4).setCellValue(item.getCourseName() != null ? item.getCourseName() : "");
+                row.createCell(5).setCellValue(item.getAttendanceScore() != null ? item.getAttendanceScore() : 0);
+                row.createCell(6).setCellValue(item.getAssignmentScore() != null ? item.getAssignmentScore() : 0);
+                row.createCell(7).setCellValue(item.getMidtermScore() != null ? item.getMidtermScore() : 0);
+                row.createCell(8).setCellValue(item.getFinalScore() != null ? item.getFinalScore() : 0);
+                row.createCell(9).setCellValue(item.getAverageScore() != null ? item.getAverageScore() : 0);
+                row.createCell(10).setCellValue(item.getTeacherComment() != null ? item.getTeacherComment() : "");
+            }
+            for (int i = 0; i < columns.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+            workbook.write(output);
+            return output.toByteArray();
+        } catch (Exception e) {
+            throw new AppException(HttpStatus.INTERNAL_SERVER_ERROR, "Can not export gradebook");
+        }
     }
 }

@@ -48,7 +48,7 @@ public class GlobalHandleException {
 
         ApiResponse<Map<String, String>> response = ApiResponse.<Map<String, String>>builder()
                 .success(false)
-                .message("Dá»¯ liá»‡u Ä‘áº§u vÃ o khÃ´ng há»£p lá»‡! Vui lÃ²ng kiá»ƒm tra láº¡i.")
+                .message("Du lieu dau vao khong hop le. Vui long kiem tra lai.")
                 .data(null)
                 .error(errors)
                 .status(HttpStatus.BAD_REQUEST)
@@ -68,13 +68,28 @@ public class GlobalHandleException {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiResponse<Object>> handleRuntimeException(RuntimeException exception) {
+        log.error("Runtime exception: ", exception);
+
+        ApiResponse<Object> response = ApiResponse.builder()
+                .success(false)
+                .message(exception.getMessage() != null ? exception.getMessage() : "Request could not be processed")
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(response);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleException(Exception exception) {
         log.error("Unhandled exception: ", exception);
 
         ApiResponse<Object> response = ApiResponse.builder()
                 .success(false)
-                .message("Há»‡ thá»‘ng Ä‘Ã£ xáº£y ra sá»± cá»‘ bÃ­ áº©n. Vui lÃ²ng liÃªn há»‡ Admin!")
+                .message("He thong da xay ra loi. Vui long lien he Admin.")
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .build();
 
@@ -88,7 +103,7 @@ public class GlobalHandleException {
 
         ApiResponse<Object> response = ApiResponse.builder()
                 .success(false)
-                .message("Äá»‹nh dáº¡ng dá»¯ liá»‡u JSON gá»­i lÃªn khÃ´ng há»£p lá»‡ hoáº·c sai kiá»ƒu dá»¯ liá»‡u!")
+                .message("Dinh dang JSON khong hop le hoac sai kieu du lieu.")
                 .status(HttpStatus.BAD_REQUEST)
                 .build();
 

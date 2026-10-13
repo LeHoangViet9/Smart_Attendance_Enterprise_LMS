@@ -7,13 +7,18 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isResetting, setIsResetting] = useState(false);
+    const [resetToken, setResetToken] = useState('');
+    const [resetPassword, setResetPassword] = useState('');
 
     const navigate = useNavigate();
 
     const handleLogin = async (e) => {
         e.preventDefault();
         setError(null);
+        setSuccess(null);
         setIsLoading(true);
 
         try {
@@ -23,10 +28,6 @@ const Login = () => {
             });
 
             const data = response.data.data;
-
-            console.log('[LOGIN DEBUG] Full response:', response.data);
-            console.log('[LOGIN DEBUG] data object:', data);
-            console.log('[LOGIN DEBUG] role:', data?.role, '| accessToken:', data?.accessToken ? 'EXISTS' : 'MISSING');
 
             if (!data?.accessToken) {
                 setError('Invalid server response, please try again');
@@ -45,7 +46,6 @@ const Login = () => {
             }));
 
             // Luồng điều hướng thông minh
-            console.log('[LOGIN DEBUG] Navigating for role:', data.role);
             if (data.role === 'STUDENT') {
                 navigate('/student/student-home');
             } else if (data.role === 'ADMIN') {
@@ -53,13 +53,54 @@ const Login = () => {
             } else if (data.role === 'LECTURER') {
                 navigate('/lecturer/dashboard');
             } else {
-                console.log('[LOGIN DEBUG] Unknown role, defaulting to /student/quizzes');
                 navigate('/student/quizzes');
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Cannot connect to server. Please try again!');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleForgotPassword = async () => {
+        if (!email) {
+            setError('Enter your email first, then reset password.');
+            return;
+        }
+        setError(null);
+        setSuccess(null);
+        setIsResetting(true);
+        try {
+            const response = await axiosInstance.post('/auth/forgot-password', { email });
+            setResetToken(response.data?.data || '');
+            setSuccess(response.data?.message || 'Password reset token generated.');
+        } catch (err) {
+            setError(err.response?.data?.message || 'Could not reset password.');
+        } finally {
+            setIsResetting(false);
+        }
+    };
+
+    const handleResetPassword = async () => {
+        if (!resetToken || !resetPassword) {
+            setError('Enter reset token and new password.');
+            return;
+        }
+        setError(null);
+        setSuccess(null);
+        setIsResetting(true);
+        try {
+            const response = await axiosInstance.post('/auth/reset-password', {
+                token: resetToken,
+                newPassword: resetPassword
+            });
+            setSuccess(response.data?.message || 'Password reset successfully.');
+            setResetToken('');
+            setResetPassword('');
+        } catch (err) {
+            setError(err.response?.data?.message || 'Could not reset password.');
+        } finally {
+            setIsResetting(false);
         }
     };
 
@@ -73,6 +114,7 @@ const Login = () => {
                 </div>
 
                 {error && <div className="error-alert">{error}</div>}
+                {success && <div className="success-alert">{success}</div>}
 
                 <form onSubmit={handleLogin}>
                     <div className="form-group">
@@ -98,7 +140,27 @@ const Login = () => {
                     <button type="submit" className="login-btn" disabled={isLoading}>
                         {isLoading ? 'Authenticating...' : 'Login'}
                     </button>
+                    <button type="button" className="forgot-btn" onClick={handleForgotPassword} disabled={isResetting}>
+                        {isResetting ? 'Processing...' : 'Forgot password?'}
+                    </button>
                 </form>
+
+                {resetToken && (
+                    <div className="reset-panel">
+                        <label>Reset token</label>
+                        <input value={resetToken} onChange={(e) => setResetToken(e.target.value)} />
+                        <label>New password</label>
+                        <input
+                            type="password"
+                            placeholder="New strong password"
+                            value={resetPassword}
+                            onChange={(e) => setResetPassword(e.target.value)}
+                        />
+                        <button type="button" className="login-btn" onClick={handleResetPassword} disabled={isResetting}>
+                            Reset Password
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

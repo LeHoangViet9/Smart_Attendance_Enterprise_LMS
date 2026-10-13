@@ -13,10 +13,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ChangePasswordRequest {
-    @NotBlank(message = "Máº­t kháº©u cÅ© khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
+    @NotBlank(message = "Old password must not be blank")
     private String oldPassword;
-    @NotBlank(message = "Máº­t kháº©u má»›i khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
-    @Size( min = 8, message = "Máº­t kháº©u má»›i pháº£i dÃ i Ã­t nháº¥t 6 kÃ½ tá»±")
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",message = "Máº­t kháº©u khÃ´ng há»£p lá»‡")
+
+    @NotBlank(message = "New password must not be blank")
+    @Size(min = 8, message = "New password must be at least 8 characters")
+    @Pattern(
+            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
+            message = "Password must contain uppercase, lowercase, number, and special character"
+    )
     private String newPassword;
 }

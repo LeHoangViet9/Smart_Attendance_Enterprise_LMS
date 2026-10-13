@@ -5,8 +5,12 @@ import edufit_com_lms.module.lms.dto.request.UpdateGradebookRequest;
 import edufit_com_lms.module.lms.dto.response.GradebookItemResponse;
 import edufit_com_lms.module.lms.service.GradebookService;
 import edufit_com_lms.security.CustomUserDetail;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -46,12 +50,12 @@ public class GradebookController {
     @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
     public ResponseEntity<ApiResponse<String>> updateGradebook(
             @PathVariable UUID gradebookId,
-            @RequestBody UpdateGradebookRequest request) {
+            @Valid @RequestBody UpdateGradebookRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Long lecturerId = ((CustomUserDetail) authentication.getPrincipal()).getId();
         
         gradebookService.updateGradebook(gradebookId, request, lecturerId);
-        return ResponseEntity.ok(ApiResponse.success("LÆ°u Ä‘iá»ƒm thÃ nh cÃ´ng"));
+        return ResponseEntity.ok(ApiResponse.success("Luu diem thanh cong"));
     }
 
     @GetMapping("/my-grades")
@@ -62,5 +66,18 @@ public class GradebookController {
         
         List<GradebookItemResponse> response = gradebookService.getMyGrades(studentId);
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/classes/{classId}/export")
+    @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
+    public ResponseEntity<byte[]> exportGradebook(@PathVariable UUID classId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long lecturerId = ((CustomUserDetail) authentication.getPrincipal()).getId();
+        byte[] data = gradebookService.exportGradebookForClass(classId, lecturerId);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentDispositionFormData("attachment", "gradebook-" + classId + ".xlsx");
+        return new ResponseEntity<>(data, headers, HttpStatus.OK);
     }
 }

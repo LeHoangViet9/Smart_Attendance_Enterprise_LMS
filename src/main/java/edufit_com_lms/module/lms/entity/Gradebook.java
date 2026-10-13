@@ -2,8 +2,9 @@ package edufit_com_lms.module.lms.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -15,6 +16,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class Gradebook {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -42,11 +44,11 @@ public class Gradebook {
     @Column(name = "teacher_comment", columnDefinition = "TEXT")
     private String teacherComment;
 
-    @CreationTimestamp
     @Column(name = "created_at", updatable = false)
+    @CreatedDate
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
     @Column(name = "updated_at")
+    @LastModifiedDate
     private LocalDateTime updatedAt;
 }

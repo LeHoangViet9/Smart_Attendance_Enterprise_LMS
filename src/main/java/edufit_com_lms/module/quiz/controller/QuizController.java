@@ -13,6 +13,7 @@ import edufit_com_lms.module.quiz.dto.response.QuizReviewResponse;
 import edufit_com_lms.module.quiz.service.QuizAttemptService;
 import edufit_com_lms.module.quiz.service.QuizService;
 import edufit_com_lms.security.CustomUserDetail;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -65,7 +66,7 @@ public class QuizController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<QuizResponse>> createQuiz(@RequestBody QuizRequest request) {
+    public ResponseEntity<ApiResponse<QuizResponse>> createQuiz(@Valid @RequestBody QuizRequest request) {
         Long creatorId = getUserId();
         return new ResponseEntity<>(new ApiResponse<>(
                 true,
@@ -77,7 +78,7 @@ public class QuizController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<QuizResponse>> updateQuiz(@PathVariable Long id,
-            @RequestBody QuizRequest request) {
+            @Valid @RequestBody QuizRequest request) {
         Long lecturerId = getLecturerIdOrNull();
         return new ResponseEntity<>(new ApiResponse<>(
                 true,
@@ -146,7 +147,7 @@ public class QuizController {
     @PutMapping("/attempts/{attemptId}/grade")
     public ResponseEntity<ApiResponse<QuizAttemptResponse>> gradeAttempt(
             @PathVariable Long attemptId,
-            @RequestBody GradeEssayRequest request) {
+            @Valid @RequestBody GradeEssayRequest request) {
         Long lecturerId = getLecturerIdOrNull();
         return ResponseEntity.ok(ApiResponse.success(
                 "Graded attempt successfully",

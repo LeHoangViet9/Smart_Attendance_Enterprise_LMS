@@ -2,6 +2,9 @@ package edufit_com_lms.module.auth.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -13,6 +16,7 @@ import java.util.Objects;
 @Builder
 @Getter
 @Setter
+@EntityListeners(AuditingEntityListener.class)
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,8 +44,10 @@ public class User {
     // write = "?::vector")
     private String faceEmbedding;
     @Column(name = "created_at", updatable = false)
+    @CreatedDate
     private LocalDateTime createdAt;
     @Column(name = "updated_at")
+    @LastModifiedDate
     private LocalDateTime updatedAt;
     @Column(name = "is_active")
     private Boolean isActive;

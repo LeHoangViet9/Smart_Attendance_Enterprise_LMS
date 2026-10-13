@@ -6,6 +6,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,6 +19,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Data
+@EntityListeners(AuditingEntityListener.class)
 public class Quiz {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -81,19 +85,10 @@ public class Quiz {
     private String accessCode;
 
     @Column(name = "created_at", updatable = false)
+    @CreatedDate
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
+    @LastModifiedDate
     private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
 }

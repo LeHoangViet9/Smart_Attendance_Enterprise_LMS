@@ -2,6 +2,8 @@ package edufit_com_lms.module.lms.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -13,6 +15,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class Assignment {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -51,6 +54,7 @@ public class Assignment {
     private Boolean isPublished = true;
 
     @Column(name = "created_at", updatable = false)
+    @CreatedDate
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 

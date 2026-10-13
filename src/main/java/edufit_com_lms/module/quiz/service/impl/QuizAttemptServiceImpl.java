@@ -18,6 +18,7 @@ import edufit_com_lms.module.quiz.mapper.QuizAttemptMapper;
 import edufit_com_lms.module.quiz.repository.*;
 import edufit_com_lms.module.quiz.service.AIGradingService;
 import edufit_com_lms.module.quiz.service.QuizAttemptService;
+import edufit_com_lms.module.quiz.service.QuizScoringService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +35,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
 
 @Slf4j
 @Service
@@ -51,6 +54,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
     private final ApplicationEventPublisher eventPublisher;
     private final AIGradingService aiGradingService;
     private final ClassEnrollmentRepository classEnrollmentRepository;
+    private final QuizScoringService quizScoringService;
     @Autowired
     @Lazy
     private QuizAttemptService quizAttemptService;
@@ -228,16 +232,16 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                     if (providedIds != null && !providedIds.isEmpty()) {
                         Set<Long> questionOptionIds = question.getOptions().stream()
                                 .map(QuestionOption::getId)
-                                .collect(java.util.stream.Collectors.toSet());
+                                .collect(Collectors.toSet());
 
                         // Only keep valid options
                         providedIds = providedIds.stream().filter(questionOptionIds::contains)
-                                .collect(java.util.stream.Collectors.toList());
+                                .collect(Collectors.toList());
 
                         Set<Long> correctOptionIds = question.getOptions().stream()
                                 .filter(opt -> Boolean.TRUE.equals(opt.getIsCorrect()))
                                 .map(QuestionOption::getId)
-                                .collect(java.util.stream.Collectors.toSet());
+                                .collect(Collectors.toSet());
                         if (!providedIds.isEmpty() && new HashSet<>(providedIds).equals(correctOptionIds)) {
                             isAwarded = true;
                             earnedPoints += qPoints;
@@ -272,7 +276,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                         .question(question)
                         .selectedOption(selectedOption)
                         .selectedOptionIds(answerReq.getSelectedOptionIds() != null
-                                ? new java.util.HashSet<>(answerReq.getSelectedOptionIds())
+                                ? new HashSet<>(answerReq.getSelectedOptionIds())
                                 : null)
                         .answerText(answerReq.getAnswerText())
                         .isAwarded(isAwarded)
@@ -302,14 +306,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
             studentAnswerRepository.saveAll(studentAnswers);
         }
 
-        double totalMaxPoints = quizAttempt.getQuiz().getQuestions().stream()
-                .mapToDouble(q -> q.getPoints() != null ? q.getPoints() : 0.0).sum();
-
-        double finalScore = 0.0;
-        if (totalMaxPoints > 0) {
-            finalScore = (earnedPoints / totalMaxPoints) * 10.0;
-            finalScore = Math.round(finalScore * 100.0) / 100.0;
-        }
+        double finalScore = quizScoringService.calculateScoreOnTenPointScale(earnedPoints, quizAttempt.getQuiz().getQuestions());
 
         quizAttempt.setScore(finalScore);
         quizAttempt.setEndTime(submitTime);
@@ -427,8 +424,8 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                             .build());
                 }
                 // Shuffle options using the same seed
-                java.util.Collections.shuffle(optionDtos,
-                        new java.util.Random(quizAttempt.getStudent().getUserId() + quiz.getId()));
+                Collections.shuffle(optionDtos,
+                        new Random(quizAttempt.getStudent().getUserId() + quiz.getId()));
             }
 
             QuizReviewResponse.ReviewStudentAnswerDto answerDto = null;
@@ -460,8 +457,8 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
 
         // Shuffle questions using the same seed to match
         // the exam time
-        java.util.Collections.shuffle(questionDtos,
-                new java.util.Random(quizAttempt.getStudent().getUserId() + quiz.getId()));
+        Collections.shuffle(questionDtos,
+                new Random(quizAttempt.getStudent().getUserId() + quiz.getId()));
 
         return QuizReviewResponse.builder()
                 .attemptId(quizAttempt.getId())
@@ -530,14 +527,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                 .mapToDouble(a -> a.getEarnedPoints() != null ? a.getEarnedPoints() : 0.0)
                 .sum();
 
-        double totalMaxPoints = quizAttempt.getQuiz().getQuestions().stream()
-                .mapToDouble(q -> q.getPoints() != null ? q.getPoints() : 0.0).sum();
-
-        double finalScore = 0.0;
-        if (totalMaxPoints > 0) {
-            finalScore = (totalEarned / totalMaxPoints) * 10.0;
-            finalScore = Math.round(finalScore * 100.0) / 100.0;
-        }
+        double finalScore = quizScoringService.calculateScoreOnTenPointScale(totalEarned, quizAttempt.getQuiz().getQuestions());
 
         quizAttempt.setScore(finalScore);
 
@@ -664,7 +654,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
 
         List<QuizAttempt> completedAttempts = quizAttemptRepository.findByQuizId(quizId).stream()
                 .filter(a -> a.getStatus() == QuizStatus.COMPLETED)
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
 
         for (QuizAttempt attempt : completedAttempts) {
             List<StudentAnswer> studentAnswers = studentAnswerRepository.findAllByAttemptId(attempt.getId());
@@ -683,8 +673,8 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                         Set<Long> correctOptionIds = question.getOptions().stream()
                                 .filter(opt -> Boolean.TRUE.equals(opt.getIsCorrect()))
                                 .map(QuestionOption::getId)
-                                .collect(java.util.stream.Collectors.toSet());
-                        if (new java.util.HashSet<>(ans.getSelectedOptionIds()).equals(correctOptionIds)) {
+                                .collect(Collectors.toSet());
+                        if (new HashSet<>(ans.getSelectedOptionIds()).equals(correctOptionIds)) {
                             isAwarded = true;
                         }
                     }
@@ -722,14 +712,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
 
             studentAnswerRepository.saveAll(studentAnswers);
 
-            double totalMaxPoints = quiz.getQuestions().stream()
-                    .mapToDouble(q -> q.getPoints() != null ? q.getPoints() : 0.0).sum();
-
-            double finalScore = 0.0;
-            if (totalMaxPoints > 0) {
-                finalScore = (earnedPoints / totalMaxPoints) * 10.0;
-                finalScore = Math.round(finalScore * 100.0) / 100.0;
-            }
+            double finalScore = quizScoringService.calculateScoreOnTenPointScale(earnedPoints, quiz.getQuestions());
             attempt.setScore(finalScore);
         }
         quizAttemptRepository.saveAll(completedAttempts);
@@ -749,7 +732,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
 
         List<QuizAttempt> completedAttempts = quizAttemptRepository.findByQuizId(quizId).stream()
                 .filter(a -> a.getStatus() == QuizStatus.COMPLETED)
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
 
         int totalAttempts = completedAttempts.size();
         if (totalAttempts == 0) {
@@ -757,8 +740,8 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                     .quizId(quizId)
                     .quizTitle(quiz.getTitle())
                     .totalAttempts(0)
-                    .scoreDistribution(new java.util.HashMap<>())
-                    .hardestQuestions(new java.util.HashMap<>())
+                    .scoreDistribution(new HashMap<>())
+                    .hardestQuestions(new HashMap<>())
                     .build();
         }
 
@@ -767,15 +750,15 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         double minScore = 11;
         int passed = 0;
 
-        java.util.Map<String, Integer> distribution = new java.util.LinkedHashMap<>();
+        Map<String, Integer> distribution = new LinkedHashMap<>();
         distribution.put("0.0 - 2.0", 0);
         distribution.put("2.1 - 4.0", 0);
         distribution.put("4.1 - 6.0", 0);
         distribution.put("6.1 - 8.0", 0);
         distribution.put("8.1 - 10.0", 0);
 
-        java.util.Map<Long, Integer> wrongAnswerCountMap = new java.util.HashMap<>();
-        java.util.Map<Long, String> questionContentMap = new java.util.HashMap<>();
+        Map<Long, Integer> wrongAnswerCountMap = new HashMap<>();
+        Map<Long, String> questionContentMap = new HashMap<>();
 
         for (QuizAttempt attempt : completedAttempts) {
             double score = attempt.getScore() != null ? attempt.getScore() : 0.0;
@@ -813,14 +796,14 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         double averageScore = Math.round((sumScore / totalAttempts) * 100.0) / 100.0;
         double passRate = Math.round(((double) passed / totalAttempts) * 10000.0) / 100.0;
 
-        java.util.Map<String, Integer> hardestQuestions = wrongAnswerCountMap.entrySet().stream()
-                .sorted(java.util.Map.Entry.<Long, Integer>comparingByValue().reversed())
+        Map<String, Integer> hardestQuestions = wrongAnswerCountMap.entrySet().stream()
+                .sorted(Map.Entry.<Long, Integer>comparingByValue().reversed())
                 .limit(3)
-                .collect(java.util.stream.Collectors.toMap(
+                .collect(Collectors.toMap(
                         e -> questionContentMap.get(e.getKey()),
-                        java.util.Map.Entry::getValue,
+                        Map.Entry::getValue,
                         (e1, e2) -> e1,
-                        java.util.LinkedHashMap::new));
+                        LinkedHashMap::new));
 
         return edufit_com_lms.module.quiz.dto.response.QuizAnalyticsResponse.builder()
                 .quizId(quizId)
@@ -911,14 +894,14 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
             throw new RuntimeException("System error when exporting Excel file");
         }
     }
-    
+
     @org.springframework.scheduling.annotation.Async
     @Override
     public void batchGradeQuizWithAIAsync(Long quizId, Long lecturerId) {
         edufit_com_lms.module.quiz.entity.Quiz quiz = quizRepository.findById(quizId).orElseThrow(() -> new edufit_com_lms.common.exception.ResourceNotFound("Can not found quiz"));
         
         // Find all completed attempts for this quiz
-        java.util.List<edufit_com_lms.module.quiz.entity.QuizAttempt> attempts = quizAttemptRepository.findByQuizId(quizId);
+        List<edufit_com_lms.module.quiz.entity.QuizAttempt> attempts = quizAttemptRepository.findByQuizId(quizId);
         
         int gradedAttempts = 0;
         
@@ -956,11 +939,8 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                 double totalEarned = attempt.getStudentAnswers().stream()
                         .mapToDouble(answer -> answer.getEarnedPoints() != null ? answer.getEarnedPoints() : 0.0)
                         .sum();
-                double totalMaxPoints = attempt.getQuiz().getQuestions().stream()
-                        .mapToDouble(question -> question.getPoints() != null ? question.getPoints() : 0.0)
-                        .sum();
-                double finalScore = totalMaxPoints > 0 ? (totalEarned / totalMaxPoints) * 10.0 : 0.0;
-                attempt.setScore(Math.round(finalScore * 100.0) / 100.0);
+                double finalScore = quizScoringService.calculateScoreOnTenPointScale(totalEarned, attempt.getQuiz().getQuestions());
+                attempt.setScore(finalScore);
                 quizAttemptRepository.save(attempt);
                 gradedAttempts++;
             }

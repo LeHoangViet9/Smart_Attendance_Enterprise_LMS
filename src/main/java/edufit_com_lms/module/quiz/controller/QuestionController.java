@@ -6,6 +6,7 @@ import edufit_com_lms.module.quiz.dto.request.QuestionRequest;
 import edufit_com_lms.module.quiz.dto.response.QuestionResponse;
 import edufit_com_lms.module.quiz.service.QuestionService;
 import edufit_com_lms.security.CustomUserDetail;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -40,7 +41,7 @@ public class QuestionController {
         @PostMapping
         public ResponseEntity<ApiResponse<QuestionResponse>> createQuestion(
                         @PathVariable Long quizId,
-                        @RequestBody QuestionRequest request) {
+                        @Valid @RequestBody QuestionRequest request) {
                 Long lecturerId = getLecturerIdOrNull();
                 return new ResponseEntity<>(new ApiResponse<>(
                                 true,
@@ -54,7 +55,7 @@ public class QuestionController {
         public ResponseEntity<ApiResponse<QuestionResponse>> updateQuestion(
                         @PathVariable Long quizId,
                         @PathVariable Long questionId,
-                        @RequestBody QuestionRequest request) {
+                        @Valid @RequestBody QuestionRequest request) {
                 Long lecturerId = getLecturerIdOrNull();
                 return new ResponseEntity<>(new ApiResponse<>(
                                 true,
@@ -107,7 +108,7 @@ public class QuestionController {
         @PostMapping("/generate-ai")
         public ResponseEntity<ApiResponse<Void>> generateQuestionsFromAI(
                         @PathVariable Long quizId,
-                        @RequestBody edufit_com_lms.module.quiz.dto.request.GenerateQuizAiRequest request) {
+                        @Valid @RequestBody edufit_com_lms.module.quiz.dto.request.GenerateQuizAiRequest request) {
                 Long lecturerId = getLecturerIdOrNull();
                 questionService.generateQuestionsFromAI(quizId, request, lecturerId);
                 return new ResponseEntity<>(new ApiResponse<>(

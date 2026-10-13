@@ -3,8 +3,10 @@ package edufit_com_lms.module.auth.controller;
 import edufit_com_lms.common.response.ApiResponse;
 import edufit_com_lms.module.auth.dto.request.AdminRegisterRequest;
 import edufit_com_lms.module.auth.dto.request.ChangePasswordRequest;
+import edufit_com_lms.module.auth.dto.request.ForgotPasswordRequest;
 import edufit_com_lms.module.auth.dto.request.LoginRequest;
 import edufit_com_lms.module.auth.dto.request.RefreshTokenRequest;
+import edufit_com_lms.module.auth.dto.request.ResetPasswordRequest;
 import edufit_com_lms.module.auth.dto.response.UserResponse;
 import edufit_com_lms.module.auth.service.AuthService;
 import jakarta.validation.Valid;
@@ -30,7 +32,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<UserResponse>> register(@Valid @RequestBody AdminRegisterRequest request) {
         return new ResponseEntity<>(new ApiResponse<>(
                 true,
-                "Cáº¥p tÃ i khoáº£n thÃ nh cÃ´ng",
+                "Create account successfully",
                 null,
                 authService.register(request),
                 HttpStatus.OK
@@ -41,7 +43,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<UserResponse>> login(@Valid @RequestBody LoginRequest request) {
         return new ResponseEntity<>(new ApiResponse<>(
                 true,
-                "ÄÄƒng nháº­p thÃ nh cÃ´ng",
+                "Login successfully",
                 null,
                 authService.login(request),
                 HttpStatus.OK
@@ -53,7 +55,7 @@ public class AuthController {
         authService.logout();
         return new ResponseEntity<>(new ApiResponse<>(
                 true,
-                "ÄÄƒng xuáº¥t thÃ nh cÃ´ng",
+                "Logout successfully",
                 null,
                 null,
                 HttpStatus.OK
@@ -72,9 +74,33 @@ public class AuthController {
         ),HttpStatus.OK);
     }
 
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        String resetToken = authService.forgotPassword(request);
+        return new ResponseEntity<>(new ApiResponse<>(
+                true,
+                "Password reset token generated. It expires in 15 minutes.",
+                null,
+                resetToken,
+                HttpStatus.OK
+        ), HttpStatus.OK);
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return new ResponseEntity<>(new ApiResponse<>(
+                true,
+                "Password reset successfully",
+                null,
+                null,
+                HttpStatus.OK
+        ), HttpStatus.OK);
+    }
+
     @PostMapping("/refresh-token")
     public ResponseEntity<ApiResponse<UserResponse>> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
-        return new ResponseEntity<>(new ApiResponse<>(true, "Refresh token thÃ nh cÃ´ng", null,
+        return new ResponseEntity<>(new ApiResponse<>(true, "Refresh token successfully", null,
                 authService.refreshToken(request), HttpStatus.OK), HttpStatus.OK);
     }
 }

@@ -50,7 +50,6 @@ const NotificationBell = () => {
             },
             reconnectDelay: 5000,
             onConnect: () => {
-                console.log('Connected to WebSocket!');
                 // Subscribe to personal queue
                 stompClient.subscribe('/user/queue/notifications', (message) => {
                     if (message.body) {

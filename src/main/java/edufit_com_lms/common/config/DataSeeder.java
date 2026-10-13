@@ -71,7 +71,8 @@ public class DataSeeder implements CommandLineRunner {
                 
                 log.info("ÄÃ£ táº¡o xong dá»¯ liá»‡u máº«u! Máº­t kháº©u chung lÃ : 123456");
 
-                if (quizRepository.count() == 0) {
+                long quizCount = quizRepository.count();
+                if (quizCount == 0) {
                         log.info("Báº¯t Ä‘áº§u khá»Ÿi táº¡o dá»¯ liá»‡u Ä‘á» thi máº«u (Quiz Seeder)...");
 
                         Quiz quiz = Quiz.builder()
@@ -226,7 +227,7 @@ public class DataSeeder implements CommandLineRunner {
                 }
 
                 // Generate 10 extra generic quizzes to fill up the table
-                if (quizRepository.count() <= 3) {
+                if (quizCount <= 3) {
                         for (int i = 4; i <= 15; i++) {
                                 Quiz extraQuiz = Quiz.builder()
                                                 .title("General Knowledge Quiz " + i)

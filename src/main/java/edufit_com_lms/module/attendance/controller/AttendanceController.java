@@ -7,7 +7,11 @@ import edufit_com_lms.module.attendance.entity.AttendanceRecord;
 import edufit_com_lms.module.attendance.repository.AttendanceRepository;
 import edufit_com_lms.module.attendance.service.AttendanceService;
 import edufit_com_lms.security.CustomUserDetail;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +27,6 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/attendance")
@@ -34,29 +37,30 @@ public class AttendanceController {
 
     @PreAuthorize("hasRole('LECTURER')")
     @PostMapping("/submit-attendance")
-    public ResponseEntity<ApiResponse<Void>> submitAttendance(@RequestBody AttendanceSubmitRequest request) {
+    public ResponseEntity<ApiResponse<Void>> submitAttendance(@Valid @RequestBody AttendanceSubmitRequest request) {
         attendanceService.submitAttendance(request);
         return new ResponseEntity<>(new ApiResponse<>(
-                true, "Äiá»ƒm danh thÃ nh cÃ´ng", null, null, HttpStatus.OK), HttpStatus.OK);
+                true, "Diem danh thanh cong", null, null, HttpStatus.OK), HttpStatus.OK);
     }
 
 
     @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
     @GetMapping("/class/{classId}/history")
-    public ResponseEntity<ApiResponse<List<AttendanceRecordResponse>>> getAttendanceHistory(
+    public ResponseEntity<ApiResponse<Page<AttendanceRecordResponse>>> getAttendanceHistory(
             @PathVariable UUID classId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @PageableDefault(size = 20) Pageable pageable) {
         
-        List<AttendanceRecord> records;
+        Page<AttendanceRecord> records;
         if (date != null) {
             LocalDateTime start = date.atStartOfDay();
             LocalDateTime end = date.atTime(LocalTime.MAX);
-            records = attendanceRepository.findBySchoolClassIdAndCheckInTimeBetween(classId, start, end);
+            records = attendanceRepository.findBySchoolClassIdAndCheckInTimeBetween(classId, start, end, pageable);
         } else {
-            records = attendanceRepository.findBySchoolClassId(classId);
+            records = attendanceRepository.findBySchoolClassId(classId, pageable);
         }
         
-        List<AttendanceRecordResponse> response = records.stream().map(record -> AttendanceRecordResponse.builder()
+        Page<AttendanceRecordResponse> response = records.map(record -> AttendanceRecordResponse.builder()
                 .id(record.getId())
                 .studentId(record.getStudent() != null ? record.getStudent().getUserId() : null)
                 .studentName(record.getStudent() != null ? record.getStudent().getFullName() : null)
@@ -64,31 +68,32 @@ public class AttendanceController {
                 .className(record.getSchoolClass() != null ? record.getSchoolClass().getClassName() : null)
                 .checkInTime(record.getCheckInTime())
                 .status(record.getStatus())
-                .build()).collect(Collectors.toList());
+                .build());
                 
         return new ResponseEntity<>(new ApiResponse<>(
-                true, "Láº¥y lá»‹ch sá»­ Ä‘iá»ƒm danh thÃ nh cÃ´ng", null, response, HttpStatus.OK), HttpStatus.OK);
+                true, "Lay lich su diem danh thanh cong", null, response, HttpStatus.OK), HttpStatus.OK);
     }
 
     @PreAuthorize("hasRole('STUDENT')")
     @GetMapping("/my-history")
-    public ResponseEntity<ApiResponse<List<AttendanceRecordResponse>>> getMyAttendanceHistory(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+    public ResponseEntity<ApiResponse<Page<AttendanceRecordResponse>>> getMyAttendanceHistory(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @PageableDefault(size = 20) Pageable pageable) {
         
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetail userDetails = (CustomUserDetail) authentication.getPrincipal();
         Long studentId = userDetails.getId();
         
-        List<AttendanceRecord> records;
+        Page<AttendanceRecord> records;
         if (date != null) {
             LocalDateTime start = date.atStartOfDay();
             LocalDateTime end = date.atTime(LocalTime.MAX);
-            records = attendanceRepository.findByStudentUserIdAndCheckInTimeBetween(studentId, start, end);
+            records = attendanceRepository.findByStudentUserIdAndCheckInTimeBetween(studentId, start, end, pageable);
         } else {
-            records = attendanceRepository.findByStudentUserId(studentId);
+            records = attendanceRepository.findByStudentUserId(studentId, pageable);
         }
         
-        List<AttendanceRecordResponse> response = records.stream().map(record -> AttendanceRecordResponse.builder()
+        Page<AttendanceRecordResponse> response = records.map(record -> AttendanceRecordResponse.builder()
                 .id(record.getId())
                 .studentId(record.getStudent() != null ? record.getStudent().getUserId() : null)
                 .studentName(record.getStudent() != null ? record.getStudent().getFullName() : null)
@@ -96,10 +101,10 @@ public class AttendanceController {
                 .className(record.getSchoolClass() != null ? record.getSchoolClass().getClassName() : null)
                 .checkInTime(record.getCheckInTime())
                 .status(record.getStatus())
-                .build()).collect(Collectors.toList());
+                .build());
                 
         return new ResponseEntity<>(new ApiResponse<>(
-                true, "Láº¥y lá»‹ch sá»­ Ä‘iá»ƒm danh cá»§a báº¡n thÃ nh cÃ´ng", null, response, HttpStatus.OK), HttpStatus.OK);
+                true, "Lay lich su diem danh cua ban thanh cong", null, response, HttpStatus.OK), HttpStatus.OK);
     }
 
     @PreAuthorize("hasRole('LECTURER')")

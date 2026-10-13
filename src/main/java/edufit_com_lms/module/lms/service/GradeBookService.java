@@ -14,4 +14,6 @@ public interface GradebookService {
     void updateGradebook(UUID gradebookId, UpdateGradebookRequest request, Long lecturerId);
     
     List<GradebookItemResponse> getMyGrades(Long studentId);
+
+    byte[] exportGradebookForClass(UUID classId, Long lecturerId);
 }

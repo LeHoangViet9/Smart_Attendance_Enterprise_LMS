@@ -8,6 +8,7 @@ import edufit_com_lms.module.auth.entity.User;
 import edufit_com_lms.module.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -25,7 +26,11 @@ import org.springframework.web.multipart.MultipartFile;
 public class StudentProfileServiceImpl {
 
     private final UserRepository userRepository;
+    private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Value("${ai.service.url}")
+    private String aiServiceBaseUrl;
 
     public FaceOnboardingResponse onboardFace(String email, MultipartFile file) {
         if (file == null || file.isEmpty()) {
@@ -36,9 +41,7 @@ public class StudentProfileServiceImpl {
                 .orElseThrow(() -> new ResourceNotFound("User not found"));
 
         try {
-            // Call Python AI Microservice
-            RestTemplate restTemplate = new RestTemplate();
-            String aiServiceUrl = "http://localhost:8000/api/v1/ai/extract-vector";
+            String aiServiceUrl = aiServiceBaseUrl + "/api/v1/ai/extract-vector";
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
@@ -55,7 +58,7 @@ public class StudentProfileServiceImpl {
             ResponseEntity<JsonNode> aiResponse = restTemplate.postForEntity(aiServiceUrl, requestEntity, JsonNode.class);
 
             if (!aiResponse.getStatusCode().is2xxSuccessful() || aiResponse.getBody() == null) {
-                throw new RuntimeException("Lá»—i káº¿t ná»‘i tá»›i AI Service");
+                throw new RuntimeException("Loi ket noi toi AI Service");
             }
 
             JsonNode responseBody = aiResponse.getBody();
@@ -73,13 +76,13 @@ public class StudentProfileServiceImpl {
             log.info("Face onboarding successful for user: {}", email);
 
             return FaceOnboardingResponse.builder()
-                    .message("KhuÃ´n máº·t Ä‘Ã£ Ä‘Æ°á»£c Ä‘Äƒng kÃ½ thÃ nh cÃ´ng!")
+                    .message("Khuon mat da duoc dang ky thanh cong")
                     .avatarUrl(user.getAvatarUrl())
                     .isVectorGenerated(true)
                     .build();
         } catch (Exception e) {
             log.error("Error saving face descriptor for user: {}", email, e);
-            throw new RuntimeException("Lá»—i lÆ°u dá»¯ liá»‡u sinh tráº¯c há»c: " + e.getMessage());
+            throw new RuntimeException("Loi luu du lieu sinh trac hoc: " + e.getMessage());
         }
     }
 }

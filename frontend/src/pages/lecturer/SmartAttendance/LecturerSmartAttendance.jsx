@@ -160,9 +160,11 @@ const LecturerSmartAttendance = () => {
     const handleSubmitAttendance = async () => {
         try {
             const presentStudentIds = students.filter(s => s.status === 'present').map(s => s.id);
+            const lateStudentIds = students.filter(s => s.status === 'late').map(s => s.id);
             const response = await axiosInstance.post('/v1/attendance/submit-attendance', {
                 classId: classId,
-                presentStudentIds: presentStudentIds
+                presentStudentIds: presentStudentIds,
+                lateStudentIds: lateStudentIds
             });
             if (response.data && response.data.success) {
                 alert('Attendance saved successfully!');
@@ -179,8 +181,8 @@ const LecturerSmartAttendance = () => {
             if (studentIdx === -1) return prev;
             
             const currentStatus = prev[studentIdx].status;
-            const newStatus = currentStatus === 'present' ? 'absent' : 'present';
-            const timeStr = newStatus === 'present' ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
+            const newStatus = currentStatus === 'absent' ? 'present' : currentStatus === 'present' ? 'late' : 'absent';
+            const timeStr = newStatus !== 'absent' ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
             
             const newStudents = [...prev];
             newStudents[studentIdx] = { ...newStudents[studentIdx], status: newStatus, time: timeStr, justMarked: newStatus === 'present' };
@@ -296,6 +298,7 @@ const LecturerSmartAttendance = () => {
                         <div className="sa-filters">
                             <button className={`sa-filter-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => { setFilter('all'); setCurrentPage(1); }}>All Students</button>
                             <button className={`sa-filter-btn ${filter === 'present' ? 'active' : ''}`} onClick={() => { setFilter('present'); setCurrentPage(1); }}>Present</button>
+                            <button className={`sa-filter-btn ${filter === 'late' ? 'active' : ''}`} onClick={() => { setFilter('late'); setCurrentPage(1); }}>Late</button>
                             <button className={`sa-filter-btn ${filter === 'absent' ? 'active' : ''}`} onClick={() => { setFilter('absent'); setCurrentPage(1); }}>Absent</button>
                         </div>
                     </div>

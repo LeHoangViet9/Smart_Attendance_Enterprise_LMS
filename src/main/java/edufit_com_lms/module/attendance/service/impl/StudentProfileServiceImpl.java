@@ -2,6 +2,8 @@ package edufit_com_lms.module.attendance.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edufit_com_lms.common.exception.AppException;
+import edufit_com_lms.common.exception.BadRequestException;
 import edufit_com_lms.common.exception.ResourceNotFound;
 import edufit_com_lms.module.attendance.dto.response.FaceOnboardingResponse;
 import edufit_com_lms.module.auth.entity.User;
@@ -12,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -27,14 +30,14 @@ public class StudentProfileServiceImpl {
 
     private final UserRepository userRepository;
     private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     @Value("${ai.service.url}")
     private String aiServiceBaseUrl;
 
     public FaceOnboardingResponse onboardFace(String email, MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new RuntimeException("Image file is required");
+            throw new BadRequestException("Image file is required");
         }
 
         User user = userRepository.findByEmail(email)
@@ -58,12 +61,12 @@ public class StudentProfileServiceImpl {
             ResponseEntity<JsonNode> aiResponse = restTemplate.postForEntity(aiServiceUrl, requestEntity, JsonNode.class);
 
             if (!aiResponse.getStatusCode().is2xxSuccessful() || aiResponse.getBody() == null) {
-                throw new RuntimeException("Loi ket noi toi AI Service");
+                throw new AppException(HttpStatus.BAD_GATEWAY, "AI Service connection error");
             }
 
             JsonNode responseBody = aiResponse.getBody();
             if (!responseBody.get("success").asBoolean()) {
-                throw new RuntimeException(responseBody.get("message").asText());
+                throw new AppException(HttpStatus.BAD_GATEWAY, responseBody.get("message").asText());
             }
 
             JsonNode descriptorNode = responseBody.get("descriptor");
@@ -80,9 +83,11 @@ public class StudentProfileServiceImpl {
                     .avatarUrl(user.getAvatarUrl())
                     .isVectorGenerated(true)
                     .build();
+        } catch (AppException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Error saving face descriptor for user: {}", email, e);
-            throw new RuntimeException("Loi luu du lieu sinh trac hoc: " + e.getMessage());
+            throw new AppException(HttpStatus.BAD_GATEWAY, "Error saving biometric data: " + e.getMessage());
         }
     }
 }

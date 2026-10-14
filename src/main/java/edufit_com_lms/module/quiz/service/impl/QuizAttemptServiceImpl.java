@@ -891,7 +891,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
             return out.toByteArray();
         } catch (java.io.IOException e) {
             log.error("Error generating Excel file for quiz scores {}", quizId, e);
-            throw new RuntimeException("System error when exporting Excel file");
+            throw new edufit_com_lms.common.exception.AppException(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, "System error when exporting Excel file");
         }
     }
 

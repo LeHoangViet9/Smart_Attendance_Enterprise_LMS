@@ -1,42 +1,32 @@
 import axios from 'axios';
 
-// Cấu hình base URL chọc vào cổng 8080 của Spring Boot
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  baseURL: apiBaseUrl,
 });
 
-// Interceptor Can thiệp trước khi GỬI request
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Lôi access token từ localStorage ra
     const token = localStorage.getItem('accessToken');
     if (token) {
-      // Nếu có token thì nhét vào header Authorization
       config.headers.Authorization = `Bearer ${token}`;
     }
-    // Tự động đặt Content-Type là JSON, trừ khi đang gửi FormData (file)
+
     if (!(config.data instanceof FormData)) {
       config.headers['Content-Type'] = 'application/json';
     }
+
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Interceptor Can thiệp sau khi NHẬN response
 axiosInstance.interceptors.response.use(
-  (response) => {
-    // Không lỗi lầm gì thì cho qua
-    return response;
-  },
+  (response) => response,
   (error) => {
-    // Nếu Spring Boot đá về lỗi 401 (Hết hạn hoặc sai token)
-    // CỰC KỲ QUAN TRỌNG: Không được chuyển hướng nếu đó là lỗi do báo Sai Mật Khẩu từ login
     const originalRequest = error.config;
-    if (error.response && error.response.status === 401 && originalRequest.url !== '/auth/login') {
-      // Tự động clear localStorage, đá văng về trang đăng nhập
+    if (error.response && error.response.status === 401 && originalRequest?.url !== '/auth/login') {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');

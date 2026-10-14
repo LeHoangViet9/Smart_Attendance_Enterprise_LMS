@@ -1,10 +1,13 @@
 package edufit_com_lms.module.quiz.service.impl;
 
 import edufit_com_lms.common.exception.AppException;
+import edufit_com_lms.module.auth.entity.Role;
 import edufit_com_lms.module.auth.entity.User;
 import edufit_com_lms.module.auth.repository.UserRepository;
 import edufit_com_lms.module.lms.entity.Major;
+import edufit_com_lms.module.lms.entity.SchoolClass;
 import edufit_com_lms.module.lms.repository.MajorRepository;
+import edufit_com_lms.module.lms.repository.SchoolClassRepository;
 import edufit_com_lms.module.quiz.dto.request.QuizRequest;
 import edufit_com_lms.module.quiz.dto.response.QuizResponse;
 import edufit_com_lms.module.quiz.entity.Quiz;
@@ -20,6 +23,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -28,23 +34,15 @@ public class QuizServiceImpl implements QuizService {
     private final QuizMapper quizMapper;
     private final UserRepository userRepository;
     private final MajorRepository majorRepository;
-    private final edufit_com_lms.module.lms.repository.SchoolClassRepository schoolClassRepository;
+    private final SchoolClassRepository schoolClassRepository;
     private final QuizAttemptRepository quizAttemptRepository;
 
     @Override
     public QuizResponse createQuiz(QuizRequest request, Long creatorId) {
         User creator = userRepository.findById(creatorId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i vá»›i id: " + creatorId));
-                
-        Major major = null;
-        if (request.getMajorId() != null) {
-            major = majorRepository.findById(request.getMajorId())
-                    .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "NgÃ nh há»c khÃ´ng tá»“n táº¡i vá»›i id: " + request.getMajorId()));
-        } else {
-            if (creator.getRole() == edufit_com_lms.module.auth.entity.Role.LECTURER && creator.getLecturerProfile() != null) {
-                major = creator.getLecturerProfile().getMajor();
-            }
-        }
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "User does not exist with id: " + creatorId));
+
+        Major major = resolveMajorForCreate(request, creator);
 
         Quiz quiz = Quiz.builder()
                 .title(request.getTitle())
@@ -53,28 +51,23 @@ public class QuizServiceImpl implements QuizService {
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
                 .accessCode(request.getAccessCode())
-                .requiresProctoring(request.getRequiresProctoring() != null ? request.getRequiresProctoring() : false)
+                .requiresProctoring(Boolean.TRUE.equals(request.getRequiresProctoring()))
                 .createdBy(creator)
                 .major(major)
                 .build();
 
         if (request.getClassIds() != null && !request.getClassIds().isEmpty()) {
-            java.util.List<edufit_com_lms.module.lms.entity.SchoolClass> classes = schoolClassRepository.findAllById(request.getClassIds());
+            List<SchoolClass> classes = schoolClassRepository.findAllById(request.getClassIds());
             quiz.setClasses(classes);
         }
 
-        Quiz savedQuiz = quizRepository.save(quiz);
-        return quizMapper.toResponse(savedQuiz);
+        return quizMapper.toResponse(quizRepository.save(quiz));
     }
 
     @Override
     public QuizResponse updateQuiz(Long quizId, QuizRequest request, Long lecturerId) {
-        Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Quiz khÃ´ng tá»“n táº¡i vá»›i id: " + quizId));
-
-        if (lecturerId != null && (quiz.getCreatedBy() == null || !quiz.getCreatedBy().getUserId().equals(lecturerId))) {
-            throw new AppException(HttpStatus.FORBIDDEN, "Báº¡n khÃ´ng cÃ³ quyá»n sá»­a Quiz nÃ y vÃ¬ khÃ´ng pháº£i lÃ  ngÆ°á»i táº¡o.");
-        }
+        Quiz quiz = findQuizOrThrow(quizId);
+        validateOwner(quiz, lecturerId, "update");
 
         if (quizAttemptRepository.existsByQuizIdAndStatus(quizId, QuizStatus.IN_PROGRESS)) {
             throw new AppException(HttpStatus.CONFLICT, "Cannot update quiz while students are taking it.");
@@ -86,37 +79,29 @@ public class QuizServiceImpl implements QuizService {
         quiz.setStartTime(request.getStartTime());
         quiz.setEndTime(request.getEndTime());
         quiz.setAccessCode(request.getAccessCode());
-        quiz.setRequiresProctoring(request.getRequiresProctoring() != null ? request.getRequiresProctoring() : false);
-        
+        quiz.setRequiresProctoring(Boolean.TRUE.equals(request.getRequiresProctoring()));
+
         if (request.getMajorId() != null) {
-            Major major = majorRepository.findById(request.getMajorId())
-                    .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "NgÃ nh há»c khÃ´ng tá»“n táº¡i vá»›i id: " + request.getMajorId()));
-            quiz.setMajor(major);
+            quiz.setMajor(findMajorOrThrow(request.getMajorId()));
         }
 
         if (request.getClassIds() != null) {
-            java.util.List<edufit_com_lms.module.lms.entity.SchoolClass> classes = schoolClassRepository.findAllById(request.getClassIds());
+            List<SchoolClass> classes = schoolClassRepository.findAllById(request.getClassIds());
             quiz.setClasses(classes);
         }
 
-        Quiz updatedQuiz = quizRepository.save(quiz);
-        return quizMapper.toResponse(updatedQuiz);
+        return quizMapper.toResponse(quizRepository.save(quiz));
     }
 
     @Override
     public void deleteQuiz(Long quizId, Long lecturerId) {
-        Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Quiz khÃ´ng tá»“n táº¡i vá»›i id: " + quizId));
-                
-        if (lecturerId != null && (quiz.getCreatedBy() == null || !quiz.getCreatedBy().getUserId().equals(lecturerId))) {
-            throw new AppException(HttpStatus.FORBIDDEN, "Báº¡n khÃ´ng cÃ³ quyá»n xÃ³a Quiz nÃ y vÃ¬ khÃ´ng pháº£i lÃ  ngÆ°á»i táº¡o.");
-        }
-        
+        Quiz quiz = findQuizOrThrow(quizId);
+        validateOwner(quiz, lecturerId, "delete");
         quizRepository.deleteById(quizId);
     }
 
     @Override
-    public Page<QuizResponse> getQuizzes(String keyword, String searchBy, java.util.UUID majorId, Long lecturerId, Pageable pageable) {
+    public Page<QuizResponse> getQuizzes(String keyword, String searchBy, UUID majorId, Long lecturerId, Pageable pageable) {
         if (lecturerId != null) {
             User user = userRepository.findById(lecturerId).orElse(null);
             if (user != null && user.getLecturerProfile() != null && user.getLecturerProfile().getMajor() != null) {
@@ -125,17 +110,12 @@ public class QuizServiceImpl implements QuizService {
         }
 
         Page<Quiz> quizPage;
-
         if (keyword != null && !keyword.trim().isEmpty()) {
-            String kw = keyword.trim();
-            quizPage = quizRepository.searchByKeyword(kw, majorId, pageable);
+            quizPage = quizRepository.searchByKeyword(keyword.trim(), majorId, pageable);
+        } else if (majorId != null) {
+            quizPage = quizRepository.searchByKeyword("", majorId, pageable);
         } else {
-            if (majorId != null) {
-                // Since there is no findByMajor_Id, use searchByKeyword with empty keyword
-                quizPage = quizRepository.searchByKeyword("", majorId, pageable);
-            } else {
-                quizPage = quizRepository.findAll(pageable);
-            }
+            quizPage = quizRepository.findAll(pageable);
         }
 
         return quizPage.map(quizMapper::toResponse);
@@ -143,8 +123,32 @@ public class QuizServiceImpl implements QuizService {
 
     @Override
     public QuizResponse findQuizById(Long quizId) {
-        Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Quiz khÃ´ng tá»“n táº¡i vá»›i id: " + quizId));
-        return quizMapper.toResponse(quiz);
+        return quizMapper.toResponse(findQuizOrThrow(quizId));
+    }
+
+    private Major resolveMajorForCreate(QuizRequest request, User creator) {
+        if (request.getMajorId() != null) {
+            return findMajorOrThrow(request.getMajorId());
+        }
+        if (creator.getRole() == Role.LECTURER && creator.getLecturerProfile() != null) {
+            return creator.getLecturerProfile().getMajor();
+        }
+        return null;
+    }
+
+    private Major findMajorOrThrow(UUID majorId) {
+        return majorRepository.findById(majorId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Major does not exist with id: " + majorId));
+    }
+
+    private Quiz findQuizOrThrow(Long quizId) {
+        return quizRepository.findById(quizId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Quiz does not exist with id: " + quizId));
+    }
+
+    private void validateOwner(Quiz quiz, Long lecturerId, String action) {
+        if (lecturerId != null && (quiz.getCreatedBy() == null || !quiz.getCreatedBy().getUserId().equals(lecturerId))) {
+            throw new AppException(HttpStatus.FORBIDDEN, "You do not have permission to " + action + " this quiz.");
+        }
     }
 }

@@ -1,5 +1,6 @@
 package edufit_com_lms.module.lms.service.impl;
 
+import edufit_com_lms.common.exception.ForbbidenException;
 import edufit_com_lms.common.exception.ResourceNotFound;
 import edufit_com_lms.module.lms.dto.request.CreateAssignmentRequest;
 import edufit_com_lms.module.lms.dto.request.UpdateAssignmentRequest;
@@ -39,7 +40,7 @@ public class AssignmentServiceImpl implements AssignmentService {
             SchoolClass schoolClass = schoolClassRepository.findById(classId)
                     .orElseThrow(() -> new ResourceNotFound("Class not found with ID: " + classId));
             if (schoolClass.getLecturer() == null || !schoolClass.getLecturer().getUserId().equals(lecturerId)) {
-                throw new RuntimeException("Bạn không có quyền quản lý Assignment của lớp học này.");
+                throw new ForbbidenException("You do not have permission to manage assignments for this class.");
             }
         }
     }
@@ -65,8 +66,8 @@ public class AssignmentServiceImpl implements AssignmentService {
             List<edufit_com_lms.module.lms.entity.ClassEnrollment> enrollments = classEnrollmentRepository.findBySchoolClassId(classId);
             for (edufit_com_lms.module.lms.entity.ClassEnrollment enrollment : enrollments) {
             eventPublisher.publishEvent(edufit_com_lms.module.notification.event.NotificationEvent.builder()
-                    .title("BÃ i táº­p má»›i: " + saved.getTitle())
-                    .message("Giáº£ng viÃªn vá»«a giao bÃ i táº­p má»›i. Háº¡n ná»™p: " + (saved.getDueDate() != null ? saved.getDueDate() : "KhÃ´ng cÃ³ háº¡n"))
+                    .title("BÃƒÂ i tÃ¡ÂºÂ­p mÃ¡Â»â€ºi: " + saved.getTitle())
+                    .message("GiÃ¡ÂºÂ£ng viÃƒÂªn vÃ¡Â»Â«a giao bÃƒÂ i tÃ¡ÂºÂ­p mÃ¡Â»â€ºi. HÃ¡ÂºÂ¡n nÃ¡Â»â„¢p: " + (saved.getDueDate() != null ? saved.getDueDate() : "KhÃƒÂ´ng cÃƒÂ³ hÃ¡ÂºÂ¡n"))
                     .type("SYSTEM_LOG")
                     .recipientId(enrollment.getStudent().getUserId())
                     .build());

@@ -3,6 +3,8 @@ package edufit_com_lms.module.attendance.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edufit_com_lms.common.exception.AppException;
+import edufit_com_lms.common.exception.BadRequestException;
 import edufit_com_lms.common.exception.ConflictException;
 import edufit_com_lms.common.exception.ResourceNotFound;
 import edufit_com_lms.module.attendance.dto.request.AttendanceSubmitRequest;
@@ -18,6 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -38,7 +41,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     private final ClassEnrollmentRepository classEnrollmentRepository;
     private final SchoolClassRepository schoolClassRepository;
     private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     @Value("${ai.service.url}")
     private String aiServiceUrl;
@@ -81,7 +84,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Override
     public List<Long> verifyFaces(UUID classId, MultipartFile frame) {
         if (frame == null || frame.isEmpty()) {
-            throw new RuntimeException("Frame is empty");
+            throw new BadRequestException("Frame is empty");
         }
 
         // Get enrolled students
@@ -130,7 +133,7 @@ public class AttendanceServiceImpl implements AttendanceService {
             ResponseEntity<JsonNode> aiResponse = restTemplate.postForEntity(verifyFaceUrl, requestEntity, JsonNode.class);
 
             if (!aiResponse.getStatusCode().is2xxSuccessful() || aiResponse.getBody() == null) {
-                throw new RuntimeException("AI Service connection error");
+                throw new AppException(HttpStatus.BAD_GATEWAY, "AI Service connection error");
             }
 
             JsonNode responseBody = aiResponse.getBody();
@@ -142,8 +145,10 @@ public class AttendanceServiceImpl implements AttendanceService {
             }
             return new ArrayList<>();
 
+        } catch (AppException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Error communicating with AI Service: " + e.getMessage());
+            throw new AppException(HttpStatus.BAD_GATEWAY, "Error communicating with AI Service: " + e.getMessage());
         }
     }
 }

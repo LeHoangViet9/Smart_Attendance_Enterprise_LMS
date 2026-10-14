@@ -3,6 +3,8 @@ package edufit_com_lms.module.quiz.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edufit_com_lms.common.exception.AppException;
+import edufit_com_lms.common.exception.BadRequestException;
 import edufit_com_lms.module.quiz.dto.request.QuestionRequest;
 import edufit_com_lms.module.quiz.service.AIQuizGenerationService;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -31,13 +34,13 @@ public class AIQuizGenerationServiceImpl implements AIQuizGenerationService {
     @Value("${gemini.api.url}")
     private String geminiApiUrl;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     @Override
     public List<QuestionRequest> generateQuestions(String documentText, int numberOfQuestions) {
         if (geminiApiKey == null || geminiApiKey.trim().isEmpty() || documentText == null || documentText.trim().isEmpty()) {
             log.error("API Key or document text is empty.");
-            throw new RuntimeException("Cannot generate questions: missing configuration or empty document.");
+            throw new BadRequestException("Cannot generate questions: missing configuration or empty document.");
         }
 
         try {
@@ -83,7 +86,7 @@ public class AIQuizGenerationServiceImpl implements AIQuizGenerationService {
 
         } catch (Exception e) {
             log.error("Error calling Gemini API for question generation: ", e);
-            throw new RuntimeException("Failed to generate questions from AI: " + e.getMessage());
+            throw new AppException(HttpStatus.BAD_GATEWAY, "Failed to generate questions from AI: " + e.getMessage());
         }
     }
 }

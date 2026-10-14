@@ -19,16 +19,13 @@ const NotificationBell = () => {
 
     const fetchData = async () => {
         try {
-            // Fetch unread count
             const countResponse = await axiosInstance.get('/v1/notifications/unread-count');
             if (countResponse.data && countResponse.data.success) {
                 setUnreadCount(countResponse.data.data || 0);
             }
 
-            // Fetch notifications (page 0, size 20 by default)
             const response = await axiosInstance.get('/v1/notifications');
             if (response.data && response.data.success) {
-                // Handle pagination structure
                 const pageData = response.data.data;
                 const content = pageData.content !== undefined ? pageData.content : (Array.isArray(pageData) ? pageData : []);
                 setNotifications(content);
@@ -40,27 +37,25 @@ const NotificationBell = () => {
 
     useEffect(() => {
         fetchData();
-        
-        // STOMP WebSocket Connection
+
         const token = localStorage.getItem('accessToken');
+        const wsUrl = import.meta.env.VITE_WS_URL || 'http://localhost:8080/ws';
         const stompClient = new Client({
-            webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
+            webSocketFactory: () => new SockJS(wsUrl),
             connectHeaders: {
                 Authorization: `Bearer ${token}`
             },
             reconnectDelay: 5000,
             onConnect: () => {
-                // Subscribe to personal queue
                 stompClient.subscribe('/user/queue/notifications', (message) => {
                     if (message.body) {
                         const newNotif = JSON.parse(message.body);
                         setNotifications(prev => [newNotif, ...prev]);
                         setUnreadCount(prev => prev + 1);
-                        showToast("Thông báo mới", newNotif.title);
+                        showToast('New notification', newNotif.title);
                     }
                 });
-                
-                // Subscribe to global topic
+
                 stompClient.subscribe('/topic/notifications', (message) => {
                     if (message.body) {
                         const newNotif = JSON.parse(message.body);
@@ -93,7 +88,7 @@ const NotificationBell = () => {
         if (isRead) return;
         try {
             await axiosInstance.put(`/v1/notifications/${id}/read`);
-            setNotifications(prev => 
+            setNotifications(prev =>
                 prev.map(notif => notif.id === id ? { ...notif, isRead: true } : notif)
             );
             setUnreadCount(prev => Math.max(0, prev - 1));
@@ -121,10 +116,10 @@ const NotificationBell = () => {
     return (
         <div className="notif-bell-container" ref={dropdownRef}>
             <div className={`notif-bell-icon ${unreadCount > 0 ? 'has-unread' : ''}`} onClick={() => setIsOpen(!isOpen)}>
-                <span style={{ fontSize: '1.25rem' }}>🔔</span>
+                <span style={{ fontSize: '1.25rem' }}>Bell</span>
                 {unreadCount > 0 && <span className="notif-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>}
             </div>
-            
+
             {isOpen && (
                 <div className="notif-dropdown">
                     <div className="notif-header">
@@ -133,13 +128,13 @@ const NotificationBell = () => {
                             <span className="notif-count" style={{ fontSize: '0.8rem', color: '#64748b' }}>{unreadCount} unread</span>
                         </div>
                         {unreadCount > 0 && (
-                            <button 
+                            <button
                                 onClick={handleMarkAllAsRead}
                                 style={{
-                                    background: 'none', 
-                                    border: 'none', 
-                                    color: '#3b82f6', 
-                                    cursor: 'pointer', 
+                                    background: 'none',
+                                    border: 'none',
+                                    color: '#3b82f6',
+                                    cursor: 'pointer',
                                     fontSize: '0.85rem',
                                     padding: '4px 8px',
                                     borderRadius: '4px'
@@ -154,13 +149,13 @@ const NotificationBell = () => {
                             <div className="notif-empty">No notifications yet.</div>
                         ) : (
                             notifications.map(notif => (
-                                <div 
-                                    key={notif.id} 
+                                <div
+                                    key={notif.id}
                                     className={`notif-item ${!notif.isRead ? 'unread' : ''}`}
                                     onClick={() => handleMarkAsRead(notif.id, notif.isRead)}
                                 >
                                     <div className="notif-item-icon">
-                                        {notif.type === 'REPORT' ? '⚠️' : 'ℹ️'}
+                                        {notif.type === 'REPORT' ? 'Warning' : 'Info'}
                                     </div>
                                     <div className="notif-item-content">
                                         <div className="notif-item-title">{notif.title}</div>
@@ -174,8 +169,7 @@ const NotificationBell = () => {
                     </div>
                 </div>
             )}
-            
-            {/* Custom Global WebSocket Toast Notification */}
+
             {toast.show && (
                 <div style={{
                     position: 'fixed',
@@ -195,7 +189,7 @@ const NotificationBell = () => {
                     minWidth: '250px'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold', fontSize: '0.95rem' }}>
-                        <span>🔔</span> {toast.title}
+                        <span>Notification</span> {toast.title}
                     </div>
                     <div style={{ fontSize: '0.85rem', color: '#64748b', marginLeft: '26px' }}>
                         {toast.message}

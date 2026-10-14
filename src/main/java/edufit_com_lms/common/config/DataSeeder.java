@@ -32,19 +32,18 @@ public class DataSeeder implements CommandLineRunner {
 
         @Override
         @Transactional
-        public void run(String... args) throws Exception {
+        public void run(String... args) {
                 if (!userRepository.existsByEmail("admin@edu.vn")) {
-                        log.info("Báº¯t Ä‘áº§u khá»Ÿi táº¡o dá»¯ liá»‡u máº«u (Seeder)...");
+                        log.info("Starting sample data seeding...");
 
-                        // 1. TÃ i khoáº£n Admin
                         User admin = User.builder()
                                         .email("admin@edu.vn")
                                         .password(passwordEncoder.encode("123456"))
-                                        .fullName("Admin Quáº£n Trá»‹")
-                                        .phone("0988888888") // ThÃªm sá»‘ Ä‘iá»‡n thoáº¡i
+                                        .fullName("Admin Quan Tri")
+                                        .phone("0988888888")
                                         .code("AD001")
                                         .role(Role.ADMIN)
-                                        .address("PhÃ²ng HÃ nh ChÃ­nh")
+                                        .address("Phong Hanh Chinh")
                                         .isActive(true)
                                         .createdAt(LocalDateTime.now())
                                         .updatedAt(LocalDateTime.now())
@@ -53,32 +52,30 @@ public class DataSeeder implements CommandLineRunner {
                 }
 
                 if (!userRepository.existsByEmail("sinhvien@edu.vn")) {
-                        // 2. TÃ i khoáº£n Sinh ViÃªn (Ä‘á»ƒ test Face Onboarding)
                         User student = User.builder()
                                         .email("sinhvien@edu.vn")
                                         .password(passwordEncoder.encode("123456"))
-                                        .fullName("Nguyá»…n Kháº¯c Phá»¥c")
-                                        .phone("0912345678") // ThÃªm sá»‘ Ä‘iá»‡n thoáº¡i
+                                        .fullName("Nguyen Khac Phuc")
+                                        .phone("0912345678")
                                         .code("SV001")
                                         .role(Role.STUDENT)
-                                        .address("KÃ½ tÃºc xÃ¡ A")
+                                        .address("Ky tuc xa A")
                                         .isActive(true)
                                         .createdAt(LocalDateTime.now())
                                         .updatedAt(LocalDateTime.now())
                                         .build();
                         userRepository.save(student);
                 }
-                
-                log.info("ÄÃ£ táº¡o xong dá»¯ liá»‡u máº«u! Máº­t kháº©u chung lÃ : 123456");
+
+                log.info("Sample data seeding completed. Default password: 123456");
 
                 long quizCount = quizRepository.count();
                 if (quizCount == 0) {
-                        log.info("Báº¯t Ä‘áº§u khá»Ÿi táº¡o dá»¯ liá»‡u Ä‘á» thi máº«u (Quiz Seeder)...");
+                        log.info("Starting sample quiz seeding...");
 
                         Quiz quiz = Quiz.builder()
-                                        .title("BÃ i kiá»ƒm tra JAVA Backend Ä‘áº§u vÃ o")
-                                        .description(
-                                                        "BÃ i kiá»ƒm tra tá»± Ä‘á»™ng Ä‘Ã¡nh giÃ¡ kiáº¿n thá»©c cÆ¡ báº£n vá» Spring Boot vÃ  Java Core, dÃ nh cho khoÃ¡ K18.")
+                                        .title("Java Backend Entry Quiz")
+                                        .description("Auto-generated quiz for basic Spring Boot and Java Core knowledge.")
                                         .timeLimitMinutes(15)
                                         .startTime(LocalDateTime.now().minusDays(1))
                                         .endTime(LocalDateTime.now().plusMonths(1))
@@ -89,44 +86,31 @@ public class DataSeeder implements CommandLineRunner {
 
                         Question q1 = Question.builder()
                                         .quiz(quiz)
-                                        .content("ThÃ nh pháº§n nÃ o cá»§a Spring Boot Ä‘Æ°á»£c dÃ¹ng Ä‘á»ƒ cáº¥u hÃ¬nh tá»± Ä‘á»™ng (Auto-configuration)?")
+                                        .content("Which Spring Boot component is used for auto-configuration?")
                                         .questionType(QuestionType.SINGLE_CHOICE)
                                         .points(5.0)
                                         .build();
                         q1 = questionRepository.save(q1);
 
-                        questionOptionRepository.save(
-                                        QuestionOption.builder().question(q1).content("@EnableAutoConfiguration")
-                                                        .isCorrect(true).build());
-                        questionOptionRepository.save(
-                                        QuestionOption.builder().question(q1).content("@SpringBootApplication")
-                                                        .isCorrect(false).build());
-                        questionOptionRepository
-                                        .save(QuestionOption.builder().question(q1).content("@ComponentScan")
-                                                        .isCorrect(false).build());
-                        questionOptionRepository
-                                        .save(QuestionOption.builder().question(q1).content("@Configuration")
-                                                        .isCorrect(false).build());
+                        questionOptionRepository.save(QuestionOption.builder().question(q1).content("@EnableAutoConfiguration").isCorrect(true).build());
+                        questionOptionRepository.save(QuestionOption.builder().question(q1).content("@SpringBootApplication").isCorrect(false).build());
+                        questionOptionRepository.save(QuestionOption.builder().question(q1).content("@ComponentScan").isCorrect(false).build());
+                        questionOptionRepository.save(QuestionOption.builder().question(q1).content("@Configuration").isCorrect(false).build());
 
                         Question q2 = Question.builder()
                                         .quiz(quiz)
-                                        .content("Java lÃ  ngÃ´n ngá»¯ láº­p trÃ¬nh thuáº§n hÆ°á»›ng Ä‘á»‘i tÆ°á»£ng 100%?")
+                                        .content("Is Java a purely object-oriented programming language?")
                                         .questionType(QuestionType.TRUE_FALSE)
                                         .points(5.0)
                                         .build();
                         q2 = questionRepository.save(q2);
 
-                        questionOptionRepository
-                                        .save(QuestionOption.builder().question(q2).content("ÄÃºng").isCorrect(false)
-                                                        .build());
-                        questionOptionRepository.save(QuestionOption.builder().question(q2)
-                                        .content("Sai (VÃ¬ váº«n há»— trá»£ cÃ¡c kiá»ƒu nguyÃªn thuá»· nhÆ° int, char)")
-                                        .isCorrect(true).build());
+                        questionOptionRepository.save(QuestionOption.builder().question(q2).content("True").isCorrect(false).build());
+                        questionOptionRepository.save(QuestionOption.builder().question(q2).content("False, because Java still supports primitive types such as int and char.").isCorrect(true).build());
 
-                        // --- QUIZ 2: React JS ---
                         Quiz quiz2 = Quiz.builder()
                                         .title("React JS Mastery")
-                                        .description("BÃ i kiá»ƒm tra Ä‘Ã¡nh giÃ¡ ká»¹ nÄƒng xÃ¢y dá»±ng Component vÃ  Hooks trong React 18.")
+                                        .description("Quiz for evaluating component and hook skills in React.")
                                         .timeLimitMinutes(30)
                                         .startTime(LocalDateTime.now().minusDays(5))
                                         .endTime(LocalDateTime.now().plusMonths(2))
@@ -137,39 +121,28 @@ public class DataSeeder implements CommandLineRunner {
 
                         Question q3 = Question.builder()
                                         .quiz(quiz2)
-                                        .content("Hook nÃ o Ä‘Æ°á»£c sá»­ dá»¥ng Ä‘á»ƒ quáº£n lÃ½ Side Effect trong Functional Component?")
+                                        .content("Which hook is used to manage side effects in a functional component?")
                                         .questionType(QuestionType.SINGLE_CHOICE)
                                         .points(5.0)
                                         .build();
                         q3 = questionRepository.save(q3);
-                        questionOptionRepository
-                                        .save(QuestionOption.builder().question(q3).content("useState").isCorrect(false)
-                                                        .build());
-                        questionOptionRepository
-                                        .save(QuestionOption.builder().question(q3).content("useEffect").isCorrect(true)
-                                                        .build());
-                        questionOptionRepository
-                                        .save(QuestionOption.builder().question(q3).content("useContext")
-                                                        .isCorrect(false).build());
+                        questionOptionRepository.save(QuestionOption.builder().question(q3).content("useState").isCorrect(false).build());
+                        questionOptionRepository.save(QuestionOption.builder().question(q3).content("useEffect").isCorrect(true).build());
+                        questionOptionRepository.save(QuestionOption.builder().question(q3).content("useContext").isCorrect(false).build());
 
                         Question q4 = Question.builder()
                                         .quiz(quiz2)
-                                        .content("Trong Redux, tráº¡ng thÃ¡i (State) cÃ³ thá»ƒ bá»‹ thay Ä‘á»•i (mutate) trá»±c tiáº¿p khÃ´ng?")
+                                        .content("Can Redux state be mutated directly?")
                                         .questionType(QuestionType.TRUE_FALSE)
                                         .points(5.0)
                                         .build();
                         q4 = questionRepository.save(q4);
-                        questionOptionRepository.save(
-                                        QuestionOption.builder().question(q4).content("ÄÃºng (CÃ³ thá»ƒ dÃ¹ng assignment)")
-                                                        .isCorrect(false).build());
-                        questionOptionRepository.save(
-                                        QuestionOption.builder().question(q4).content("Sai (State lÃ  Immutable)")
-                                                        .isCorrect(true).build());
+                        questionOptionRepository.save(QuestionOption.builder().question(q4).content("True, direct assignment is acceptable.").isCorrect(false).build());
+                        questionOptionRepository.save(QuestionOption.builder().question(q4).content("False, Redux state should be immutable.").isCorrect(true).build());
 
-                        // --- QUIZ 3: CSDL ---
                         Quiz quiz3 = Quiz.builder()
-                                        .title("Database & SQL Performance")
-                                        .description("BÃ i kiá»ƒm tra vá» tá»‘i Æ°u hoÃ¡ cÃ¢u truy váº¥n vÃ  Ä‘Ã¡nh Index trÃªn CSDL Quan há»‡.")
+                                        .title("Database and SQL Performance")
+                                        .description("Quiz about query optimization and indexing in relational databases.")
                                         .timeLimitMinutes(45)
                                         .startTime(LocalDateTime.now().minusDays(10))
                                         .endTime(LocalDateTime.now().plusMonths(3))
@@ -180,53 +153,38 @@ public class DataSeeder implements CommandLineRunner {
 
                         Question q5 = Question.builder()
                                         .quiz(quiz3)
-                                        .content("Lá»‡nh SQL nÃ o lÃ m sáº¡ch toÃ n bá»™ dá»¯ liá»‡u báº£ng cá»±c ká»³ nhanh vÃ  giáº£i phÃ³ng dung lÆ°á»£ng Ä‘Ä©a?")
+                                        .content("Which SQL command removes all rows from a table quickly and releases storage more efficiently?")
                                         .questionType(QuestionType.SINGLE_CHOICE)
                                         .points(5.0)
                                         .build();
                         q5 = questionRepository.save(q5);
-                        questionOptionRepository
-                                        .save(QuestionOption.builder().question(q5).content("DELETE FROM table")
-                                                        .isCorrect(false).build());
-                        questionOptionRepository.save(
-                                        QuestionOption.builder().question(q5).content("TRUNCATE TABLE table")
-                                                        .isCorrect(true).build());
+                        questionOptionRepository.save(QuestionOption.builder().question(q5).content("DELETE FROM table").isCorrect(false).build());
+                        questionOptionRepository.save(QuestionOption.builder().question(q5).content("TRUNCATE TABLE table").isCorrect(true).build());
 
                         Question q6 = Question.builder()
                                         .quiz(quiz3)
-                                        .content("Index B-Tree hoáº¡t Ä‘á»™ng hiá»‡u quáº£ cho loáº¡i truy váº¥n nÃ o? (Chá»n nhiá»u Ä‘Ã¡p Ã¡n)")
+                                        .content("Which query types can use a B-Tree index efficiently? Select multiple answers.")
                                         .questionType(QuestionType.MULTIPLE_CHOICE)
                                         .points(5.0)
                                         .build();
                         q6 = questionRepository.save(q6);
-                        questionOptionRepository.save(
-                                        QuestionOption.builder().question(q6).content("TÃ¬m kiáº¿m chÃ­nh xÃ¡c (=)")
-                                                        .isCorrect(true).build());
-                        questionOptionRepository.save(
-                                        QuestionOption.builder().question(q6).content("TÃ¬m khoáº£ng (<, >, BETWEEN)")
-                                                        .isCorrect(true).build());
-                        questionOptionRepository.save(QuestionOption.builder().question(q6)
-                                        .content("TÃ¬m kiáº¿m theo chuá»—i (LIKE '%abc%')").isCorrect(false).build());
+                        questionOptionRepository.save(QuestionOption.builder().question(q6).content("Exact match search (=)").isCorrect(true).build());
+                        questionOptionRepository.save(QuestionOption.builder().question(q6).content("Range search (<, >, BETWEEN)").isCorrect(true).build());
+                        questionOptionRepository.save(QuestionOption.builder().question(q6).content("Contains search (LIKE '%abc%')").isCorrect(false).build());
 
                         Question q7 = Question.builder()
                                         .quiz(quiz3)
-                                        .content(
-                                                        "Tá»« khoÃ¡ SQL Ä‘á»ƒ ná»‘i hai báº£ng, chá»‰ láº¥y cÃ¡c dÃ²ng khá»›p (matchs) á»Ÿ cáº£ 2 bÃªn (Äiá»n vÃ o chá»— trá»‘ng)")
+                                        .content("Which SQL keyword joins two tables and returns only matching rows from both sides?")
                                         .questionType(QuestionType.FILL_BLANK)
                                         .points(5.0)
                                         .build();
                         q7 = questionRepository.save(q7);
-                        questionOptionRepository
-                                        .save(QuestionOption.builder().question(q7).content("INNER JOIN")
-                                                        .isCorrect(true).build());
-                        questionOptionRepository
-                                        .save(QuestionOption.builder().question(q7).content("JOIN").isCorrect(true)
-                                                        .build());
+                        questionOptionRepository.save(QuestionOption.builder().question(q7).content("INNER JOIN").isCorrect(true).build());
+                        questionOptionRepository.save(QuestionOption.builder().question(q7).content("JOIN").isCorrect(true).build());
 
-                        log.info("Khá»Ÿi táº¡o Ä‘á» thi máº«u hoÃ n táº¥t!");
+                        log.info("Sample quiz seeding completed.");
                 }
 
-                // Generate 10 extra generic quizzes to fill up the table
                 if (quizCount <= 3) {
                         for (int i = 4; i <= 15; i++) {
                                 Quiz extraQuiz = Quiz.builder()
@@ -239,7 +197,7 @@ public class DataSeeder implements CommandLineRunner {
                                                 .updatedAt(LocalDateTime.now())
                                                 .build();
                                 extraQuiz = quizRepository.save(extraQuiz);
-                                
+
                                 Question eq1 = Question.builder()
                                                 .quiz(extraQuiz)
                                                 .content("Mock Question 1 for Quiz " + i)

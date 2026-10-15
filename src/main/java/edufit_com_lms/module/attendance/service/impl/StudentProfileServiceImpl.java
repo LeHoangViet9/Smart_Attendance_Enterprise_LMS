@@ -58,13 +58,13 @@ public class StudentProfileServiceImpl {
             });
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-            ResponseEntity<JsonNode> aiResponse = restTemplate.postForEntity(aiServiceUrl, requestEntity, JsonNode.class);
+            ResponseEntity<String> aiResponse = restTemplate.postForEntity(aiServiceUrl, requestEntity, String.class);
 
             if (!aiResponse.getStatusCode().is2xxSuccessful() || aiResponse.getBody() == null) {
                 throw new AppException(HttpStatus.BAD_GATEWAY, "AI Service connection error");
             }
 
-            JsonNode responseBody = aiResponse.getBody();
+            JsonNode responseBody = objectMapper.readTree(aiResponse.getBody());
             if (!responseBody.get("success").asBoolean()) {
                 throw new AppException(HttpStatus.BAD_GATEWAY, responseBody.get("message").asText());
             }

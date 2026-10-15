@@ -8,7 +8,11 @@ const LecturerSmartAttendance = () => {
     const navigate = useNavigate();
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
+    const scanInFlight = useRef(false);
     const [isScanning, setIsScanning] = useState(false);
+    const [scanError, setScanError] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveNotice, setSaveNotice] = useState(null);
     const [filter, setFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -86,7 +90,8 @@ const LecturerSmartAttendance = () => {
         const canvas = canvasRef.current;
 
         const scanInterval = setInterval(async () => {
-            if (video.paused || video.ended) return;
+            if (video.paused || video.ended || !video.videoWidth || scanInFlight.current) return;
+            scanInFlight.current = true;
 
             // Match canvas to video size
             canvas.width = video.videoWidth || 640;
@@ -108,6 +113,7 @@ const LecturerSmartAttendance = () => {
                         );
 
                         if (response.data && response.data.success && response.data.data) {
+                            setScanError('');
                             const presentIds = response.data.data;
                             presentIds.forEach(id => {
                                 markStudentPresentById(id);
@@ -115,7 +121,12 @@ const LecturerSmartAttendance = () => {
                         }
                     } catch (error) {
                         console.error('Error verifying frame:', error);
+                        setScanError(error.response?.data?.message || 'Unable to reach face recognition service. Please try again.');
+                    } finally {
+                        scanInFlight.current = false;
                     }
+                } else {
+                    scanInFlight.current = false;
                 }
             }, 'image/jpeg', 0.5);
 
@@ -158,6 +169,9 @@ const LecturerSmartAttendance = () => {
     };
 
     const handleSubmitAttendance = async () => {
+        if (isSaving || students.length === 0) return;
+        setIsSaving(true);
+        setSaveNotice(null);
         try {
             const presentStudentIds = students.filter(s => s.status === 'present').map(s => s.id);
             const lateStudentIds = students.filter(s => s.status === 'late').map(s => s.id);
@@ -167,11 +181,19 @@ const LecturerSmartAttendance = () => {
                 lateStudentIds: lateStudentIds
             });
             if (response.data && response.data.success) {
-                alert('Attendance saved successfully!');
+                setSaveNotice({
+                    type: 'success',
+                    title: 'Attendance saved',
+                    message: `${presentStudentIds.length} present · ${lateStudentIds.length} late · ${students.length - presentStudentIds.length - lateStudentIds.length} absent`
+                });
+            } else {
+                setSaveNotice({type: 'error', title: 'Could not save attendance', message: response.data?.message || 'Please try again.'});
             }
         } catch (error) {
             console.error('Error submitting attendance:', error);
-            alert('Failed to save attendance. Please try again.');
+            setSaveNotice({type: 'error', title: 'Could not save attendance', message: error.response?.data?.message || 'Check your connection and try again.'});
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -271,11 +293,24 @@ const LecturerSmartAttendance = () => {
                         <button 
                             className="sa-start-btn" 
                             onClick={handleSubmitAttendance}
+                            disabled={isSaving || students.length === 0}
+                            aria-busy={isSaving}
                             style={{ flex: 1, margin: 0, backgroundColor: '#10b981' }}
                         >
-                            Save Attendance
+                            {isSaving ? 'Saving…' : 'Save Attendance'}
                         </button>
                     </div>
+                    {saveNotice && (
+                        <div className={`sa-save-notice ${saveNotice.type}`} role={saveNotice.type === 'error' ? 'alert' : 'status'}>
+                            <span className="sa-save-notice-icon" aria-hidden="true">{saveNotice.type === 'success' ? '✓' : '!'}</span>
+                            <div className="sa-save-notice-copy">
+                                <strong>{saveNotice.title}</strong>
+                                <p>{saveNotice.message}</p>
+                            </div>
+                            <button type="button" className="sa-save-notice-close" aria-label="Dismiss notification" onClick={() => setSaveNotice(null)}>×</button>
+                        </div>
+                    )}
+                    {scanError && <p role="alert" style={{ color: '#f87171' }}>{scanError}</p>}
                     {students.length === 0 && (
                         <p style={{ color: '#f59e0b', fontSize: '0.8rem', marginTop: '10px', textAlign: 'center' }}>
                             ⚠️ Warning: No students found in this class.

@@ -16,6 +16,21 @@ import java.util.Map;
 @Slf4j
 @RestControllerAdvice
 public class GlobalHandleException {
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Object>> handleAccessDenied(
+            org.springframework.security.access.AccessDeniedException exception) {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        HttpStatus status = authentication == null
+                || authentication instanceof org.springframework.security.authentication.AnonymousAuthenticationToken
+                ? HttpStatus.UNAUTHORIZED : HttpStatus.FORBIDDEN;
+        return ResponseEntity.status(status).body(ApiResponse.builder()
+                .success(false)
+                .message(status == HttpStatus.UNAUTHORIZED ? "Authentication required" : "Access denied")
+                .status(status)
+                .build());
+    }
+
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ApiResponse<Object>> handleAppException(AppException exception) {
         ApiResponse<Object> response = ApiResponse.builder()

@@ -130,13 +130,13 @@ public class AttendanceServiceImpl implements AttendanceService {
             body.add("registered_descriptors", descriptorsJson);
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-            ResponseEntity<JsonNode> aiResponse = restTemplate.postForEntity(verifyFaceUrl, requestEntity, JsonNode.class);
+            ResponseEntity<String> aiResponse = restTemplate.postForEntity(verifyFaceUrl, requestEntity, String.class);
 
             if (!aiResponse.getStatusCode().is2xxSuccessful() || aiResponse.getBody() == null) {
                 throw new AppException(HttpStatus.BAD_GATEWAY, "AI Service connection error");
             }
 
-            JsonNode responseBody = aiResponse.getBody();
+            JsonNode responseBody = objectMapper.readTree(aiResponse.getBody());
             if (responseBody.has("present_student_ids")) {
                 return objectMapper.convertValue(
                     responseBody.get("present_student_ids"), 

@@ -26,7 +26,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/v1/attendance")
@@ -109,17 +108,10 @@ public class AttendanceController {
 
     @PreAuthorize("hasRole('LECTURER')")
     @PostMapping("/class/{classId}/verify-faces")
-    public CompletableFuture<ResponseEntity<ApiResponse<List<Long>>>> verifyFaces(
+    public ResponseEntity<ApiResponse<List<Long>>> verifyFaces(
             @PathVariable UUID classId,
             @RequestParam("file") MultipartFile file) {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                List<Long> presentIds = attendanceService.verifyFaces(classId, file);
-                return ResponseEntity.ok(new ApiResponse<>(true, "Verified faces", null, presentIds, HttpStatus.OK));
-            } catch (Exception e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(new ApiResponse<>(false, e.getMessage(), null, null, HttpStatus.INTERNAL_SERVER_ERROR));
-            }
-        });
+        List<Long> presentIds = attendanceService.verifyFaces(classId, file);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Verified faces", null, presentIds, HttpStatus.OK));
     }
 }

@@ -3,9 +3,12 @@ import face_recognition
 import numpy as np
 import cv2
 import json
-from typing import List, Dict, Any
 
 app = FastAPI(title="EduFit Face Recognition AI Service")
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "service": "face-recognition"}
 
 @app.post("/api/v1/ai/extract-vector")
 async def extract_vector(file: UploadFile = File(...)):
@@ -47,6 +50,8 @@ async def extract_vector(file: UploadFile = File(...)):
             "descriptor": descriptor
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Error in extract_vector: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error while processing face")
@@ -116,6 +121,8 @@ async def verify_face(
             "present_student_ids": list(present_ids)
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Error in verify_face: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error during verification")

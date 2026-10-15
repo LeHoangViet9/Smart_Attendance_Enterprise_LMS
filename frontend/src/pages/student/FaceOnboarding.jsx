@@ -37,7 +37,13 @@ const FaceOnboarding = () => {
     };
 
     useEffect(() => {
-        return () => stopCamera();
+        if (stream && videoRef.current) {
+            videoRef.current.srcObject = stream;
+        }
+    }, [stream, step]);
+
+    useEffect(() => {
+        return () => stream?.getTracks().forEach(track => track.stop());
     }, [stream]);
 
     const captureAndUpload = () => {
@@ -45,6 +51,10 @@ const FaceOnboarding = () => {
         
         const video = videoRef.current;
         const canvas = canvasRef.current;
+        if (!video.videoWidth || !video.videoHeight || video.readyState < 2) {
+            setError('Camera is starting. Please wait until the video appears.');
+            return;
+        }
         
         // Set canvas to video dimensions
         canvas.width = video.videoWidth;
@@ -67,7 +77,9 @@ const FaceOnboarding = () => {
 
     const uploadFaceImage = async (imageBlob) => {
         setStep(3);
+        setProgress(0);
         stopCamera();
+        let progressInterval;
         
         try {
             const formData = new FormData();
@@ -75,7 +87,7 @@ const FaceOnboarding = () => {
             
             // Progress simulation
             let currentProgress = 0;
-            const progressInterval = setInterval(() => {
+            progressInterval = setInterval(() => {
                 currentProgress += Math.floor(Math.random() * 10) + 2;
                 if (currentProgress > 95) currentProgress = 95;
                 setProgress(currentProgress);
@@ -95,6 +107,8 @@ const FaceOnboarding = () => {
             console.error('Error saving biometric data:', err);
             setError(err.response?.data?.message || 'Failed to securely save biometric data to server. Please try again.');
             setStep(0);
+        } finally {
+            clearInterval(progressInterval);
         }
     };
 

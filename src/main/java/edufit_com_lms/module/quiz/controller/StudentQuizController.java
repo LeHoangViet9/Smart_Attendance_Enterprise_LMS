@@ -36,6 +36,7 @@ public class StudentQuizController {
         private final QuizService quizService;
         private final StudentProfileRepository studentProfileRepository;
         private final MinioStorageService minioStorageService;
+        private final edufit_com_lms.module.quiz.repository.QuizAttemptRepository quizAttemptRepository;
 
         // Method xÃ³a cá» isCorrect Ä‘á»ƒ sinh viÃªn khÃ´ng thá»ƒ dÃ¹ng F12 soi Ä‘Ã¡p Ã¡n
         private void scrubCorrectAnswers(QuizResponse res) {
@@ -148,6 +149,13 @@ public class StudentQuizController {
         public ResponseEntity<ApiResponse<QuizAttemptResponse>> submitAttempt(
                         @PathVariable Long attemptId,
                         @RequestBody SubmitQuizRequest submitRequest) {
+                CustomUserDetail userDetails = (CustomUserDetail) SecurityContextHolder.getContext()
+                        .getAuthentication().getPrincipal();
+                var attempt = quizAttemptRepository.findById(attemptId)
+                        .orElseThrow(() -> new edufit_com_lms.common.exception.ResourceNotFound("Quiz attempt not found"));
+                if (!attempt.getStudent().getUserId().equals(userDetails.getId())) {
+                        throw new org.springframework.security.access.AccessDeniedException("This attempt belongs to another student");
+                }
                 return new ResponseEntity<>(new ApiResponse<>(
                                 true,
                                 "Submit test successfully",

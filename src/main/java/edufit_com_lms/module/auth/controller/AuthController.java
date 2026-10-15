@@ -51,6 +51,7 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<String>> logout() {
         authService.logout();
         return new ResponseEntity<>(new ApiResponse<>(
@@ -63,6 +64,7 @@ public class AuthController {
     }
 
     @PostMapping("/change-password")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<String>> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
         authService.changePassword(request);
         return new ResponseEntity<>(new ApiResponse<>(
@@ -75,6 +77,8 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
+    // Token delivery by email is not implemented; only admins may issue reset tokens.
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         String resetToken = authService.forgotPassword(request);
         return new ResponseEntity<>(new ApiResponse<>(

@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/student")
@@ -25,13 +24,11 @@ public class StudentProfileController {
 
     @PostMapping("/onboarding-face")
     @PreAuthorize("hasRole('STUDENT')")
-    public CompletableFuture<ResponseEntity<FaceOnboardingResponse>> onboardFace(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<FaceOnboardingResponse> onboardFace(@RequestParam("file") MultipartFile file) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetail userDetails = (CustomUserDetail) authentication.getPrincipal();
 
-        return CompletableFuture.supplyAsync(() -> {
-            FaceOnboardingResponse response = profileService.onboardFace(userDetails.getUsername(), file);
-            return ResponseEntity.ok(response);
-        });
+        FaceOnboardingResponse response = profileService.onboardFace(userDetails.getUsername(), file);
+        return ResponseEntity.ok(response);
     }
 }

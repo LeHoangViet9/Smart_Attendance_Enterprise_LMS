@@ -8,6 +8,7 @@ const Gradebook = () => {
     const navigate = useNavigate();
     const [grades, setGrades] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState('');
     const [editingRow, setEditingRow] = useState(null);
     const [editValues, setEditValues] = useState({});
     const [statusMessage, setStatusMessage] = useState({ text: '', type: '' });
@@ -17,6 +18,7 @@ const Gradebook = () => {
 
     const fetchGrades = useCallback(async () => {
         setLoading(true);
+        setLoadError('');
         try {
             let res;
             if (userRole === 'STUDENT') {
@@ -32,6 +34,10 @@ const Gradebook = () => {
             }
         } catch (error) {
             console.error("Lỗi khi tải bảng điểm:", error);
+            setGrades([]);
+            setLoadError(error.response?.status === 403
+                ? 'Bạn không có quyền xem bảng điểm của lớp này.'
+                : 'Không thể tải bảng điểm. Vui lòng thử lại.');
         } finally {
             setLoading(false);
         }
@@ -167,6 +173,12 @@ const Gradebook = () => {
                 </div>
             </div>
 
+            {loadError && (
+                <div role="alert" style={{ color: '#b91c1c', marginBottom: '1rem' }}>
+                    {loadError} <button onClick={fetchGrades}>Thử lại</button>
+                </div>
+            )}
+
             <div className="gradebook-table-wrapper">
                 <table className="gradebook-table">
                     <thead>
@@ -195,7 +207,7 @@ const Gradebook = () => {
                         {grades.length === 0 ? (
                             <tr>
                                 <td colSpan={userRole === 'LECTURER' ? 9 : 8} style={{ textAlign: 'center', padding: '2rem' }}>
-                                    Chưa có dữ liệu điểm cho lớp học này.
+                                    {loadError ? 'Chưa tải được dữ liệu bảng điểm.' : 'Chưa có dữ liệu điểm cho lớp học này.'}
                                 </td>
                             </tr>
                         ) : grades.map((grade) => {

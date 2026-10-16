@@ -14,6 +14,8 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
@@ -31,6 +33,15 @@ public class GradebookServiceImpl implements GradebookService {
     private final SubmissionRepository submissionRepository;
     private final AttendanceRepository attendanceRepository;
     private final GradebookRepository gradebookRepository;
+
+    private boolean canManageGradebook(SchoolClass schoolClass, Long userId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = authentication != null && authentication.isAuthenticated()
+                && authentication.getAuthorities().stream()
+                        .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
+        return isAdmin || (schoolClass.getLecturer() != null
+                && schoolClass.getLecturer().getUserId().equals(userId));
+    }
 
     private GradebookItemResponse mapToResponse(Gradebook g) {
         User student = g.getEnrollment().getStudent();
@@ -57,7 +68,7 @@ public class GradebookServiceImpl implements GradebookService {
         SchoolClass schoolClass = schoolClassRepository.findById(classId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Lá»›p há»c khÃ´ng tá»“n táº¡i"));
 
-        if (schoolClass.getLecturer() == null || !schoolClass.getLecturer().getUserId().equals(lecturerId)) {
+        if (!canManageGradebook(schoolClass, lecturerId)) {
             throw new AppException(HttpStatus.FORBIDDEN, "Báº¡n khÃ´ng cÃ³ quyá»n xem sá»• Ä‘iá»ƒm cá»§a lá»›p nÃ y");
         }
 
@@ -76,7 +87,7 @@ public class GradebookServiceImpl implements GradebookService {
         SchoolClass schoolClass = schoolClassRepository.findById(classId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Lá»›p há»c khÃ´ng tá»“n táº¡i"));
 
-        if (schoolClass.getLecturer() == null || !schoolClass.getLecturer().getUserId().equals(lecturerId)) {
+        if (!canManageGradebook(schoolClass, lecturerId)) {
             throw new AppException(HttpStatus.FORBIDDEN, "Báº¡n khÃ´ng cÃ³ quyá»n xem sá»• Ä‘iá»ƒm cá»§a lá»›p nÃ y");
         }
 
@@ -171,8 +182,7 @@ public class GradebookServiceImpl implements GradebookService {
         Gradebook gradebook = gradebookRepository.findById(gradebookId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Báº£n ghi sá»• Ä‘iá»ƒm khÃ´ng tá»“n táº¡i"));
 
-        User lecturer = gradebook.getEnrollment().getSchoolClass().getLecturer();
-        if (lecturer == null || !lecturer.getUserId().equals(lecturerId)) {
+        if (!canManageGradebook(gradebook.getEnrollment().getSchoolClass(), lecturerId)) {
             throw new AppException(HttpStatus.FORBIDDEN, "Báº¡n khÃ´ng cÃ³ quyá»n sá»­a sá»• Ä‘iá»ƒm nÃ y");
         }
 
